@@ -5,6 +5,7 @@ import {
   GH_CHANGES_OUTPUT,
   GH_ISSUE_DETAIL,
   GH_ISSUES_OUTPUT,
+  GH_ISSUES_PAGED_OUTPUT,
   GH_TRUNCATED_CHANGES_OUTPUT,
   ghAuthor,
 } from './fixtures.ts'
@@ -51,6 +52,7 @@ describe('GraphQL 工单解析', () => {
         repository: {
           issues: {
             totalCount: 1,
+            pageInfo: { hasNextPage: false, endCursor: null },
             nodes: [
               {
                 number: 1,
@@ -75,6 +77,7 @@ describe('GraphQL 工单解析', () => {
         repository: {
           issues: {
             totalCount: 1,
+            pageInfo: { hasNextPage: false, endCursor: null },
             nodes: [
               {
                 number: 1,
@@ -92,6 +95,42 @@ describe('GraphQL 工单解析', () => {
     })
 
     expect(parseIssueGraphql(output).tickets[0]?.author).toBeNull()
+  })
+
+  it('读取下一页游标；没有下一页时不给游标', () => {
+    expect(parseIssueGraphql(GH_ISSUES_OUTPUT).nextCursor).toBeUndefined()
+    expect(parseIssueGraphql(GH_ISSUES_PAGED_OUTPUT).nextCursor).toBe('Y3Vyc29yOnYyOpHOF0')
+  })
+
+  it('缺少分页信息时返回数据格式错误，不静默当成已覆盖全部', () => {
+    const output = JSON.stringify({
+      data: {
+        repository: {
+          issues: {
+            totalCount: 1,
+            nodes: [],
+          },
+        },
+      },
+    })
+
+    expect(() => parseIssueGraphql(output)).toThrow(/pageInfo/)
+  })
+
+  it('还有下一页却没有游标时返回数据格式错误', () => {
+    const output = JSON.stringify({
+      data: {
+        repository: {
+          issues: {
+            totalCount: 30,
+            pageInfo: { hasNextPage: true, endCursor: null },
+            nodes: [],
+          },
+        },
+      },
+    })
+
+    expect(() => parseIssueGraphql(output)).toThrow(/endCursor/)
   })
 
   it('输出不是 JSON 时返回抓取失败', () => {

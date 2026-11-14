@@ -13,30 +13,33 @@ export type TicketSortKey = 'updated' | 'created' | 'number' | 'title' | 'status
 /** 排序方向。 */
 export type SortDirection = 'asc' | 'desc'
 
-/** “可接 / 阻塞 / 已关闭”三类数量。 */
+/** “可接 / 阻塞 / 其他开放 / 已关闭”四类数量。 */
 export interface TicketCounts {
   readonly ready: number
   readonly blocked: number
+  readonly open: number
   readonly closed: number
 }
 
 /**
- * 统计三类数量；其他开放的票不进入统计。
+ * 统计四类数量。四类相加等于已加载票数，顶部计数才对得上列表。
  * @param tickets - 已判定的工单。
- * @returns 三个计数。
+ * @returns 四个计数。
  */
 export function countTickets(tickets: readonly TicketSnapshot[]): TicketCounts {
   let ready = 0
   let blocked = 0
+  let open = 0
   let closed = 0
 
   for (const ticket of tickets) {
     if (ticket.status === 'ready') ready += 1
     else if (ticket.status === 'blocked') blocked += 1
     else if (ticket.status === 'closed') closed += 1
+    else open += 1
   }
 
-  return { ready, blocked, closed }
+  return { ready, blocked, open, closed }
 }
 
 /**

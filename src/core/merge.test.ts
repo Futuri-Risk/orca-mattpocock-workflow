@@ -67,19 +67,6 @@ describe('增量合并', () => {
     expect(merged[0]?.state).toBe('closed')
   })
 
-  it('给了上限时按更新时间倒序裁到窗口大小', () => {
-    const merged = mergeTickets(
-      [
-        ticket({ ref: '#1', updatedAt: '2026-01-01T00:00:00Z' }),
-        ticket({ ref: '#2', updatedAt: '2026-03-01T00:00:00Z' }),
-      ],
-      [ticket({ ref: '#3', updatedAt: '2026-02-01T00:00:00Z' })],
-      2,
-    )
-
-    expect(refs(merged)).toEqual(['#2', '#3'])
-  })
-
   it('合并结果与全量重拉的票集合一致', () => {
     const full = [
       ticket({ ref: '#1', updatedAt: '2026-03-01T00:00:00Z' }),
@@ -89,7 +76,7 @@ describe('增量合并', () => {
     const base = [full[0], full[2]].filter((item): item is Ticket => item !== undefined)
     const changes = [full[1]].filter((item): item is Ticket => item !== undefined)
 
-    const merged = mergeTickets(base, changes, 3)
+    const merged = mergeTickets(base, changes)
 
     expect([...refs(merged)].sort()).toEqual([...refs(full)].sort())
   })

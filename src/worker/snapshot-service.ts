@@ -65,7 +65,7 @@ export interface SnapshotServiceDeps extends SnapshotLibraryDeps {
 export interface SnapshotService {
   /**
    * 处理一个快照方法。
-   * @param method - 三个快照方法之一。
+   * @param method - 快照读取、刷新、追加或阻塞补齐方法之一。
    * @param params - 方法参数。
    * @returns 成功快照或带错误码的失败。
    */
@@ -87,6 +87,8 @@ export function createSnapshotService(deps: SnapshotServiceDeps): SnapshotServic
   const cache = new Map<string, CachedWorkspace>()
   // 冷启动时两个面板会同时请求：共享同一次列表拉取，后续补齐才能挂到同一条缓存上。
   const loading = new Map<string, Promise<RpcResult<WorkspaceSnapshot>>>()
+  // 「加载更多」按工作区去重：连点两次只发一次请求，第二次拿到同一份结果。
+  const paging = new Map<string, Promise<RpcResult<WorkspaceSnapshot>>>()
 
   return {
     handle(method, params) {
@@ -109,6 +111,10 @@ export function createSnapshotService(deps: SnapshotServiceDeps): SnapshotServic
         return resolveBlockers(deps, cache, loading, workspaceRoot)
       }
 
+      if (method === RPC_METHODS.snapshotLoadMore) {
+        return loadMore(deps, cache, loading, paging, workspaceRoot)
+      }
+
       return refreshSnapshot(deps, cache, workspaceRoot, readFullFlag(params))
     },
 
@@ -128,6 +134,7 @@ function isSnapshotMethod(method: string): boolean {
   return (
     method === RPC_METHODS.snapshotGet ||
     method === RPC_METHODS.snapshotRefresh ||
+    method === RPC_METHODS.snapshotLoadMore ||
     method === RPC_METHODS.snapshotResolveBlockers
   )
 }
@@ -171,17 +178,32 @@ function loadWorkspace(
   loading: Map<string, Promise<RpcResult<WorkspaceSnapshot>>>,
   workspaceRoot: string,
 ): Promise<RpcResult<WorkspaceSnapshot>> {
-  const running = loading.get(workspaceRoot)
+  return singleFlight(loading, workspaceRoot, () => readWorkspace(deps, cache, workspaceRoot))
+}
+
+/**
+ * 同一工作区的并发请求共享一次执行；成功或失败后释放槽位。
+ * @param flights - 进行中的请求表。
+ * @param workspaceRoot - 工作区根目录，作为去重键。
+ * @param start - 真正发起请求的函数。
+ * @returns 这次（或正在进行的）请求结果。
+ */
+function singleFlight(
+  flights: Map<string, Promise<RpcResult<WorkspaceSnapshot>>>,
+  workspaceRoot: string,
+  start: () => Promise<RpcResult<WorkspaceSnapshot>>,
+): Promise<RpcResult<WorkspaceSnapshot>> {
+  const running = flights.get(workspaceRoot)
   if (running !== undefined) return running
 
-  const task = readWorkspace(deps, cache, workspaceRoot)
-  loading.set(workspaceRoot, task)
+  const task = start()
+  flights.set(workspaceRoot, task)
   void task.then(
     () => {
-      loading.delete(workspaceRoot)
+      flights.delete(workspaceRoot)
     },
     () => {
-      loading.delete(workspaceRoot)
+      flights.delete(workspaceRoot)
     },
   )
   return task
@@ -277,8 +299,11 @@ async function refreshSnapshot(
   const base =
     stored?.repositoryKey === repositoryKey(resolved.kind, resolved.address) ? stored : undefined
   const tracker = resolved.tracker
+  // 只覆盖了一部分却没有游标的条目来自旧版本：增量合并补不出下一页，必须全量重拉一页。
+  const extendable =
+    base === undefined || base.nextCursor !== undefined || base.total <= base.tickets.length
 
-  if (base !== undefined && !full && tracker.fetchChanges !== undefined) {
+  if (base !== undefined && !full && extendable && tracker.fetchChanges !== undefined) {
     const merged = await mergeIncremental(deps, cache, workspaceRoot, resolved, base, startedAt)
     if (merged !== undefined) return merged
   }
@@ -334,16 +359,117 @@ async function mergeIncremental(
     return undefined
   }
 
-  const merged = mergeTickets(base.tickets, changes.tickets, base.windowLimit)
+  // 不按窗口上限裁剪：增量里可能有窗口外的票被更新，它们现在属于最前面；
+  // 裁掉尾部会留下一个游标已经越过的空洞，而那些票再也取不回来。
+  const merged = mergeTickets(base.tickets, changes.tickets)
+  const nextCursor = base.nextCursor
   const raw: TrackerSnapshot = {
     repository: base.repository,
     fetchedAt: deps.now(),
     loaded: merged.length,
     total: changes.total ?? base.total,
     tickets: merged,
-    ...(base.windowLimit === undefined ? {} : { windowLimit: base.windowLimit }),
+    // 游标仍指向已加载窗口之后的第一张；窗口大小由已加载数表达。
+    ...(nextCursor === undefined ? {} : { nextCursor }),
   }
   return await publish(deps, cache, workspaceRoot, resolved, raw, startedAt, 'incremental')
+}
+
+/**
+ * 按游标取下一段并追加到已加载的列表。
+ *
+ * 同一工作区的并发请求共享一次拉取：连点「加载更多」不会重复消耗配额。
+ * @param deps - 服务依赖。
+ * @param cache - 内存缓存。
+ * @param loading - 进行中的首屏拉取。
+ * @param paging - 进行中的「加载更多」。
+ * @param workspaceRoot - 工作区根目录。
+ * @returns 追加后的快照或失败。
+ */
+function loadMore(
+  deps: SnapshotServiceDeps,
+  cache: Map<string, CachedWorkspace>,
+  loading: Map<string, Promise<RpcResult<WorkspaceSnapshot>>>,
+  paging: Map<string, Promise<RpcResult<WorkspaceSnapshot>>>,
+  workspaceRoot: string,
+): Promise<RpcResult<WorkspaceSnapshot>> {
+  return singleFlight(paging, workspaceRoot, () =>
+    appendPage(deps, cache, loading, workspaceRoot),
+  )
+}
+
+/**
+ * 取下一页并合并进当前快照。
+ *
+ * - 快照没有游标时原样返回：后端一次取全，或列表已经覆盖全部；
+ * - 新的一段按工单引用去重后并入旧列表，窗口上限跟着已加载数走，
+ *   增量合并仍与同样范围的重新拉取一致；
+ * - 拉取失败保留已有列表，把原因记在快照上，用户可以再点一次；
+ * - 拉取期间刷新替换了缓存时丢弃这一页，不把旧游标的结果写回新快照。
+ * @param deps - 服务依赖。
+ * @param cache - 内存缓存。
+ * @param loading - 进行中的首屏拉取。
+ * @param workspaceRoot - 工作区根目录。
+ * @returns 追加后的快照或失败。
+ */
+async function appendPage(
+  deps: SnapshotServiceDeps,
+  cache: Map<string, CachedWorkspace>,
+  loading: Map<string, Promise<RpcResult<WorkspaceSnapshot>>>,
+  workspaceRoot: string,
+): Promise<RpcResult<WorkspaceSnapshot>> {
+  const startedAt = deps.now()
+
+  let entry = cache.get(workspaceRoot)
+  if (entry === undefined) {
+    const loaded = await loadWorkspace(deps, cache, loading, workspaceRoot)
+    if (!loaded.ok) return loaded
+    entry = cache.get(workspaceRoot)
+    if (entry === undefined) return loaded
+  }
+
+  const cursor = entry.raw.nextCursor
+  if (cursor === undefined) return { ok: true, result: entry.snapshot }
+
+  let resolved: ResolvedBackend
+  try {
+    resolved = await deps.resolve(workspaceRoot)
+  } catch (error) {
+    return await keepOldSnapshot(deps, cache, workspaceRoot, mapError(error), startedAt)
+  }
+
+  // 仓库换了：旧游标属于另一个仓库，按刷新流程重建快照，不把两个仓库的票混在一起。
+  if (repositoryKey(resolved.kind, resolved.address) !== entry.repositoryKey) {
+    return await refreshSnapshot(deps, cache, workspaceRoot, false)
+  }
+
+  let page: TrackerSnapshot
+  try {
+    page = await resolved.tracker.fetchSnapshot(workspaceRoot, { cursor })
+  } catch (error) {
+    return await keepOldSnapshot(deps, cache, workspaceRoot, mapError(error), startedAt)
+  }
+
+  if (cache.get(workspaceRoot) !== entry) {
+    const current = cache.get(workspaceRoot)
+    if (current === undefined) {
+      return failure(ERROR_CODES.internal, '加载更多时缓存被清空，请重新读取工单。')
+    }
+    return { ok: true, result: current.snapshot }
+  }
+
+  const merged = mergeTickets(entry.raw.tickets, page.tickets)
+  // 游标没往前走说明后端没有真的翻页，停在这里，不让用户无限点下去。
+  const nextCursor = page.nextCursor === cursor ? undefined : page.nextCursor
+  const raw: TrackerSnapshot = {
+    repository: entry.raw.repository,
+    fetchedAt: deps.now(),
+    loaded: merged.length,
+    total: page.total,
+    tickets: merged,
+    ...(nextCursor === undefined ? {} : { nextCursor }),
+  }
+  return await publish(deps, cache, workspaceRoot, resolved, raw, startedAt, 'more')
 }
 
 /**
@@ -387,7 +513,7 @@ async function fetchAndCache(
  * @param resolved - 解析出的后端。
  * @param raw - 后端返回的原始列表。
  * @param startedAt - 这次拉取的起始时刻。
- * @param mode - 这次是全量还是增量。
+ * @param mode - 这次是全量、增量还是追加一页。
  * @returns 快照。
  */
 async function publish(
@@ -397,7 +523,7 @@ async function publish(
   resolved: ResolvedBackend,
   raw: TrackerSnapshot,
   startedAt: number,
-  mode: 'full' | 'incremental',
+  mode: 'full' | 'incremental' | 'more',
 ): Promise<RpcResult<WorkspaceSnapshot>> {
   const tickets = withSkillActions(classifyTickets(raw.tickets, deps.labels), deps.labels)
   const resolver = resolved.tracker.resolveBlockers ?? null
@@ -418,6 +544,7 @@ async function publish(
 
   cache.set(workspaceRoot, {
     kind: resolved.kind,
+    repositoryKey: repositoryKey(resolved.kind, resolved.address),
     repositoryHost,
     raw,
     snapshot,
@@ -601,6 +728,7 @@ function buildSnapshot(
     fetchedAt: raw.fetchedAt,
     loaded: tickets.length,
     total: raw.total,
+    hasMore: raw.nextCursor !== undefined,
     blockersFinalized,
     metrics,
     source,

@@ -37,8 +37,8 @@ export interface SnapshotStoreEntry {
   readonly loaded: number
   /** 当时的仓库总票数。 */
   readonly total: number
-  /** 列表覆盖的上限；缺省表示覆盖全部。 */
-  readonly windowLimit?: number
+  /** 还有下一页时的后端游标；缺省表示已经覆盖全部。 */
+  readonly nextCursor?: string
   /** 当时拿到的工单原始数据，不含判定结果。 */
   readonly tickets: readonly Ticket[]
 }
@@ -59,7 +59,7 @@ export function serializeSnapshotStoreEntry(entry: SnapshotStoreEntry): string {
     fetchedAt: entry.fetchedAt,
     loaded: entry.loaded,
     total: entry.total,
-    ...(entry.windowLimit === undefined ? {} : { windowLimit: entry.windowLimit }),
+    ...(entry.nextCursor === undefined ? {} : { nextCursor: entry.nextCursor }),
     tickets: entry.tickets,
   })
 }
@@ -111,11 +111,8 @@ function readEntry(value: unknown): SnapshotStoreEntry | undefined {
   const repositoryHost = value.repositoryHost
   if (repositoryHost !== null && typeof repositoryHost !== 'string') return undefined
 
-  const windowLimit = value.windowLimit
-  if (
-    windowLimit !== undefined &&
-    (typeof windowLimit !== 'number' || !Number.isFinite(windowLimit))
-  ) {
+  const nextCursor = value.nextCursor
+  if (nextCursor !== undefined && (typeof nextCursor !== 'string' || nextCursor.length === 0)) {
     return undefined
   }
 
@@ -132,7 +129,7 @@ function readEntry(value: unknown): SnapshotStoreEntry | undefined {
     fetchedAt,
     loaded,
     total,
-    ...(windowLimit === undefined ? {} : { windowLimit }),
+    ...(nextCursor === undefined ? {} : { nextCursor }),
     tickets,
   }
 }

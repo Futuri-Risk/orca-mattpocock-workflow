@@ -24,6 +24,10 @@ export interface SnapshotRequestState {
   readonly refresh: () => void
   /** 全量刷新：忽略本地快照库重拉一次。 */
   readonly refreshFull: () => void
+  /** 正在取下一页；界面据此禁用「加载更多」。 */
+  readonly appending: boolean
+  /** 取下一页并追加到当前列表；没有更多时宿主原样返回。 */
+  readonly loadMore: () => void
 }
 
 /** 请求方式：读缓存、增量刷新、全量刷新。 */
@@ -54,7 +58,9 @@ interface Loader {
   readonly error: RpcErrorBody | null
   readonly refreshError: RpcErrorBody | null
   readonly phase: SnapshotPhase
+  readonly appending: boolean
   readonly load: (mode: RequestMode) => Promise<WorkspaceSnapshot | null>
+  readonly append: () => Promise<void>
 }
 
 /**
@@ -62,14 +68,17 @@ interface Loader {
  * @param client - 面板客户端。
  * @param workspaceRoot - 当前工作区；没有工作区时直接进入错误态。
  * @param reloadToken - 外部推送的刷新信号；变了就重新读一次。
- * @returns 快照、错误、阶段与两个刷新入口。
+ * @returns 快照、错误、阶段、两个刷新入口与「加载更多」。
  */
 export function useSnapshotRequest(
   client: PanelClient,
   workspaceRoot: string | undefined,
   reloadToken = 0,
 ): SnapshotRequestState {
-  const { snapshot, error, refreshError, phase, load } = useSnapshotLoader(client, workspaceRoot)
+  const { snapshot, error, refreshError, phase, appending, load, append } = useSnapshotLoader(
+    client,
+    workspaceRoot,
+  )
   // 一轮缓存只自动刷新一次：刷新失败时不再反复打宿主。
   const autoRefreshed = React.useRef(false)
 
@@ -105,7 +114,12 @@ export function useSnapshotRequest(
     void run('refresh-full')
   }, [phase, run])
 
-  return { snapshot, error, refreshError, phase, refresh, refreshFull }
+  const loadMore = React.useCallback(() => {
+    if (phase === 'loading' || phase === 'refreshing' || appending) return
+    void append()
+  }, [appending, append, phase])
+
+  return { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore }
 }
 
 /**
@@ -119,9 +133,12 @@ function useSnapshotLoader(client: PanelClient, workspaceRoot: string | undefine
   const [error, setError] = React.useState<RpcErrorBody | null>(null)
   const [refreshError, setRefreshError] = React.useState<RpcErrorBody | null>(null)
   const [phase, setPhase] = React.useState<SnapshotPhase>('loading')
+  const [appending, setAppending] = React.useState(false)
   const sequence = React.useRef(0)
   // 已经拿到过数据：刷新失败时要靠它决定是保留列表还是切错误页。
   const hasData = React.useRef(false)
+  // 防连点：state 更新是异步的，用 ref 立即拦住第二次点击。
+  const appendingRef = React.useRef(false)
 
   const load = React.useCallback(
     async (mode: RequestMode): Promise<WorkspaceSnapshot | null> => {
@@ -188,5 +205,33 @@ function useSnapshotLoader(client: PanelClient, workspaceRoot: string | undefine
     hasData.current = false
   }, [workspaceRoot])
 
-  return { snapshot, error, refreshError, phase, load }
+  /**
+   * 取下一页并追加。不推进序号：并发的刷新结果仍然有效；
+   * 自己这一页只在序号没变时落地，避免覆盖刚刷新出来的列表。
+   */
+  const append = React.useCallback(async (): Promise<void> => {
+    if (appendingRef.current || workspaceRoot === undefined) return
+
+    const started = sequence.current
+    appendingRef.current = true
+    setAppending(true)
+    try {
+      const result = await client.loadMore(workspaceRoot)
+      if (started !== sequence.current) return
+      if (!result.ok) {
+        // 列表已经有数据：保留它，只把失败原因记下来，用户可以再点一次。
+        if (hasData.current) setRefreshError(result.error)
+        return
+      }
+      setSnapshot(result.result)
+      hasData.current = true
+      setRefreshError(null)
+      setPhase('ready')
+    } finally {
+      appendingRef.current = false
+      setAppending(false)
+    }
+  }, [client, workspaceRoot])
+
+  return { snapshot, error, refreshError, phase, appending, load, append }
 }

@@ -79,6 +79,14 @@ const REFRESH_ERROR_STYLE: React.CSSProperties = {
   whiteSpace: 'nowrap',
 }
 
+/** 列表底部的翻页行：贴在滚动区下沿，列表再长也点得到。 */
+const LOAD_MORE_ROW_STYLE: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'center',
+  padding: '6px 12px 10px',
+  flex: 'none',
+}
+
 /** 工单列表视图依赖。 */
 export interface TicketsViewProps {
   readonly client: PanelClient
@@ -101,11 +109,8 @@ export interface TicketsViewProps {
 /** 工单列表视图。 */
 export function TicketsView(props: TicketsViewProps): React.ReactElement {
   const clock = props.now ?? Date.now
-  const { snapshot, error, refreshError, phase, refresh, refreshFull } = useSnapshotRequest(
-    props.client,
-    props.workspaceRoot,
-    props.refreshToken ?? 0,
-  )
+  const { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore } =
+    useSnapshotRequest(props.client, props.workspaceRoot, props.refreshToken ?? 0)
   const { preference, setFilter, toggleSort } = useViewPreference(props.workspaceRoot)
   const nowValue = useNow(clock)
   const actions = useTicketActions(props.workspaceRoot, props.copy)
@@ -117,7 +122,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
     preference.sortKey,
     preference.direction,
   )
-  const busy = phase === 'loading' || phase === 'refreshing'
+  const busy = phase === 'loading' || phase === 'refreshing' || appending
 
   const focused = useFocusedTicket(props.focusRef, props.onFocusHandled, props.workspaceRoot)
 
@@ -161,6 +166,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             snapshot={snapshot}
             visible={visible}
             ticketCount={tickets.length}
+            appending={appending}
             copied={actions.copied}
             canCopy={props.copy.canCopy}
             focused={focused}
@@ -168,6 +174,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             client={props.client}
             workspaceRoot={props.workspaceRoot}
             onOpenEnvCheck={props.onOpenEnvCheck}
+            onLoadMore={loadMore}
             onPick={props.onOpenTicket}
             onSkillAction={actions.onSkillAction}
             onManual={actions.onManual}
@@ -218,6 +225,7 @@ function TicketRows(props: {
   readonly snapshot: WorkspaceSnapshot
   readonly visible: readonly TicketSnapshot[]
   readonly ticketCount: number
+  readonly appending: boolean
   readonly copied: string | null
   readonly canCopy: boolean
   readonly focused: string | null
@@ -225,10 +233,12 @@ function TicketRows(props: {
   readonly client: PanelClient
   readonly workspaceRoot: string | undefined
   readonly onOpenEnvCheck: (code: ErrorCode) => void
+  readonly onLoadMore: () => void
   readonly onPick: (ticket: TicketSnapshot) => void
   readonly onSkillAction: (ticket: TicketSnapshot) => void
   readonly onManual: (ticket: TicketSnapshot) => void
 }): React.ReactElement {
+  const remaining = Math.max(0, props.snapshot.total - props.snapshot.loaded)
   return (
     <>
       <div data-testid="loaded-total" style={LOADED_STYLE}>
@@ -249,6 +259,22 @@ function TicketRows(props: {
         onSkillAction={props.onSkillAction}
         onManual={props.onManual}
       />
+      {/* 翻页入口贴在列表下沿：滚到列表底部就能看到，不随内容滚走。 */}
+      {props.snapshot.hasMore ? (
+        <div style={LOAD_MORE_ROW_STYLE}>
+          <button
+            type="button"
+            data-testid="load-more"
+            data-hover="soft"
+            disabled={props.appending}
+            title={remaining > 0 ? `还有 ${String(remaining)} 张未加载` : '继续加载后面的工单'}
+            onClick={props.onLoadMore}
+            style={{ ...SECONDARY_BUTTON_STYLE, opacity: props.appending ? 0.6 : 1 }}
+          >
+            {props.appending ? '加载中…' : '加载更多'}
+          </button>
+        </div>
+      ) : null}
     </>
   )
 }
@@ -429,6 +455,12 @@ function StatsRow(props: { readonly counts: TicketCounts }): React.ReactElement 
     <div style={STATS_STYLE}>
       <Stat testId="stat-ready" label="可接" value={props.counts.ready} color={COLORS.success} />
       <Stat testId="stat-blocked" label="阻塞" value={props.counts.blocked} color={COLORS.warn} />
+      <Stat
+        testId="stat-open"
+        label="其他开放"
+        value={props.counts.open}
+        color={COLORS.secondary}
+      />
       <Stat
         testId="stat-closed"
         label="已关闭"

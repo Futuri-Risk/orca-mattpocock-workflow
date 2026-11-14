@@ -9,12 +9,17 @@ import type { BackendKind } from './backend.ts'
 import type { EnvCheckParams } from './env-check.ts'
 import type { TicketActionReason, TicketSkillAction } from './labels.ts'
 
-/** 当前版本提供的方法：读缓存、强制刷新、补齐阻塞信息、环境检查与工单详情。 */
+/** 插件私有的 HTTP 路由。宿主用 `connection.fetch.register` 挂载，界面用同源 fetch 调用。 */
+export const RPC_PATH = '/api/dsh-mattpocock-workflow'
+
+/** 当前版本提供的方法：读缓存、强制刷新、按游标追加、补齐阻塞信息、环境检查与工单详情。 */
 export const RPC_METHODS = {
   /** 读缓存；没有缓存时拉取一次。阻塞信息可能尚未定稿。 */
   snapshotGet: 'snapshot.get',
   /** 忽略缓存，强制拉取。 */
   snapshotRefresh: 'snapshot.refresh',
+  /** 按快照给出的游标取下一段工单，追加到已加载的列表；没有更多时原样返回。 */
+  snapshotLoadMore: 'snapshot.loadMore',
   /** 补齐原生阻塞信息；快照已定稿时直接返回缓存。同一工作区的进行中请求会复用。 */
   snapshotResolveBlockers: 'snapshot.resolveBlockers',
   /** 读取本地快照库的信息；带确认词时可以清空它。 */
@@ -243,6 +248,11 @@ export interface WorkspaceSnapshot {
   readonly loaded: number
   /** 仓库里的票总数；大于 `loaded` 时列表不完整。 */
   readonly total: number
+  /**
+   * 后端还有未加载的工单：界面据此给出「加载更多」入口。
+   * 一次取全的后端始终为 false。
+   */
+  readonly hasMore: boolean
   readonly tickets: readonly TicketSnapshot[]
   /**
    * 项目指标与压力判档。宿主在列表返回时算一次，阻塞补齐完成后重算；
@@ -266,7 +276,7 @@ export interface WorkspaceSnapshot {
   readonly refreshError: RpcErrorBody | null
 }
 
-/** 三个快照方法共用的参数。 */
+/** 快照读取方法共用的参数。 */
 export interface SnapshotParams {
   /** 当前工作区根目录，宿主用它解析 git 远端并缓存快照。 */
   readonly workspaceRoot: string
@@ -458,6 +468,7 @@ export interface TicketOptions {
 export interface RpcParamsMap {
   'snapshot.get': SnapshotParams
   'snapshot.refresh': SnapshotRefreshParams
+  'snapshot.loadMore': SnapshotParams
   'snapshot.resolveBlockers': SnapshotParams
   'snapshot.cache': SnapshotCacheParams
   'env.check': EnvCheckParams

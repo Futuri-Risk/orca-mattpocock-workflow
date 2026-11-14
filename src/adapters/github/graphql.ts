@@ -35,6 +35,8 @@ const AUTHOR_FIELDS: AuthorFields = {
 export interface ParsedIssues {
   readonly total: number
   readonly tickets: readonly Ticket[]
+  /** 还有下一页时给出的游标；缺省表示这一份已经覆盖全部。 */
+  readonly nextCursor?: string
 }
 
 /** 一次增量 GraphQL 解析的结果。 */
@@ -50,10 +52,10 @@ export interface ParsedChanges {
 }
 
 /**
- * 从 GraphQL 响应里取出总数与工单。
+ * 从 GraphQL 响应里取出总数、工单与下一页游标。
  * @param output - `gh api graphql` 的标准输出。
- * @returns 仓库总数与实际解析到的工单。
- * @throws {TrackerError} 输出不是 JSON、仓库不存在或工单字段不合法。
+ * @returns 仓库总数、实际解析到的工单与下一页游标。
+ * @throws {TrackerError} 输出不是 JSON、仓库不存在、工单字段不合法或缺少分页信息。
  */
 export function parseIssueGraphql(output: string): ParsedIssues {
   const payload = parseJson(output, 'gh 返回的不是有效 JSON')
@@ -69,7 +71,8 @@ export function parseIssueGraphql(output: string): ParsedIssues {
     throw invalid('仓库的 issues.totalCount 不是非负整数')
   }
 
-  return { total, tickets }
+  const nextCursor = readNextCursor(issues)
+  return nextCursor === undefined ? { total, tickets } : { total, tickets, nextCursor }
 }
 
 /**
@@ -97,6 +100,32 @@ export function parseIssueChangesGraphql(output: string): ParsedChanges {
     truncated: readHasNextPage(issues),
     ...(total === undefined ? {} : { total }),
   }
+}
+
+/**
+ * 列表的下一页游标。
+ *
+ * 列表查询固定请求 `pageInfo { hasNextPage endCursor }`；拿不到分页信息说明
+ * 响应不是这份查询的结果，按数据格式错误处理——静默当成「没有下一页」
+ * 会让列表永远停在第一页，正是这个接口要避免的情况。
+ * @param issues - 仓库的 issues 连接。
+ * @returns 下一页游标；没有下一页时 undefined。
+ */
+function readNextCursor(issues: Record<string, unknown>): string | undefined {
+  const pageInfo = issues.pageInfo
+  if (!isRecord(pageInfo)) throw invalid('仓库的 issues.pageInfo 缺失')
+
+  const hasNextPage = pageInfo.hasNextPage
+  if (typeof hasNextPage !== 'boolean') {
+    throw invalid('仓库的 issues.pageInfo.hasNextPage 不是布尔值')
+  }
+  if (!hasNextPage) return undefined
+
+  const endCursor = pageInfo.endCursor
+  if (typeof endCursor !== 'string' || endCursor.length === 0) {
+    throw invalid('仓库还有下一页，但 issues.pageInfo.endCursor 不是非空字符串')
+  }
+  return endCursor
 }
 
 /**

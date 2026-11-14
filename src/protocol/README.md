@@ -9,6 +9,8 @@ worker 与面板之间的消息类型和常量。
 RPC 方法（面板用 `orca.plugin.request(方法名, 参数)` 调用，worker 用同名处理器应答）：
 
 - `snapshot.get` / `snapshot.refresh` / `snapshot.resolveBlockers`：列表快照与阻塞补齐；
+- `snapshot.loadMore`：按快照的游标取下一段工单并追加到已加载的列表，参数是 `{ workspaceRoot }`；
+  一次取全的后端原样返回当前快照；
 - `snapshot.cache`：读取或清空本地快照库；
 - `env.check`：环境检查；
 - `ticket.get`：读取单张工单详情，参数是 `{ workspaceRoot, ref, number }`；
@@ -36,11 +38,14 @@ worktree 另有两个错误码：`orca-missing`（找不到 Orca 命令行，属
 
 ## 快照载荷
 
-`snapshot.get`、`snapshot.refresh` 与 `snapshot.resolveBlockers` 都返回同一个 `WorkspaceSnapshot`：
+`snapshot.get`、`snapshot.refresh`、`snapshot.loadMore` 与 `snapshot.resolveBlockers` 都返回同一个
+`WorkspaceSnapshot`：
 
 - 工单级：判定结果（`status`、`category`）、关闭时间（`closedAt`，能给才给）与阻塞引用（`blockedBy`，
   能给才给；GitHub 列表查询没有依赖边）；
 - 快照级：仓库标识、后端、实例主机、拉取时间、已加载数与总数、阻塞是否定稿；
+- 分页：`hasMore` 为 true 时后端还有未加载的工单，界面据此给出「加载更多」入口。游标只在宿主内部
+  流转（快照库条目里的 `nextCursor`），不暴露给面板；一次取全的后端 `hasMore` 恒为 false；
 - 指标级：`metrics`，含三个压力维度（`PressureDimension` / `PressureTier`）、关键数字、样本覆盖度
   （`coverage`）与关注清单（`attention`）。`MetricValue` 用 `value: null` + `gap` 表示后端给不出的指标；
   维度数据不足时 `PressureDimensionReport.tier` 为 `null`，总档位只合并可判档的维度。

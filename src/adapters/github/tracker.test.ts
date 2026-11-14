@@ -7,6 +7,7 @@ import {
   GH_ASSIGNEES_OUTPUT,
   GH_CHANGES_OUTPUT,
   GH_ISSUES_OUTPUT,
+  GH_ISSUES_PAGED_OUTPUT,
   GH_LABELS_OUTPUT,
   GH_TRUNCATED_CHANGES_OUTPUT,
   GH_VIEWER_PERMISSION_OUTPUT,
@@ -191,7 +192,11 @@ describe('GitHub 工单后端', () => {
 })
 
 const EMPTY_ISSUES_OUTPUT = JSON.stringify({
-  data: { repository: { issues: { totalCount: 0, nodes: [] } } },
+  data: {
+    repository: {
+      issues: { totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null }, nodes: [] },
+    },
+  },
 })
 
 /**
@@ -243,13 +248,57 @@ describe('GitHub 工单增量', () => {
     expect(changes?.truncated).toBe(true)
   })
 
-  it('列表快照声明窗口上限，宿主合并增量时按它裁剪', async () => {
-    const { runner } = recordedRunner({})
-    const tracker = createGithubTracker({ run: runner, now: () => NOW, limit: 42 })
+  it('还有下一页时给出游标，宿主据此追加', async () => {
+    const { runner } = recordedRunner({ gh: () => GH_ISSUES_PAGED_OUTPUT })
+    const tracker = createGithubTracker({ run: runner, now: () => NOW })
 
     const snapshot = await tracker.fetchSnapshot('/workspace')
 
-    expect(snapshot.windowLimit).toBe(42)
+    expect(snapshot.nextCursor).toBe('Y3Vyc29yOnYyOpHOF0')
+    expect(snapshot.loaded).toBe(2)
+    expect(snapshot.total).toBe(30)
+  })
+
+  it('没有下一页时不给游标，表示已覆盖全部', async () => {
+    const { runner } = recordedRunner({})
+    const tracker = createGithubTracker({ run: runner, now: () => NOW })
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.nextCursor).toBeUndefined()
+  })
+
+  it('按游标取下一段并把游标传给 gh', async () => {
+    const seen: string[] = []
+    const { runner } = recordedRunner({
+      gh: (args) => {
+        seen.push(...args)
+        return GH_ISSUES_OUTPUT
+      },
+    })
+    const tracker = createGithubTracker({ run: runner, now: () => NOW })
+
+    await tracker.fetchSnapshot('/workspace', { cursor: 'Y3Vyc29yOnYyOpHOF0' })
+
+    expect(seen).toContain('after=Y3Vyc29yOnYyOpHOF0')
+    const query = seen.find((arg) => arg.startsWith('query=')) ?? ''
+    expect(query).toContain('after: $after')
+    expect(query).toContain('pageInfo { hasNextPage endCursor }')
+  })
+
+  it('第一页不传游标，避免把空串当成位置', async () => {
+    const seen: string[] = []
+    const { runner } = recordedRunner({
+      gh: (args) => {
+        seen.push(...args)
+        return GH_ISSUES_OUTPUT
+      },
+    })
+    const tracker = createGithubTracker({ run: runner, now: () => NOW })
+
+    await tracker.fetchSnapshot('/workspace')
+
+    expect(seen.some((arg) => arg.startsWith('after='))).toBe(false)
   })
 })
 

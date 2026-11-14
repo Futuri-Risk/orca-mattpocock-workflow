@@ -19,6 +19,7 @@ const RECORDED_ISSUES = {
     repository: {
       issues: {
         totalCount: 30,
+        pageInfo: { hasNextPage: false, endCursor: null },
         nodes: [
           {
             number: 15,
@@ -78,6 +79,45 @@ const RECORDED_ISSUES = {
 }
 
 export const GH_ISSUES_OUTPUT = JSON.stringify(RECORDED_ISSUES, null, 2)
+
+/** 列表还有下一页的录制输出：`hasNextPage` 为真并带下一页游标。 */
+export const GH_ISSUES_PAGED_OUTPUT = JSON.stringify(
+  {
+    data: {
+      repository: {
+        issues: {
+          totalCount: 30,
+          pageInfo: { hasNextPage: true, endCursor: 'Y3Vyc29yOnYyOpHOF0' },
+          nodes: [
+            {
+              number: 5,
+              title: '第二页的一张票',
+              state: 'OPEN',
+              createdAt: '2026-11-05T09:00:00Z',
+              updatedAt: '2026-11-05T09:30:00Z',
+              labels: { nodes: [{ name: 'needs-triage' }] },
+              author: AUTHOR,
+              issueDependenciesSummary: { blockedBy: 0 },
+            },
+            {
+              number: 3,
+              title: '第二页的另一张票',
+              state: 'CLOSED',
+              createdAt: '2026-11-03T09:00:00Z',
+              updatedAt: '2026-11-03T09:30:00Z',
+              closedAt: '2026-11-03T10:00:00Z',
+              labels: { nodes: [] },
+              author: AUTHOR,
+              issueDependenciesSummary: { blockedBy: 0 },
+            },
+          ],
+        },
+      },
+    },
+  },
+  null,
+  2,
+)
 
 /**
  * 增量查询的录制输出：同一份查询加上更新时间过滤后只回变更过的票。

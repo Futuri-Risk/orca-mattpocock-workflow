@@ -47,6 +47,14 @@ export interface Ticket {
   readonly blockedBy?: readonly string[]
 }
 
+/**
+ * 分页起点。只有按页取数的后端（GitHub）会用到；一次取全的后端忽略这个参数。
+ */
+export interface SnapshotPage {
+  /** 上一次拉取给出的游标；省略表示第一页。 */
+  readonly cursor?: string
+}
+
 /** 后端返回的一次拉取结果。 */
 export interface TrackerSnapshot {
   /** 后端相关的仓库显示名：`owner/name`、含嵌套 group 的项目路径或工作区目录名。 */
@@ -56,10 +64,10 @@ export interface TrackerSnapshot {
   readonly total: number
   readonly tickets: readonly Ticket[]
   /**
-   * 列表覆盖的上限：只覆盖最近更新的 N 张票（GitHub 的单页上限）。
-   * 缺省表示覆盖全部。宿主合并增量时按它裁剪，使结果与全量重拉一致。
+   * 还有下一页时给出的后端游标；缺省表示这份快照已经覆盖全部。
+   * 宿主按它请求下一段，界面据此决定要不要显示「加载更多」。
    */
-  readonly windowLimit?: number
+  readonly nextCursor?: string
 }
 
 /** 一次增量拉取的结果。 */
@@ -148,8 +156,15 @@ export interface TicketOptions {
 
 /** 工单后端。GitHub / GitLab / Gitea / 本地 Markdown 都实现同一契约。 */
 export interface Tracker {
-  /** 读取一个工作区的工单快照；业务失败抛 {@link TrackerError}。 */
-  fetchSnapshot(workspaceRoot: string): Promise<TrackerSnapshot>
+  /**
+   * 读取一个工作区的工单快照；业务失败抛 {@link TrackerError}。
+   *
+   * 按页取数的后端接受 {@link SnapshotPage}：省略时取第一页，带 `cursor` 时取该游标之后
+   * 的一段，并在还有更多时返回新的 `nextCursor`。一次取全的后端忽略这个参数。
+   * @param workspaceRoot - 工作区根目录。
+   * @param page - 分页起点；省略表示第一页。
+   */
+  fetchSnapshot(workspaceRoot: string, page?: SnapshotPage): Promise<TrackerSnapshot>
   /**
    * 可选能力：读取某时刻之后变更过的工单。
    *

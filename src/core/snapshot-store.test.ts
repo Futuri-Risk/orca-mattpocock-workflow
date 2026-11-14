@@ -42,6 +42,21 @@ describe('本地快照库条目', () => {
     expect(parseSnapshotStoreEntry(serializeSnapshotStoreEntry(original))).toEqual(original)
   })
 
+  it('分页窗口与游标一并保存，重启后还能继续加载', () => {
+    const original = entry({ loaded: 100, total: 11_162, nextCursor: 'cursor-2' })
+
+    const restored = parseSnapshotStoreEntry(serializeSnapshotStoreEntry(original))
+
+    expect(restored).toEqual(original)
+    expect(restored?.nextCursor).toBe('cursor-2')
+  })
+
+  it('游标不是非空字符串时整份作废', () => {
+    const raw = JSON.stringify({ ...entry(), nextCursor: 42 })
+
+    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  })
+
   it('格式版本不符时按没有缓存处理', () => {
     const raw = serializeSnapshotStoreEntry(entry({ version: 99 }))
 
