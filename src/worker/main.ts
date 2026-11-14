@@ -27,6 +27,7 @@ import { createSkillCatalog } from './skill-catalog.ts'
 import { createSnapshotService, type SnapshotService } from './snapshot-service.ts'
 import { createCommandRunner } from './subprocess-runner.ts'
 import { createTicketService } from './ticket-service.ts'
+import { createTicketWorktreeService } from './ticket-worktree-service.ts'
 import { createTimer } from './timer.ts'
 import { createWorkspaceResolver, type WorkspaceResolver } from './workspace-resolver.ts'
 
@@ -56,6 +57,7 @@ export default function activate(orca: OrcaWorkerApi): void {
 
   const snapshot = createSnapshotService({ resolve, now, labels: TRACKER_LABELS, log, store })
   const ticket = createTicketService({ resolve, now, log, store })
+  const worktree = createTicketWorktreeService({ resolve, run, now, log })
   const envCheck = createEnvCheckService({
     resolve: resolveFresh,
     github: createGithubEnvProbe({ run }),
@@ -72,7 +74,7 @@ export default function activate(orca: OrcaWorkerApi): void {
 
   const workspace = createWorkspaceResolver(orca.host)
 
-  registerRpcHandlers(orca, { snapshot, ticket, envCheck, workspace, log })
+  registerRpcHandlers(orca, { snapshot, ticket, worktree, envCheck, workspace, log })
 
   orca.commands.register(REFRESH_COMMAND_ID, async () => {
     const result = await refreshWorkspace(orca, { snapshot, workspace })

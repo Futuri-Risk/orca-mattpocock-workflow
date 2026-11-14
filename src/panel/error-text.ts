@@ -13,6 +13,7 @@ const ERROR_MESSAGES: Partial<Record<ErrorCode, string>> = {
   'tea-unauthenticated': 'tea 未登录该实例或令牌已失效，请运行 tea login add 后重试。',
   'markdown-read-failed': '读取 .scratch 里的工单失败，请检查文件读取权限。',
   'ticket-not-found': '找不到这张工单，它可能已被删除。',
+  'orca-missing': '未找到 Orca 命令行，请先在环境检查里确认安装或设置 ORCA_CLI_COMMAND。',
 }
 
 /**

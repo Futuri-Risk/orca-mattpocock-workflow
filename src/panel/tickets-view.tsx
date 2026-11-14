@@ -165,6 +165,9 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             canCopy={props.copy.canCopy}
             focused={focused}
             now={nowValue}
+            client={props.client}
+            workspaceRoot={props.workspaceRoot}
+            onOpenEnvCheck={props.onOpenEnvCheck}
             onPick={props.onOpenTicket}
             onSkillAction={actions.onSkillAction}
             onManual={actions.onManual}
@@ -219,6 +222,9 @@ function TicketRows(props: {
   readonly canCopy: boolean
   readonly focused: string | null
   readonly now: number
+  readonly client: PanelClient
+  readonly workspaceRoot: string | undefined
+  readonly onOpenEnvCheck: (code: ErrorCode) => void
   readonly onPick: (ticket: TicketSnapshot) => void
   readonly onSkillAction: (ticket: TicketSnapshot) => void
   readonly onManual: (ticket: TicketSnapshot) => void
@@ -235,6 +241,10 @@ function TicketRows(props: {
         canCopy={props.canCopy}
         focused={props.focused}
         now={props.now}
+        backend={props.snapshot.backend}
+        workspaceRoot={props.workspaceRoot}
+        client={props.client}
+        onOpenEnvCheck={props.onOpenEnvCheck}
         onPick={props.onPick}
         onSkillAction={props.onSkillAction}
         onManual={props.onManual}

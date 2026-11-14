@@ -3,7 +3,7 @@
   "id": "mattpocock-workflow",
   "name": "MattWorkflow",
   "version": "0.1.0",
-  "description": "Matt Pocock 工作流面板：工单 triage 判定、积压概览、环境检查，一键复制工单技能提示词。",
+  "description": "Matt Pocock 工作流面板：工单 triage 判定、积压概览、环境检查，一键复制工单技能提示词或建 Orca worktree。",
   "author": {
     "name": "zgray"
   },

@@ -21,6 +21,7 @@ import type { RepositoryAddress } from './remote.ts'
 export type ProbeFailureReason =
   | 'cli-missing'
   | 'cli-unauthenticated'
+  | 'orca-cli-missing'
   | 'repository-forbidden'
   | 'repository-not-found'
   | 'repository-network'
@@ -86,6 +87,8 @@ export interface EnvCheckFacts {
    * 时宿主不探测，这里为 undefined；后端尚未判定时仍要探测，避免误藏。
    */
   readonly localIssues: LocalIssuesFact | undefined
+  /** Orca 命令行是否可用；面板的一键建 worktree 依赖它。 */
+  readonly orca: ProbeOutcome | undefined
   /** 以下三项在前置项未通过时不会探测，为 undefined。 */
   readonly cli: ProbeOutcome | undefined
   readonly auth: ProbeOutcome | undefined
@@ -148,8 +151,8 @@ export function shouldCheckLocalIssues(backend: BackendProbeOutcome): boolean {
 /**
  * 产出固定顺序的检查项。
  * @param facts - 各项探测结果。
- * @returns 顺序为：主目录、后端、命令行、登录、仓库可达、工作区、本地工单目录（仅本地
- * Markdown 或后端未判定）、技能。
+ * @returns 顺序为：主目录、后端、Orca 命令行、后端命令行、登录、仓库可达、工作区、
+ * 本地工单目录（仅本地 Markdown 或后端未判定）、技能。
  */
 export function buildEnvCheckItems(facts: EnvCheckFacts): readonly EnvCheckItem[] {
   const items: EnvCheckItem[] = []
@@ -174,6 +177,7 @@ export function buildEnvCheckItems(facts: EnvCheckFacts): readonly EnvCheckItem[
   // 判定失败但已锁定后端时，subject 让标题和后继跳过项都点名那个后端。
   const candidate = facts.backend.status === 'fail' ? (facts.backend.backend ?? null) : null
   const backend = place('backend', candidate, toProbeOutcome(facts.backend), null)
+  place('orca', null, facts.orca, null)
 
   const hosted = hostedBackend(facts.backend)
   if (hosted !== undefined) {
@@ -318,6 +322,8 @@ function remedyFor(
   switch (outcome.reason) {
     case 'cli-missing':
       return { code: 'install-cli', subject }
+    case 'orca-cli-missing':
+      return { code: 'install-orca', subject: null }
     case 'cli-unauthenticated':
       return { code: 'login-cli', subject }
     case 'skill-missing':

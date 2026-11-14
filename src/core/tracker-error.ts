@@ -38,31 +38,35 @@ export class TrackerError extends Error {
 const NETWORK_FAILURE =
   /dial tcp|no such host|i\/o timeout|timeout|network is unreachable|connection refused|connection reset|TLS handshake|proxyconnect|unexpected EOF/i
 
-/** 命令失败的两类原因：可执行文件不存在，或进程非零退出。 */
-export type CommandFailureKind = 'not-found' | 'failed'
+/** 命令失败的三类原因：可执行文件不存在、超时，或进程非零退出。 */
+export type CommandFailureKind = 'not-found' | 'timeout' | 'failed'
 
 /** 命令执行失败。adapter 负责把它翻译成 {@link TrackerError}。 */
 export class CommandError extends Error {
   readonly kind: CommandFailureKind
   readonly stderr: string
+  readonly stdout: string
   readonly exitCode: number | null
 
   /**
-   * @param kind - 找不到可执行文件或进程非零退出。
+   * @param kind - 找不到可执行文件、超时或进程非零退出。
    * @param message - 诊断信息。
    * @param stderr - 进程的标准错误；`not-found` 时为空串。
    * @param exitCode - 退出码；被信号终止或未启动时为 null。
+   * @param stdout - 进程的标准输出；带 `--json` 的 CLI 会把错误信封写在这里。
    */
   constructor(
     kind: CommandFailureKind,
     message: string,
     stderr = '',
     exitCode: number | null = null,
+    stdout = '',
   ) {
     super(message)
     this.name = 'CommandError'
     this.kind = kind
     this.stderr = stderr
+    this.stdout = stdout
     this.exitCode = exitCode
   }
 }

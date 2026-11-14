@@ -7,6 +7,7 @@ import type { OrcaPanelRequestHandler, OrcaWorkerApi } from './orca-types.ts'
 import { registerRpcHandlers, SKILL_INSTALL_REQUEST } from './rpc-bridge.ts'
 import type { SnapshotService } from './snapshot-service.ts'
 import type { TicketService } from './ticket-service.ts'
+import type { TicketWorktreeService } from './ticket-worktree-service.ts'
 import { createWorkspaceResolver } from './workspace-resolver.ts'
 
 /** 收集注册下来的面板处理器。 */
@@ -40,6 +41,7 @@ function fakeOrca(): {
 function recordingServices(): {
   readonly snapshot: SnapshotService
   readonly ticket: TicketService
+  readonly worktree: TicketWorktreeService
   readonly envCheck: EnvCheckService
   readonly seen: { method: string; params: unknown }[]
 } {
@@ -55,6 +57,7 @@ function recordingServices(): {
       cache: (params) => record(RPC_METHODS.snapshotCache, params),
     },
     ticket: { handle: (method, params) => record(method, params) },
+    worktree: { handle: (method, params) => record(method, params) },
     envCheck: { handle: (method, params) => record(method, params) },
   }
 }
@@ -69,6 +72,7 @@ describe('面板 RPC 桥', () => {
     registerRpcHandlers(orca, {
       snapshot: services.snapshot,
       ticket: services.ticket,
+      worktree: services.worktree,
       envCheck: services.envCheck,
       workspace: createWorkspaceResolver(orca.host),
       log,
@@ -84,6 +88,7 @@ describe('面板 RPC 桥', () => {
     registerRpcHandlers(orca, {
       snapshot: services.snapshot,
       ticket: services.ticket,
+      worktree: services.worktree,
       envCheck: services.envCheck,
       workspace: createWorkspaceResolver(orca.host),
       log,
@@ -114,6 +119,7 @@ describe('面板 RPC 桥', () => {
     registerRpcHandlers(orca, {
       snapshot: services.snapshot,
       ticket: services.ticket,
+      worktree: services.worktree,
       envCheck: services.envCheck,
       workspace: createWorkspaceResolver(host),
       log,
@@ -138,6 +144,7 @@ describe('面板 RPC 桥', () => {
     registerRpcHandlers(orca, {
       snapshot: services.snapshot,
       ticket: services.ticket,
+      worktree: services.worktree,
       envCheck: services.envCheck,
       workspace: createWorkspaceResolver(orca.host),
       log,

@@ -41,6 +41,7 @@ function facts(overrides: Partial<EnvCheckFacts> = {}): EnvCheckFacts {
     },
     workspace: pass('docs/agents/issue-tracker.md 存在'),
     localIssues: { status: 'found', files: ['.scratch/login/issues/01-token.md'] },
+    orca: pass('/Applications/Orca.app/Contents/Resources/bin/orca'),
     cli: pass('/opt/homebrew/bin/gh'),
     auth: pass('已登录'),
     repository: pass('可访问 owner/repo'),
@@ -76,6 +77,7 @@ describe('环境检查判定', () => {
     expect(items.map((entry) => `${entry.id}:${String(entry.subject)}`)).toEqual([
       'home:null',
       'backend:null',
+      'orca:null',
       'cli:github',
       'auth:github',
       'repository:github',
@@ -253,6 +255,7 @@ describe('环境检查判定', () => {
     expect(items.map((entry) => entry.id)).toEqual([
       'home',
       'backend',
+      'orca',
       'workspace',
       'local-issues',
       'skill',
@@ -405,6 +408,28 @@ describe('环境检查判定', () => {
       code: 'init-workspace',
       subject: null,
     })
+  })
+
+  it('Orca 命令行缺失时给出安装或设置 ORCA_CLI_COMMAND 的解决', () => {
+    const items = buildEnvCheckItems(
+      facts({ orca: failure('未找到 Orca 命令行', 'orca-cli-missing') }),
+    )
+
+    expect(item(items, 'orca', null)).toMatchObject({ status: 'fail' })
+    expect(remedyOf(items, 'orca', null)).toEqual({ code: 'install-orca', subject: null })
+  })
+
+  it('Orca 命令行检查不依赖工单后端，后端判定失败时仍会执行', () => {
+    const items = buildEnvCheckItems(
+      facts({
+        backend: { status: 'fail', detail: '无法判定工单后端', reason: 'backend-unavailable' },
+        cli: undefined,
+        auth: undefined,
+        repository: undefined,
+      }),
+    )
+
+    expect(item(items, 'orca', null)).toMatchObject({ status: 'pass' })
   })
 
   it('技能缺失时解决点名该项技能', () => {

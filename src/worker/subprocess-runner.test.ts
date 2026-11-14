@@ -36,6 +36,19 @@ describe('命令执行器', () => {
     expect(error instanceof CommandError && error.kind).toBe('not-found')
   })
 
+  it('超过调用方给的时限时映射为 timeout', async () => {
+    const run = createCommandRunner()
+
+    const error = await run(
+      process.execPath,
+      ['-e', 'setTimeout(() => undefined, 5000)'],
+      { timeoutMs: 50 },
+    ).catch((failure: unknown) => failure)
+
+    expect(error).toBeInstanceOf(CommandError)
+    expect(error instanceof CommandError && error.kind).toBe('timeout')
+  })
+
   it('在指定目录里执行命令', async () => {
     const run = createCommandRunner()
 

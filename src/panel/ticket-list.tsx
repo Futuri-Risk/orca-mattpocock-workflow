@@ -4,11 +4,13 @@
  */
 import * as React from 'react'
 
+import type { BackendKind } from '../protocol/backend.ts'
 import { TRIAGE_LABELS } from '../protocol/labels.ts'
-import type { TicketAuthor, TicketSnapshot } from '../protocol/tracker.ts'
+import type { ErrorCode, TicketAuthor, TicketSnapshot } from '../protocol/tracker.ts'
 import { authorName, authorTitle } from './author-text.ts'
 import { formatRelativeTime } from './relative-time.ts'
 import { SkillActionBadge } from './skill-action-badge.tsx'
+import type { PanelClient } from './transport.ts'
 import {
   CARD_ACTION_BADGE_STYLE,
   CARD_FOCUSED_STYLE,
@@ -30,6 +32,12 @@ import {
   LABEL_BADGE_STYLE,
   ROW_AGE_STYLE,
 } from './ticket-row-styles.ts'
+import {
+  WorktreeCreateButton,
+  WorktreeOutcome,
+  useWorktreeCreate,
+  worktreeAvailability,
+} from './worktree-action.tsx'
 
 /** 工单列表依赖。 */
 export interface TicketListProps {
@@ -44,6 +52,11 @@ export interface TicketListProps {
   readonly focused?: string | null | undefined
   /** 当前时间（毫秒），用于行内的相对创建时间。 */
   readonly now: number
+  /** 当前快照的后端：本地 Markdown 不提供建 worktree 入口。 */
+  readonly backend: BackendKind
+  readonly workspaceRoot: string | undefined
+  readonly client: PanelClient
+  readonly onOpenEnvCheck: (code: ErrorCode) => void
   readonly onPick: (ticket: TicketSnapshot) => void
   readonly onSkillAction: (ticket: TicketSnapshot) => void
   readonly onManual: (ticket: TicketSnapshot) => void
@@ -79,6 +92,10 @@ export function TicketList(props: TicketListProps): React.ReactElement {
           canCopy={props.canCopy}
           focused={ticket.ref === props.focused}
           now={props.now}
+          backend={props.backend}
+          workspaceRoot={props.workspaceRoot}
+          client={props.client}
+          onOpenEnvCheck={props.onOpenEnvCheck}
           onPick={props.onPick}
           onSkillAction={props.onSkillAction}
           onManual={props.onManual}
@@ -94,51 +111,82 @@ function TicketRow(props: {
   readonly canCopy: boolean
   readonly focused: boolean
   readonly now: number
+  /** 当前快照的后端：本地 Markdown 不提供建 worktree 入口。 */
+  readonly backend: BackendKind
+  readonly workspaceRoot: string | undefined
+  readonly client: PanelClient
+  readonly onOpenEnvCheck: (code: ErrorCode) => void
   readonly onPick: (ticket: TicketSnapshot) => void
   readonly onSkillAction: (ticket: TicketSnapshot) => void
   readonly onManual: (ticket: TicketSnapshot) => void
 }): React.ReactElement {
   const { ticket } = props
   const display = refDisplay(ticket)
+  const worktree = useWorktreeCreate(props.client, props.workspaceRoot, ticket)
+  const availability = worktreeAvailability(ticket, props.backend, props.workspaceRoot)
 
   return (
-    <div
-      role="listitem"
-      data-hover="card"
-      // 卡片的表面在这一层：空白页边距也算行的一部分。按钮是键盘可达的打开入口，
-      // 它的点击会和这里一样冒泡上来，所以只在行容器上挂一次。
-      onClick={() => {
-        props.onPick(ticket)
-      }}
-      style={{ ...CARD_ROW_STYLE, ...(props.focused ? CARD_FOCUSED_STYLE : undefined) }}
-    >
-      <button
-        type="button"
-        data-testid="ticket-row"
-        data-ref={ticket.ref}
-        data-focused={props.focused ? 'true' : undefined}
-        style={CARD_STYLE}
+    <div role="listitem">
+      <div
+        data-hover="card"
+        // 卡片的表面在这一层：空白页边距也算行的一部分。按钮是键盘可达的打开入口，
+        // 它的点击会和这里一样冒泡上来，所以只在行容器上挂一次。
+        onClick={() => {
+          props.onPick(ticket)
+        }}
+        style={{ ...CARD_ROW_STYLE, ...(props.focused ? CARD_FOCUSED_STYLE : undefined) }}
       >
-        <span
-          data-testid="ticket-ref"
-          style={NUMBER_BADGE_STYLE}
-          {...(display.full === undefined ? {} : { title: display.full })}
+        <button
+          type="button"
+          data-testid="ticket-row"
+          data-ref={ticket.ref}
+          data-focused={props.focused ? 'true' : undefined}
+          style={CARD_STYLE}
         >
-          {display.text}
-        </span>
-        <span style={CARD_TITLE_STYLE}>{ticket.title}</span>
-        <MetaRow ticket={ticket} now={props.now} />
-      </button>
-      <SkillActionBadge
-        ticket={ticket}
-        copied={props.copied}
-        canCopy={props.canCopy}
-        onSkillAction={props.onSkillAction}
-        onManual={props.onManual}
-        style={CARD_ACTION_BADGE_STYLE}
+          <span
+            data-testid="ticket-ref"
+            style={NUMBER_BADGE_STYLE}
+            {...(display.full === undefined ? {} : { title: display.full })}
+          >
+            {display.text}
+          </span>
+          <span style={CARD_TITLE_STYLE}>{ticket.title}</span>
+          <MetaRow ticket={ticket} now={props.now} />
+        </button>
+        <div style={ACTION_COLUMN_STYLE}>
+          <SkillActionBadge
+            ticket={ticket}
+            copied={props.copied}
+            canCopy={props.canCopy}
+            onSkillAction={props.onSkillAction}
+            onManual={props.onManual}
+            style={CARD_ACTION_BADGE_STYLE}
+          />
+          <WorktreeCreateButton
+            availability={availability}
+            busy={worktree.busy}
+            onClick={worktree.create}
+            compact
+          />
+        </div>
+      </div>
+      <WorktreeOutcome
+        error={worktree.error}
+        result={worktree.result}
+        onOpenEnvCheck={props.onOpenEnvCheck}
+        compact
       />
     </div>
   )
+}
+
+/** 右列：技能动作在上，建 worktree 在下；窄面板里不挤压标题。 */
+const ACTION_COLUMN_STYLE: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-end',
+  gap: 4,
+  flex: 'none',
 }
 
 function MetaRow(props: {

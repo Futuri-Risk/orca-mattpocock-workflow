@@ -65,6 +65,9 @@ const CLI: Readonly<Record<EnvCliBackend, CliText>> = {
 
 const SKILLS_REPO = 'https://github.com/mattpocock/skills'
 
+/** Orca 官方下载页；本机命令行缺失时先给出安装入口。 */
+const ORCA_SITE = 'https://www.onorca.dev'
+
 /** 宿主日志的位置；探测失败与重试的文案共用。 */
 const HOST_LOGS = 'Orca 的插件日志目录'
 
@@ -122,6 +125,12 @@ const REMEDIES: Readonly<Record<EnvRemedyCode, (context: RemedyContext) => Remed
         : { link: { href: cli.installUrl, label: `${cli.label} 安装说明` } }),
     }
   },
+  'install-orca': () => ({
+    summary:
+      '安装 Orca，或把 ORCA_CLI_COMMAND 指到 Orca 自带的命令行；改好后重新检查。',
+    action: { kind: 'command', command: 'export ORCA_CLI_COMMAND=/path/to/orca' },
+    link: { href: ORCA_SITE, label: 'Orca 下载与文档' },
+  }),
   'login-cli': (context) => {
     const cli = cliOf(context.subject)
     return {

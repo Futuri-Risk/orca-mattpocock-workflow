@@ -252,6 +252,7 @@ function TicketsPane(props: {
         ticket={props.open.ticket}
         copy={props.copy}
         onBack={props.onCloseDetail}
+        onOpenEnvCheck={props.onOpenEnvCheck}
       />
     )
   }

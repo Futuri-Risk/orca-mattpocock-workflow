@@ -235,7 +235,11 @@ export interface CommandOutput {
 export type CommandRunner = (
   command: string,
   args: readonly string[],
-  options?: { readonly cwd?: string },
+  options?: {
+    readonly cwd?: string
+    /** 本次命令的最长执行时间；缺省用执行器的默认值。 */
+    readonly timeoutMs?: number
+  },
 ) => Promise<CommandOutput>
 
 /** 标签名集合，由宿主从 protocol 的常量传入，规则本身留在 core。 */

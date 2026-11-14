@@ -18,6 +18,8 @@ export const ENV_CHECK_IDS = {
   auth: 'auth',
   /** 当前仓库可通过后端接口访问。 */
   repository: 'repository',
+  /** Orca 自己的命令行可用；面板的一键建 worktree 依赖它。 */
+  orca: 'orca',
   /** 工作区已用 `setup-matt-pocock-skills` 初始化。 */
   workspace: 'workspace',
   /** 工作区里的本地工单目录可读；只在本地 Markdown 后端或后端未判定时检查。 */
@@ -44,6 +46,8 @@ export const ENV_REMEDY_CODES = {
   installCli: 'install-cli',
   /** 登录后端对应的命令行工具。 */
   loginCli: 'login-cli',
+  /** 安装 Orca 或设置 `ORCA_CLI_COMMAND` 指向可用的 Orca 命令行。 */
+  installOrca: 'install-orca',
   /** 本地工单目录缺失或不可读；按 `docs/local-issues.md` 放好工单文件。 */
   placeLocalIssues: 'place-local-issues',
   /** 安装一项必需技能；subject 是技能名。 */

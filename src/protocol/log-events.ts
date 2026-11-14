@@ -28,4 +28,5 @@ export const TICKET_ACTIONS = {
   update: 'update',
   options: 'options',
   delete: 'delete',
+  worktree: 'worktree',
 } as const

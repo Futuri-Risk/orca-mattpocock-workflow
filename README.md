@@ -8,11 +8,12 @@ Orca 插件：在右侧栏运行 [mattpocock/skills](https://github.com/mattpoco
 ## 视图
 
 - **列表**：读当前工作区的工单，按「可接 / 阻塞 / 其他开放 / 已关闭」判定，支持状态过滤与多键排序；
-  每张票给出技能动作徽标，点击「复制提示词」把 `/implement #40` 这类手势写进剪贴板。
+  每张票给出技能动作徽标，点击「复制提示词」把 `/implement #40` 这类手势写进剪贴板；
+  能开工的远端工单还有一个「建 worktree」动作，一次点击就建出 Orca 托管的 worktree。
 - **概览**：一屏给出压力总览（规模 / 阻塞 / 时效）、关键数字、状态与分类构成、最该先看的票。
 - **详情**：单张票的时间线、字段、原生阻塞关系。
-- **环境检查**：逐项检查主目录、后端选择、CLI 安装与登录、仓库可达、工作区初始化、本地工单目录、
-  面板用到的技能是否安装；失败项给对应原因的可执行修复方式。
+- **环境检查**：逐项检查主目录、后端选择、Orca 命令行、CLI 安装与登录、仓库可达、工作区初始化、
+  本地工单目录、面板用到的技能是否安装；失败项给对应原因的可执行修复方式。
 - **流程帮助**：入池与 triage 状态机、需求链与缺陷链的流程图。
 
 ## 与 DSH 版本的差异
@@ -26,6 +27,10 @@ Orca 插件：在右侧栏运行 [mattpocock/skills](https://github.com/mattpoco
 | `$DSH_HOME/cache/...` | `~/.orca-mattpocock-workflow/cache/` | Orca 没有对应数据根 |
 | 浏览器 `localStorage` 记视图偏好 | `orca.storage` | 插件私有存储，按工作区记 |
 | 宿主 `subprocess` 服务 | worker 内 `node:child_process` | worker 是独立 Node 进程 |
+
+「建 worktree」只走 Orca 自己的命令行（`orca worktree create`），不用裸 `git worktree`：
+分支名按仓库约定从票推导（`feat/4-…` / `bugfix/1-…`），工单链接挂到新 worktree 上，
+建完由 Orca 切到新工作区；同分支已有工作区时直接返回既有结果，不会重复创建。
 
 判定语义不变：可接 / 阻塞 / 已关闭、triage 标签（`needs-triage`、`wontfix`、`ready-for-human` …）、
 `Blocked by:` 解析、GitLab 原生阻塞合并，全部沿用原实现。

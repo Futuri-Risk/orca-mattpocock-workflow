@@ -15,10 +15,12 @@ import * as React from 'react'
 
 import { BACKEND_LABELS } from '../protocol/backend.ts'
 import type {
+  ErrorCode,
   RpcErrorBody,
   TicketDetail,
   TicketPatch,
   TicketSnapshot,
+  TicketWorktreeResult,
 } from '../protocol/tracker.ts'
 import { errorText } from './error-text.ts'
 import { ChevronLeftIcon } from './icons.tsx'
@@ -68,6 +70,12 @@ import {
   TITLE_META_ROW_STYLE,
 } from './ticket-timeline-styles.ts'
 import { useTicketActions } from './ticket-actions.ts'
+import {
+  WorktreeCreateButton,
+  WorktreeOutcome,
+  useWorktreeCreate,
+  worktreeAvailability,
+} from './worktree-action.tsx'
 
 /** 工单详情视图依赖。 */
 export interface TicketDetailViewProps {
@@ -79,6 +87,8 @@ export interface TicketDetailViewProps {
   readonly copy: PromptCopy
   /** 返回列表；Esc、返回按钮与删除成功后都走这里。 */
   readonly onBack: () => void
+  /** 建 worktree 失败属于环境问题时，跳到环境检查。 */
+  readonly onOpenEnvCheck: (code: ErrorCode) => void
 }
 
 /** 工单详情视图。 */
@@ -111,6 +121,11 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
   })
   const options = useTicketOptions(client, workspaceRoot, detail?.capabilities.labels === true)
   const actions = useTicketActions(workspaceRoot, props.copy)
+  const worktree = useWorktreeCreate(client, workspaceRoot, currentTicket)
+  const worktreeState =
+    detail === null
+      ? { visible: false, enabled: false, reason: null }
+      : worktreeAvailability(currentTicket, detail.backend, workspaceRoot)
   const link = useCopyLink(detail?.url ?? null)
   const busy = mutation.busy || deletion.deleting
   useEscapeKey(props.onBack)
@@ -124,6 +139,11 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
           canCopy={props.copy.canCopy}
           onSkillAction={actions.onSkillAction}
           onManual={actions.onManual}
+        />
+        <WorktreeCreateButton
+          availability={worktreeState}
+          busy={worktree.busy}
+          onClick={worktree.create}
         />
         {detail === null ? null : (
           <HeaderActions
@@ -147,6 +167,9 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
           options={options}
           deletion={deletion}
           onApply={mutation.apply}
+          worktreeError={worktree.error}
+          worktreeResult={worktree.result}
+          onOpenEnvCheck={props.onOpenEnvCheck}
         />
       ) : request.phase === 'error' ? (
         <LoadError error={request.error} onRetry={request.reload} />
@@ -222,6 +245,9 @@ function DetailContent(props: {
   readonly options: OptionsState
   readonly deletion: TicketDeletion
   readonly onApply: (patch: TicketPatch) => void
+  readonly worktreeError: RpcErrorBody | null
+  readonly worktreeResult: TicketWorktreeResult | null
+  readonly onOpenEnvCheck: (code: ErrorCode) => void
 }): React.ReactElement {
   const { detail, deletion } = props
   const fieldProps = { detail, busy: props.busy, onApply: props.onApply }
@@ -240,6 +266,11 @@ function DetailContent(props: {
         />
       ) : null}
       <CopyFailure copy={props.copy} url={detail.url} />
+      <WorktreeOutcome
+        error={props.worktreeError}
+        result={props.worktreeResult}
+        onOpenEnvCheck={props.onOpenEnvCheck}
+      />
       <PromptCopyArea state={props.copyState} onDismiss={props.onDismissCopy} />
       <TitleBlock detail={detail} />
       <PropertyStrip {...fieldProps} options={props.options} />

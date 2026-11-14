@@ -42,6 +42,8 @@ export function envCheckTitle(item: EnvCheckItem): string {
       if (item.subject === 'gitlab') return 'GitLab 仓库可达'
       if (item.subject === 'gitea') return 'Gitea 仓库可达'
       return '仓库可达'
+    case 'orca':
+      return 'Orca 命令行可用'
     case 'workspace':
       return '工作区已初始化'
     case 'local-issues':

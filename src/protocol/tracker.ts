@@ -32,6 +32,8 @@ export const RPC_METHODS = {
   ticketOptions: 'ticket.options',
   /** 永久删除一张工单；必须带 `confirm: 'delete'`，宿主再按权限拒绝或执行。 */
   ticketDelete: 'ticket.delete',
+  /** 为一张能开工的远端工单创建 Orca 托管的 worktree；同分支已存在时返回既有工作区。 */
+  ticketWorktree: 'ticket.worktree',
 } as const
 
 /** 工单的开闭状态。 */
@@ -391,6 +393,28 @@ export interface TicketDeleteResult {
   readonly deleted: true
 }
 
+/** 创建 worktree 的参数：与其它工单方法共用工作区与工单定位。 */
+export type TicketWorktreeParams = TicketDetailParams
+
+/**
+ * 一次 worktree 创建的结果。分支名已去掉 `refs/heads/` 前缀；
+ * `created` 为 false 表示同分支的工作区已经存在，本次没有新建。
+ */
+export interface TicketWorktreeResult {
+  /** Orca 的 worktree 标识（`<repo-id>::<path>`）。 */
+  readonly id: string
+  /** worktree 在宿主机上的绝对路径。 */
+  readonly path: string
+  /** Git 分支名，例如 `feat/6-ticket-one-click`。 */
+  readonly branch: string
+  /** Orca 侧边栏里的显示名，通常就是工单标题。 */
+  readonly name: string
+  /** 挂到 worktree 上的工单链接，取自后端详情。 */
+  readonly reference: string
+  /** 本次是否真的新建了 worktree。 */
+  readonly created: boolean
+}
+
 /** 仓库里的一个标签。 */
 export interface LabelOption {
   readonly name: string
@@ -424,6 +448,7 @@ export interface RpcParamsMap {
   'ticket.update': TicketUpdateParams
   'ticket.options': SnapshotParams
   'ticket.delete': TicketDeleteParams
+  'ticket.worktree': TicketWorktreeParams
 }
 
 /** 已支持的方法名。 */
@@ -452,6 +477,10 @@ export const ERROR_CODES = {
   ticketNotFound: 'ticket-not-found',
   /** 当前后端不提供所请求的详情或写能力。 */
   capabilityUnsupported: 'capability-unsupported',
+  /** 机器上找不到可用的 Orca 命令行；环境检查里能定位到具体解决方式。 */
+  orcaMissing: 'orca-missing',
+  /** Orca 命令行存在，但创建 worktree 失败；消息里带命令行的诊断。 */
+  worktreeCreateFailed: 'worktree-create-failed',
   invalidParams: 'invalid-params',
   unknownMethod: 'unknown-method',
   invalidRequest: 'invalid-request',
@@ -480,9 +509,10 @@ export const ERROR_BACKENDS: Readonly<
  * 属于环境问题的快照错误码。列表视图据此在错误提示里给出「查看环境检查」入口：
  * 这几类失败都能在环境检查里定位到具体检查项。
  */
-export const ENV_ISSUE_ERROR_CODES: readonly ErrorCode[] = Object.keys(
-  ERROR_BACKENDS,
-) as readonly ErrorCode[]
+export const ENV_ISSUE_ERROR_CODES: readonly ErrorCode[] = [
+  ...(Object.keys(ERROR_BACKENDS) as readonly ErrorCode[]),
+  ERROR_CODES.orcaMissing,
+]
 
 /** 失败的响应体。 */
 export interface RpcErrorBody {

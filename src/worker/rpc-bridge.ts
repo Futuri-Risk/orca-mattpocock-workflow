@@ -15,6 +15,7 @@ import { readWorkspaceRoot } from './rpc-params.ts'
 import type { SnapshotService } from './snapshot-service.ts'
 import { installPoolSkills } from './skill-installer.ts'
 import type { TicketService } from './ticket-service.ts'
+import type { TicketWorktreeService } from './ticket-worktree-service.ts'
 import type { WorkspaceCandidate, WorkspaceResolver } from './workspace-resolver.ts'
 
 /** 面板事件：工作区无法唯一确定时把候选列表推给面板。 */
@@ -32,6 +33,7 @@ export const OPEN_WORKSPACE_REQUEST = 'workspace.open'
 export interface RpcBridgeDeps {
   readonly snapshot: SnapshotService
   readonly ticket: TicketService
+  readonly worktree: TicketWorktreeService
   readonly envCheck: EnvCheckService
   readonly workspace: WorkspaceResolver
   readonly log: LogSink
@@ -88,6 +90,7 @@ export function registerRpcHandlers(orca: OrcaWorkerApi, deps: RpcBridgeDeps): v
 function dispatch(deps: RpcBridgeDeps, method: string, params: unknown): Promise<RpcResult<unknown>> {
   if (method === RPC_METHODS.envCheck) return deps.envCheck.handle(method, params)
   if (method === RPC_METHODS.snapshotCache) return deps.snapshot.cache(params)
+  if (method === RPC_METHODS.ticketWorktree) return deps.worktree.handle(method, params)
   if (
     method === RPC_METHODS.ticketGet ||
     method === RPC_METHODS.ticketUpdate ||

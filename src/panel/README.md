@@ -10,6 +10,8 @@ Orca 右侧栏里的 MattWorkflow 面板（`ui: "html"`，独立 frame 里跑的
   底层是 `orca.plugin.request`；另外提供 `skills.install` 这一个额外处理器。
 - `clipboard.ts`：剪贴板写入的两级路径（剪贴板 API → 隐藏 textarea + `execCommand('copy')`），
   提示词、命令与工单链接的复制共用。
+- `worktree-action.tsx`：工单列表行与详情头部的「建 worktree」入口，以及创建结果的原地回报；
+  可用性只看快照里已有的判定，本地 Markdown 与未确定工作区不提供入口。
 - `injection.ts` + `prompt-copy.tsx`：提示词出口。Orca 没有「填会话输入框」与「开新会话」，
   面板只把提示词复制到剪贴板。`clipboard.ts` 先试剪贴板 API；面板 iframe 没有
   `clipboard-write` 权限策略时会拒绝，此时退回隐藏 textarea + `execCommand('copy')`。

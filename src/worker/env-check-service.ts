@@ -45,6 +45,7 @@ import {
 } from '../protocol/tracker.ts'
 import type { BackendResolver } from './backend-resolver.ts'
 import type { LogSink } from './log.ts'
+import { resolveOrcaCli } from './orca-cli.ts'
 import type { ProbeDeadline } from './probe-deadline.ts'
 import { resolveExecutable } from './subprocess-runner.ts'
 import { FLOW_COMMANDS } from '../protocol/flow.ts'
@@ -201,11 +202,12 @@ async function collectFacts(
       : { status: 'pass', detail: home }
 
   // 主目录、后端、工作区与技能互不依赖，并发探测；本地工单目录与命令行链等后端结果。
-  const [backend, workspace, skills, tools] = await Promise.all([
+  const [backend, workspace, skills, tools, orca] = await Promise.all([
     probeBackend(deps, workspaceRoot),
     probeWorkspace(deps.files, workspaceRoot),
     home === undefined ? Promise.resolve(unprobedSkills()) : probeSkills(deps, workspaceRoot),
     probeTools(deps),
+    probeOrcaCli(deps),
   ])
   // 托管后端的工单完全来自远端：不探测本地目录，也就不会产出这一项。
   const [commands, localIssues] = await Promise.all([
@@ -221,6 +223,7 @@ async function collectFacts(
     backend: backend.outcome,
     workspace,
     localIssues,
+    orca,
     cli: commands.cli,
     auth: commands.auth,
     repository: commands.repository,
@@ -240,6 +243,27 @@ async function collectFacts(
       localIssues,
       workspace,
     ),
+  }
+}
+
+/**
+ * 探测 Orca 命令行。找不到时归为「命令行缺失」，解决区给出安装或设置
+ * `ORCA_CLI_COMMAND` 的办法；探测本身超时或异常则按重试处理。
+ * @param deps - 服务依赖。
+ * @returns 版本确认后的可执行文件路径，或失败原因。
+ */
+async function probeOrcaCli(deps: EnvCheckServiceDeps): Promise<ProbeOutcome> {
+  try {
+    const result = await deps.deadline(resolveOrcaCli(deps.run))
+    if (!result.ok) {
+      return { status: 'fail', detail: 'Orca 命令行探测超时', reason: 'timeout' }
+    }
+    if (result.value === undefined) {
+      return { status: 'fail', detail: '未找到 Orca 命令行', reason: 'orca-cli-missing' }
+    }
+    return { status: 'pass', detail: result.value.executable ?? result.value.command }
+  } catch {
+    return { status: 'fail', detail: 'Orca 命令行探测失败', reason: 'probe-failed' }
   }
 }
 

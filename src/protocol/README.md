@@ -14,13 +14,17 @@ RPC 方法（面板用 `orca.plugin.request(方法名, 参数)` 调用，worker 
 - `ticket.get`：读取单张工单详情，参数是 `{ workspaceRoot, ref, number }`；
 - `ticket.update`：提交一次变更补丁，参数在详情参数上再加 `patch`，成功返回 `{ applied: true }`；
 - `ticket.options`：读取仓库的标签与可分配用户，参数是 `{ workspaceRoot }`，返回 `TicketOptions`；
-- `ticket.delete`：永久删除一张工单，参数在详情参数上再加 `confirm: 'delete'`，成功返回 `{ deleted: true }`。
+- `ticket.delete`：永久删除一张工单，参数在详情参数上再加 `confirm: 'delete'`，成功返回 `{ deleted: true }`；
+- `ticket.worktree`：为一张远端工单创建 Orca 托管的 worktree，参数是 `{ workspaceRoot, ref, number }`，
+  返回 worktree 标识、绝对路径、分支名、显示名、挂上的工单链接与 `created`（同分支已有工作区时为 false）。
 
 `workspaceRoot` 由 worker 自己解析：面板不填路径，worker 认领不到工作区时把候选列表推给面板，
 用户选定后由面板在后续请求里带上候选的 `path`。
 
 错误码里与详情相关的是 `ticket-not-found`（编号不存在或已被删除）与
-`capability-unsupported`（当前后端不提供所请求的详情、补全候选或写 / 删除能力）。
+`capability-unsupported`（当前后端不提供所请求的详情、补全候选、写 / 删除能力或远端链接）。
+worktree 另有两个错误码：`orca-missing`（找不到 Orca 命令行，属于环境问题）与
+`worktree-create-failed`（创建失败，消息里带命令行的诊断）。
 删除时没有权限用 `fetch-failed`，消息里写明需要哪种角色。界面按错误码给出统一文案。
 
 ## 快照载荷

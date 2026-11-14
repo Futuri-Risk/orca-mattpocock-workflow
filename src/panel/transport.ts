@@ -30,6 +30,7 @@ import {
   type TicketOptions,
   type TicketPatch,
   type TicketUpdateResult,
+  type TicketWorktreeResult,
   type WorkspaceSnapshot,
 } from '../protocol/tracker.ts'
 
@@ -78,6 +79,15 @@ export interface PanelClient {
     ref: string,
     number: number | null,
   ): Promise<RpcResult<TicketDeleteResult>>
+  /**
+   * 为一张远端工单创建 Orca 托管的 worktree；同分支已存在时返回既有工作区，
+   * `created` 为 false。
+   */
+  createWorktree(
+    workspaceRoot: string,
+    ref: string,
+    number: number | null,
+  ): Promise<RpcResult<TicketWorktreeResult>>
 }
 
 /**
@@ -155,6 +165,13 @@ export function createPanelClient(request: RequestLike = defaultRequest): PanelC
         RPC_METHODS.ticketDelete,
         { workspaceRoot, ref, number, confirm: TICKET_DELETE_CONFIRMATION },
         isTicketDeleteResult,
+      ),
+    createWorktree: (workspaceRoot, ref, number) =>
+      call(
+        request,
+        RPC_METHODS.ticketWorktree,
+        { workspaceRoot, ref, number },
+        isTicketWorktreeResult,
       ),
   }
 }
@@ -379,6 +396,21 @@ function isTicketUpdateResult(value: unknown): value is RpcResult<TicketUpdateRe
       'applied' in payload &&
       payload.applied === true,
   )
+}
+
+function isTicketWorktreeResult(value: unknown): value is RpcResult<TicketWorktreeResult> {
+  return isRpcResult(value, isTicketWorktree)
+}
+
+function isTicketWorktree(value: unknown): value is TicketWorktreeResult {
+  if (typeof value !== 'object' || value === null) return false
+  if (!('id' in value) || typeof value.id !== 'string') return false
+  if (!('path' in value) || typeof value.path !== 'string') return false
+  if (!('branch' in value) || typeof value.branch !== 'string') return false
+  if (!('name' in value) || typeof value.name !== 'string') return false
+  if (!('reference' in value) || typeof value.reference !== 'string') return false
+  if (!('created' in value) || typeof value.created !== 'boolean') return false
+  return true
 }
 
 function isTicketDeleteResult(value: unknown): value is RpcResult<TicketDeleteResult> {

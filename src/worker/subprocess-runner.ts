@@ -48,7 +48,8 @@ export function createCommandRunner(): CommandRunner {
   return async (command, args, options) => {
     const executable = await resolveExecutable(command)
     const cwd = options?.cwd ?? process.cwd()
-    return await runCommand(executable, command, args, cwd)
+    const timeoutMs = options?.timeoutMs ?? COMMAND_TIMEOUT_MS
+    return await runCommand(executable, command, args, cwd, timeoutMs)
   }
 }
 
@@ -120,6 +121,7 @@ function runCommand(
   command: string,
   args: readonly string[],
   cwd: string,
+  timeoutMs: number,
 ): Promise<CommandOutput> {
   return new Promise<CommandOutput>((resolve, reject) => {
     const child = spawn(executable, [...args], {
@@ -130,6 +132,7 @@ function runCommand(
 
     const stdout = new OutputCollector(STDOUT_LIMIT_BYTES)
     const stderr = new OutputCollector(STDERR_LIMIT_BYTES)
+    let timedOut = false
     child.stdout?.on('data', (chunk: Buffer) => {
       stdout.push(chunk)
     })
@@ -138,8 +141,9 @@ function runCommand(
     })
 
     const timeout = setTimeout(() => {
+      timedOut = true
       terminate(child)
-    }, COMMAND_TIMEOUT_MS)
+    }, timeoutMs)
 
     child.on('error', (error: NodeJS.ErrnoException) => {
       clearTimeout(timeout)
@@ -157,11 +161,29 @@ function runCommand(
         stderr: stderr.text(),
         exitCode: code,
       }
+      if (timedOut) {
+        reject(
+          new CommandError(
+            'timeout',
+            `${command} 超时（${String(Math.round(timeoutMs / 1000))} 秒）`,
+            collected.stderr,
+            collected.exitCode,
+            collected.stdout,
+          ),
+        )
+        return
+      }
       if (collected.exitCode !== 0) {
         const label =
           collected.exitCode === null ? '被信号终止' : `退出码 ${String(collected.exitCode)}`
         reject(
-          new CommandError('failed', `${command} ${label}`, collected.stderr, collected.exitCode),
+          new CommandError(
+            'failed',
+            `${command} ${label}`,
+            collected.stderr,
+            collected.exitCode,
+            collected.stdout,
+          ),
         )
         return
       }
