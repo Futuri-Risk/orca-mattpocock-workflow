@@ -7,8 +7,10 @@
  */
 import * as React from 'react'
 
+import { canCopyText, copyText } from './clipboard.ts'
+
 /** 一次复制的结果。 */
-export type CopyOutcome =
+export type PromptCopyOutcome =
   /** 已写进剪贴板。 */
   | 'copied'
   /** 剪贴板不可用或被拒绝，需要手动复制。 */
@@ -16,13 +18,13 @@ export type CopyOutcome =
 
 /** 复制结果与给用户看的说明。 */
 export interface CopyResult {
-  readonly outcome: CopyOutcome
+  readonly outcome: PromptCopyOutcome
   readonly message: string
 }
 
 /** 面板的提示词复制端口。 */
 export interface PromptCopy {
-  /** 剪贴板 API 是否可用；不可用时界面直接给出手动复制区。 */
+  /** 能否尝试写入剪贴板；两种路径都没有时界面直接给出手动复制区。 */
   readonly canCopy: boolean
   /**
    * 复制一段提示词。
@@ -54,40 +56,27 @@ export interface PromptCopyControls {
   readonly dismiss: () => void
 }
 
-/**
- * 剪贴板是否可用。webview 里 navigator.clipboard 可能缺席。
- * @returns 能否调用 writeText。
- */
-export function isClipboardAvailable(): boolean {
-  return (
-    typeof navigator !== 'undefined' &&
-    typeof navigator.clipboard?.writeText === 'function'
-  )
-}
-
 /** 手动复制时的统一提示。 */
 const MANUAL_HINT = '下面的文本框已全选，按 ⌘C 复制。'
 
 /**
  * 创建复制端口。
- * @returns 走剪贴板的复制端口；剪贴板不可用时直接回报手动复制。
+ * @returns 走剪贴板的复制端口；两种写入路径都不可用时回报手动复制。
  */
 export function createPromptCopy(): PromptCopy {
   return {
     // 用取值器而不是快照：剪贴板能力可能在面板运行后才就绪。
     get canCopy(): boolean {
-      return isClipboardAvailable()
+      return canCopyText()
     },
     copy: async (text) => {
-      if (!isClipboardAvailable()) {
-        return { outcome: 'manual', message: MANUAL_HINT }
-      }
-      try {
-        await navigator.clipboard.writeText(text)
+      const result = await copyText(text)
+      if (result.status === 'copied') {
         return { outcome: 'copied', message: '提示词已复制到剪贴板，粘贴到会话里即可使用。' }
-      } catch (error) {
-        const detail = error instanceof Error ? error.message : '未知错误'
-        return { outcome: 'manual', message: `复制失败：${detail}。${MANUAL_HINT}` }
+      }
+      return {
+        outcome: 'manual',
+        message: `${result.message ?? '复制失败。'}${MANUAL_HINT}`,
       }
     },
   }

@@ -6,6 +6,7 @@
  * 诊断结果的 id 与顺序固定，环境检查视图按这个顺序显示。
  */
 import type { CapabilityDiagnostic } from '../protocol/env-check.ts'
+import { canCopyText } from './clipboard.ts'
 
 /** 面板侧的能力 id。 */
 export const PANEL_CAPABILITY_IDS = ['panel-bridge', 'clipboard', 'worker'] as const
@@ -17,21 +18,39 @@ export type PanelCapabilityId = (typeof PANEL_CAPABILITY_IDS)[number]
 export interface PanelCapabilityProbe {
   /** `orca.plugin.request` 是否可用。 */
   readonly bridge: boolean
-  /** `navigator.clipboard.writeText` 是否可用。 */
+  /** 剪贴板 API 未被权限策略拒绝，且至少有一条写入路径。 */
   readonly clipboard: boolean
 }
 
 /**
  * 探测面板自身的能力。
- * @returns 面板桥与剪贴板的可用性。
+ * @returns 面板桥与剪贴板的可用性；剪贴板要读一次权限状态，因此是异步的。
  */
-export function probePanelCapabilities(): PanelCapabilityProbe {
+export async function probePanelCapabilities(): Promise<PanelCapabilityProbe> {
   const bridge =
     typeof window !== 'undefined' &&
     typeof window.orca?.plugin?.request === 'function'
-  const clipboard =
-    typeof navigator !== 'undefined' && typeof navigator.clipboard?.writeText === 'function'
-  return { bridge, clipboard }
+  return { bridge, clipboard: await probeClipboardWritable() }
+}
+
+/**
+ * 剪贴板是否真的可写：权限策略拒绝时不能声称可用。
+ * 兼容写入（`execCommand`）仍会在点击时尝试，但环境检查按真实权限给建议。
+ * @returns 剪贴板 API 可用或权限状态未拒绝时为 true。
+ */
+async function probeClipboardWritable(): Promise<boolean> {
+  if (!canCopyText()) return false
+
+  const permissions = typeof navigator === 'undefined' ? undefined : navigator.permissions
+  if (typeof permissions?.query === 'function') {
+    try {
+      const status = await permissions.query({ name: 'clipboard-write' as PermissionName })
+      if (status.state === 'denied') return false
+    } catch {
+      // 浏览器不认识这个权限名时按可用处理，交给复制时的降级链。
+    }
+  }
+  return true
 }
 
 /**

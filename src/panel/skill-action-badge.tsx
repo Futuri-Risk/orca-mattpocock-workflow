@@ -89,6 +89,6 @@ export function SkillActionBadge(props: SkillActionBadgeProps): React.ReactEleme
 function badgeHint(hint: string, copied: boolean, canCopy: boolean): string {
   const parts = [hint]
   if (copied) parts.push('提示词已复制')
-  if (!canCopy) parts.push('当前没有剪贴板 API，请用小箭头手动复制')
+  if (!canCopy) parts.push('当前环境不能写入剪贴板，请用小箭头手动复制')
   return parts.join('；')
 }

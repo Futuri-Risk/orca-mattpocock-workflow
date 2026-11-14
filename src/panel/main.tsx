@@ -11,7 +11,11 @@
 import * as React from 'react'
 import { createRoot } from 'react-dom/client'
 
-import { panelCapabilityDiagnostics, probePanelCapabilities } from './capabilities.ts'
+import {
+  panelCapabilityDiagnostics,
+  probePanelCapabilities,
+  type PanelCapabilityProbe,
+} from './capabilities.ts'
 import { readFrame } from './host.ts'
 import { promptCopy } from './injection.ts'
 import {
@@ -149,8 +153,19 @@ const PICKER_PATH_STYLE: React.CSSProperties = {
  */
 function App(props: { readonly client: PanelClient }): React.ReactElement {
   const host = React.useSyncExternalStore(subscribeHost, getHostState)
-  const probe = React.useMemo(probePanelCapabilities, [])
+  const [probe, setProbe] = React.useState<PanelCapabilityProbe | null>(null)
   const [workerReachable, setWorkerReachable] = React.useState(false)
+
+  // 剪贴板可写性要读一次权限状态；读到之前不把面板能力算成可用或不可用。
+  React.useEffect(() => {
+    let active = true
+    void probePanelCapabilities().then((next) => {
+      if (active) setProbe(next)
+    })
+    return () => {
+      active = false
+    }
+  }, [])
 
   // 探测 worker：能完成一次请求就算可达（即使这次请求本身失败）。
   React.useEffect(() => {
@@ -169,7 +184,7 @@ function App(props: { readonly client: PanelClient }): React.ReactElement {
   }, [props.client])
 
   const capabilities = React.useMemo(
-    () => panelCapabilityDiagnostics(probe, workerReachable),
+    () => (probe === null ? [] : panelCapabilityDiagnostics(probe, workerReachable)),
     [probe, workerReachable],
   )
 

@@ -6,6 +6,7 @@ import * as React from 'react'
 
 import type { EnvCheckItem, EnvCheckReport } from '../protocol/env-check.ts'
 import type { RpcResult } from '../protocol/tracker.ts'
+import { copyText } from './clipboard.ts'
 import {
   ENV_COMMAND_STYLE,
   ENV_DETAIL_STYLE,
@@ -16,7 +17,7 @@ import {
   ENV_REMEDY_STYLE,
 } from './env-check-styles.ts'
 import { envCheckTitle } from './env-check-text.ts'
-import { isClipboardAvailable, usePromptCopy, type PromptCopy } from './injection.ts'
+import { usePromptCopy, type PromptCopy } from './injection.ts'
 import { PromptCopyArea } from './prompt-copy.tsx'
 import { remedyContent, type RemedyAction } from './env-remedy-text.ts'
 import { installSkills, type SkillsInstallResult } from './transport.ts'
@@ -213,8 +214,8 @@ function CopyButton(props: {
         type="button"
         data-testid={props.testId}
         onClick={() => {
-          void copyText(props.text).then((copied) => {
-            setState(copied ? 'copied' : 'failed')
+          void copyText(props.text).then((result) => {
+            setState(result.status === 'copied' ? 'copied' : 'failed')
           })
         }}
         style={BUTTON_STYLE}
@@ -230,13 +231,3 @@ function CopyButton(props: {
   )
 }
 
-async function copyText(text: string): Promise<boolean> {
-  // webview 里 navigator.clipboard 可能缺席，按可选能力处理。
-  if (!isClipboardAvailable()) return false
-  try {
-    await navigator.clipboard.writeText(text)
-    return true
-  } catch {
-    return false
-  }
-}

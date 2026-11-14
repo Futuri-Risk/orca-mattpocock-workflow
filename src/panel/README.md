@@ -8,8 +8,12 @@ Orca 右侧栏里的 MattWorkflow 面板（`ui: "html"`，独立 frame 里跑的
   `workspace.changed`）、在工作区认领不到时渲染候选列表。
 - `transport.ts`：面板与 worker 的唯一通道。方法名与入参出参沿用 `src/protocol/tracker.ts`，
   底层是 `orca.plugin.request`；另外提供 `skills.install` 这一个额外处理器。
+- `clipboard.ts`：剪贴板写入的两级路径（剪贴板 API → 隐藏 textarea + `execCommand('copy')`），
+  提示词、命令与工单链接的复制共用。
 - `injection.ts` + `prompt-copy.tsx`：提示词出口。Orca 没有「填会话输入框」与「开新会话」，
-  面板只把提示词复制到剪贴板；剪贴板不可用时给出只读、已全选的文本框由用户手动 ⌘C。
+  面板只把提示词复制到剪贴板。`clipboard.ts` 先试剪贴板 API；面板 iframe 没有
+  `clipboard-write` 权限策略时会拒绝，此时退回隐藏 textarea + `execCommand('copy')`。
+  两条路都失败才给出只读、已全选的文本框由用户手动 ⌘C。
 - `view-preference.ts`：按工作区记住筛选与排序，存在 Orca 的插件私有存储里（一份 JSON 映射，
   最多 50 个工作区条目）。
 - `capabilities.ts`：面板侧能力诊断（面板桥、剪贴板、worker 可达），与环境检查里
