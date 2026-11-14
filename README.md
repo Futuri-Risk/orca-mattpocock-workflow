@@ -62,6 +62,9 @@ orca plugin dev load <本目录>
 
 面板截图：`orca plugin dev watch . --shot ./shots --shot-panel tickets`。
 
+清单指向 `dist/` 里的产物，`dist/` 不进版本库；克隆后 `pnpm install` 会自动构建一次，
+发布前确认 `pnpm build` 通过。
+
 ## 已知限制
 
 - 提示词只能复制，不能直接写进会话：Orca 插件没有会话草稿接口。

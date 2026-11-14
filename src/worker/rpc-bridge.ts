@@ -25,6 +25,8 @@ export const SNAPSHOT_REFRESHED_EVENT = 'snapshot.refreshed'
 
 /** 面板请求名：安装入池技能。这个动作不属于工单 RPC，单独一个处理器。 */
 export const SKILL_INSTALL_REQUEST = 'skills.install'
+/** 把工作区切到 Orca 前台的请求名。 */
+export const OPEN_WORKSPACE_REQUEST = 'workspace.open'
 
 /** 桥接依赖。 */
 export interface RpcBridgeDeps {
@@ -48,6 +50,38 @@ export function registerRpcHandlers(orca: OrcaWorkerApi, deps: RpcBridgeDeps): v
       return dispatch(deps, method, prepared.params)
     })
   }
+
+  orca.panels.handle(OPEN_WORKSPACE_REQUEST, async (input) => {
+    const path = isRecord(input) && typeof input['path'] === 'string' ? input['path'] : undefined
+    const target = await resolveWorkspaceTarget(orca, deps, path)
+    if (target === undefined) {
+      return {
+        ok: false,
+        error: {
+          code: ERROR_CODES.invalidParams,
+          message: path === undefined ? '认不到当前工作区。' : `Orca 里没有这个工作区：${path}`,
+        },
+      }
+    }
+    await orca.host.call('workspace.open', { workspaceId: target.id })
+    // 记住它：下次遇到同名工作区时优先认领这个。
+    deps.workspace.prefer(target.path)
+    return { ok: true, result: { opened: true, path: target.path } }
+  })
+
+  orca.panels.handle(SKILL_INSTALL_REQUEST, async () => {
+    try {
+      return { ok: true, result: await installPoolSkills() }
+    } catch (error) {
+      return {
+        ok: false,
+        error: {
+          code: ERROR_CODES.internal,
+          message: error instanceof Error ? error.message : String(error),
+        },
+      }
+    }
+  })
 }
 
 /** 按方法名分发到对应服务。 */
@@ -136,23 +170,31 @@ export function postWorkspaceCandidates(
 }
 
 /**
- * 注册「安装入池技能」处理器。
+ * 找出要打开的工作区。
  *
- * 这是往用户机器上写文件的动作，只在面板显式调用时执行。
+ * 给了路径就按路径找；没给就用聚焦工作区。
  * @param orca - worker API。
+ * @param deps - 服务依赖。
+ * @param path - 工作区绝对路径。
+ * @returns 工作区条目；找不到时是 undefined。
  */
-export function registerSkillInstallHandler(orca: OrcaWorkerApi): void {
-  orca.panels.handle(SKILL_INSTALL_REQUEST, async () => {
-    try {
-      return { ok: true, result: await installPoolSkills() }
-    } catch (error) {
-      return {
-        ok: false,
-        error: {
-          code: ERROR_CODES.internal,
-          message: error instanceof Error ? error.message : String(error),
-        },
-      }
+async function resolveWorkspaceTarget(
+  orca: OrcaWorkerApi,
+  deps: RpcBridgeDeps,
+  path: string | undefined,
+): Promise<{ readonly id: string; readonly path: string } | undefined> {
+  if (path !== undefined) {
+    const list = await orca.host.call('workspace.list').catch(() => null)
+    if (!isRecord(list) || !Array.isArray(list['workspaces'])) return undefined
+    for (const entry of list['workspaces']) {
+      if (!isRecord(entry) || entry['path'] !== path) continue
+      const id = entry['id']
+      if (typeof id === 'string') return { id, path }
     }
-  })
+    return undefined
+  }
+
+  const resolution = await deps.workspace.resolve()
+  if (resolution.status !== 'resolved') return undefined
+  return { id: resolution.candidate.id, path: resolution.root }
 }

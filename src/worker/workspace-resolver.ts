@@ -46,6 +46,8 @@ export interface WorkspaceResolver {
   resolve(): Promise<WorkspaceResolution>
   /** 丢弃缓存；工作区切换后调用。 */
   invalidate(): void
+  /** 记住一个工作区路径；下次认领重名工作区时优先用它。 */
+  prefer(path: string): void
 }
 
 /**
@@ -55,6 +57,8 @@ export interface WorkspaceResolver {
  */
 export function createWorkspaceResolver(host: OrcaWorkerApi['host']): WorkspaceResolver {
   let cached: { readonly key: string; readonly resolution: WorkspaceResolution } | undefined
+  // 上一次认领成功的工作区；重名时用它稳住面板。
+  let lastResolvedPath: string | null = null
 
   return {
     async resolve() {
@@ -67,12 +71,18 @@ export function createWorkspaceResolver(host: OrcaWorkerApi['host']): WorkspaceR
       const key = `${context.displayName}\u0000${context.branch}`
       if (cached?.key === key) return cached.resolution
 
-      const resolution = await matchWorkspace(host, context)
+      const resolution = await matchWorkspace(host, context, lastResolvedPath)
+      if (resolution.status === 'resolved') lastResolvedPath = resolution.root
       cached = { key, resolution }
       return resolution
     },
 
     invalidate() {
+      cached = undefined
+    },
+
+    prefer(path: string) {
+      lastResolvedPath = path
       cached = undefined
     },
   }
@@ -175,6 +185,7 @@ function pathForms(path: string): readonly string[] {
 async function matchWorkspace(
   host: OrcaWorkerApi['host'],
   context: WorkspaceContext,
+  previousPath: string | null,
 ): Promise<WorkspaceResolution> {
   const workspaces = await listWorkspaces(host)
   if (workspaces.length === 0) return { status: 'unresolved', candidates: [] }
@@ -182,26 +193,33 @@ async function matchWorkspace(
   const byName = matchByName(workspaces, context.displayName)
   if (byName.length === 1) {
     const candidate = byName[0]
-    if (candidate !== undefined) return { status: 'resolved', root: candidate.path, candidate }
+    if (candidate !== undefined) return resolved(candidate)
   }
 
   const byBranch = workspaces.filter((workspace) => workspace.branch === context.branch)
   // 名字命中多个时用分支再收一次；名字没命中时直接按分支认领。
   const narrowed = byName.length > 1 ? byName.filter((workspace) => byBranch.includes(workspace)) : byBranch
-  // 还是多个：终端标题里通常带着工作目录，用它认领。
+  // 还是多个：先沿用上一次认领的工作区，再看终端标题里的工作目录。
   if (narrowed.length > 1) {
+    const previous = narrowed.find((workspace) => workspace.path === previousPath)
+    if (previous !== undefined) return resolved(previous)
     const byTerminal = matchByTerminalTitle(narrowed, context.terminalTitles)
-    if (byTerminal !== undefined) return { status: 'resolved', root: byTerminal.path, candidate: byTerminal }
+    if (byTerminal !== undefined) return resolved(byTerminal)
   }
   if (narrowed.length === 1) {
     const candidate = narrowed[0]
-    if (candidate !== undefined) return { status: 'resolved', root: candidate.path, candidate }
+    if (candidate !== undefined) return resolved(candidate)
   }
 
   if (narrowed.length === 0) {
     return { status: 'unresolved', candidates: byName.length > 1 ? byName : byBranch }
   }
   return { status: 'ambiguous', candidates: narrowed }
+}
+
+/** 认领成功的解析结果。 */
+function resolved(candidate: WorkspaceCandidate): WorkspaceResolution {
+  return { status: 'resolved', root: candidate.path, candidate }
 }
 
 /** 读全部工作区；宿主不支持或读取失败时是空列表。 */

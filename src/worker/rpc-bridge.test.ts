@@ -4,7 +4,7 @@ import { RPC_METHODS, type RpcResult } from '../protocol/tracker.ts'
 import type { EnvCheckService } from './env-check-service.ts'
 import type { LogSink } from './log.ts'
 import type { OrcaPanelRequestHandler, OrcaWorkerApi } from './orca-types.ts'
-import { registerRpcHandlers, registerSkillInstallHandler, SKILL_INSTALL_REQUEST } from './rpc-bridge.ts'
+import { registerRpcHandlers, SKILL_INSTALL_REQUEST } from './rpc-bridge.ts'
 import type { SnapshotService } from './snapshot-service.ts'
 import type { TicketService } from './ticket-service.ts'
 import { createWorkspaceResolver } from './workspace-resolver.ts'
@@ -74,15 +74,22 @@ describe('面板 RPC 桥', () => {
       log,
     })
 
-    expect([...handlers.keys()].sort()).toEqual([...Object.values(RPC_METHODS)].sort())
+    expect([...handlers.keys()]).toEqual(expect.arrayContaining([...Object.values(RPC_METHODS)]))
   })
 
   it('入池技能安装是独立的一个处理器', () => {
     const { orca, handlers } = fakeOrca()
+    const services = recordingServices()
 
-    registerSkillInstallHandler(orca)
+    registerRpcHandlers(orca, {
+      snapshot: services.snapshot,
+      ticket: services.ticket,
+      envCheck: services.envCheck,
+      workspace: createWorkspaceResolver(orca.host),
+      log,
+    })
 
-    expect([...handlers.keys()]).toEqual([SKILL_INSTALL_REQUEST])
+    expect(handlers.has(SKILL_INSTALL_REQUEST)).toBe(true)
   })
 
   it('面板没给工作区时由 worker 解析后注入', async () => {

@@ -21,7 +21,6 @@ import { createProbeDeadline, ENV_PROBE_TIMEOUT_MS } from './probe-deadline.ts'
 import {
   postWorkspaceCandidates,
   registerRpcHandlers,
-  registerSkillInstallHandler,
   SNAPSHOT_REFRESHED_EVENT,
 } from './rpc-bridge.ts'
 import { createSkillCatalog } from './skill-catalog.ts'
@@ -33,6 +32,8 @@ import { createWorkspaceResolver, type WorkspaceResolver } from './workspace-res
 
 /** 插件自己注册的命令：刷新当前工作区的工单。 */
 const REFRESH_COMMAND_ID = 'mattwf.refresh'
+/** 把当前工作区切到 Orca 前台。 */
+const OPEN_WORKSPACE_COMMAND_ID = 'mattwf.open-workspace'
 
 /**
  * 激活插件。
@@ -72,12 +73,21 @@ export default function activate(orca: OrcaWorkerApi): void {
   const workspace = createWorkspaceResolver(orca.host)
 
   registerRpcHandlers(orca, { snapshot, ticket, envCheck, workspace, log })
-  registerSkillInstallHandler(orca)
 
   orca.commands.register(REFRESH_COMMAND_ID, async () => {
     const result = await refreshWorkspace(orca, { snapshot, workspace })
     orca.panels.post(SNAPSHOT_REFRESHED_EVENT, { result })
     return result
+  })
+
+  orca.commands.register(OPEN_WORKSPACE_COMMAND_ID, async () => {
+    const resolution = await workspace.resolve()
+    if (resolution.status !== 'resolved') {
+      postWorkspaceCandidates(orca, resolution.candidates)
+      return '认不到当前工作区，请在面板里选一个。'
+    }
+    await orca.host.call('workspace.open', { workspaceId: resolution.candidate.id })
+    return `已在 Orca 里打开 ${resolution.candidate.path}`
   })
 
   // 工作区切换后缓存的解析结果失效，下一次请求重新认领工作区。

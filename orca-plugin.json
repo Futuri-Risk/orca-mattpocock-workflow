@@ -8,7 +8,7 @@
     "name": "zgray"
   },
   "engines": {
-    "orca": ">=1.4.246"
+    "orca": ">=1.4.248"
   },
   "execution": "trusted-worker",
   "pluginApi": 1,
@@ -27,6 +27,11 @@
         "id": "mattwf.refresh",
         "title": "MattWorkflow: 刷新工单",
         "when": "workspace"
+      },
+      {
+        "id": "mattwf.open-workspace",
+        "title": "MattWorkflow: 在 Orca 里打开当前工作区",
+        "when": "workspace"
       }
     ],
     "events": [
@@ -38,6 +43,9 @@
   "capabilities": [
     {
       "kind": "workspace:read"
+    },
+    {
+      "kind": "workspace:write"
     },
     {
       "kind": "storage:own"
