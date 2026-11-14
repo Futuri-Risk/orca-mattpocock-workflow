@@ -1,0 +1,52 @@
+{
+  "manifestVersion": 2,
+  "id": "mattpocock-workflow",
+  "name": "MattWorkflow",
+  "version": "0.1.0",
+  "description": "Matt Pocock 工作流面板：工单 triage 判定、积压概览、环境检查，一键复制工单技能提示词。",
+  "author": {
+    "name": "zgray"
+  },
+  "engines": {
+    "orca": ">=1.4.246"
+  },
+  "execution": "trusted-worker",
+  "pluginApi": 1,
+  "main": "dist/worker/main.mjs",
+  "contributes": {
+    "panels": [
+      {
+        "id": "tickets",
+        "title": "MattWorkflow",
+        "icon": "flag",
+        "entry": "dist/panel/panel.html"
+      }
+    ],
+    "commands": [
+      {
+        "id": "mattwf.refresh",
+        "title": "MattWorkflow: 刷新工单",
+        "when": "workspace"
+      }
+    ],
+    "events": [
+      {
+        "on": "workspace.changed"
+      }
+    ]
+  },
+  "capabilities": [
+    {
+      "kind": "workspace:read"
+    },
+    {
+      "kind": "storage:own"
+    },
+    {
+      "kind": "settings:own"
+    },
+    {
+      "kind": "notifications:show"
+    }
+  ]
+}

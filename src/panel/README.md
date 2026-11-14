@@ -1,0 +1,25 @@
+# panel
+
+Orca 右侧栏里的 MattWorkflow 面板（`ui: "html"`，独立 frame 里跑的 React 应用）。
+
+## 结构
+
+- `main.tsx`：入口。挂载 React、接宿主事件（`workspace.candidates` / `snapshot.refreshed` /
+  `workspace.changed`）、在工作区认领不到时渲染候选列表。
+- `transport.ts`：面板与 worker 的唯一通道。方法名与入参出参沿用 `src/protocol/tracker.ts`，
+  底层是 `orca.plugin.request`；另外提供 `skills.install` 这一个额外处理器。
+- `injection.ts` + `prompt-copy.tsx`：提示词出口。Orca 没有「填会话输入框」与「开新会话」，
+  面板只把提示词复制到剪贴板；剪贴板不可用时给出只读、已全选的文本框由用户手动 ⌘C。
+- `view-preference.ts`：按工作区记住筛选与排序，存在 Orca 的插件私有存储里（一份 JSON 映射，
+  最多 50 个工作区条目）。
+- `capabilities.ts`：面板侧能力诊断（面板桥、剪贴板、worker 可达），与环境检查里
+  worker 侧的能力合并显示。
+- `task-panel.tsx`：面板外壳，在列表、概览、环境检查与流程帮助之间切换。
+- `theme.css`：把宿主注入的 `--orca-*` 令牌映射成面板自己的 `--mwf-*` 变量；深浅色跟随宿主。
+- `markdown-body.tsx`：自带的极简 Markdown 渲染器。工单正文是不可信输入，因此不解析原始
+  HTML，链接只放行 http(s) 与 mailto。
+
+## 约束
+
+- 面板只依赖 `src/protocol` 的类型与常量，不导入 `src/core` 或 `src/adapters`。
+- 协议里的方法名与参数形状不改；面板按名字调用 worker 注册的 handler。

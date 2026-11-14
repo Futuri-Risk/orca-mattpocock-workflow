@@ -1,0 +1,48 @@
+import { describe, expect, it } from 'vitest'
+
+import { CommandError } from '../core/tracker-error.ts'
+import { createCommandRunner } from './subprocess-runner.ts'
+
+describe('命令执行器', () => {
+  it('成功时返回标准输出与可执行文件路径', async () => {
+    const run = createCommandRunner()
+
+    const output = await run(process.execPath, ['-e', 'process.stdout.write("ok")'])
+
+    expect(output.stdout).toBe('ok')
+    expect(output.stderr).toBe('')
+    expect(output.executable).toBe(process.execPath)
+  })
+
+  it('非零退出时映射为 failed', async () => {
+    const run = createCommandRunner()
+
+    const error = await run(process.execPath, ['-e', 'process.stderr.write("boom"); process.exit(3)']).catch(
+      (failure: unknown) => failure,
+    )
+
+    expect(error).toBeInstanceOf(CommandError)
+    expect(error instanceof CommandError && error.kind).toBe('failed')
+    expect(error instanceof CommandError && error.exitCode).toBe(3)
+    expect(error instanceof CommandError && error.stderr).toBe('boom')
+  })
+
+  it('找不到可执行文件时映射为 not-found', async () => {
+    const run = createCommandRunner()
+
+    const error = await run('mattwf-does-not-exist', []).catch((failure: unknown) => failure)
+
+    expect(error).toBeInstanceOf(CommandError)
+    expect(error instanceof CommandError && error.kind).toBe('not-found')
+  })
+
+  it('在指定目录里执行命令', async () => {
+    const run = createCommandRunner()
+
+    const output = await run(process.execPath, ['-e', 'process.stdout.write(process.cwd())'], {
+      cwd: '/tmp',
+    })
+
+    expect(output.stdout).toContain('tmp')
+  })
+})
