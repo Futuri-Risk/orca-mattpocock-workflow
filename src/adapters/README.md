@@ -22,6 +22,10 @@
 | Gitea         | 是             | comments 接口                  | 是       | 是     | 是（`--set-assignees`）         | 是     | labels 分页（每页 50 条）与 assignees                      | `tea api --method DELETE`；`permissions.admin`                     |
 | 本地 Markdown | 是（文件正文） | `## Comments` 段按空行分段     | 否       | 否     | 否                              | 否     | 否                                                         | 否（不改用户手写的文件）                                           |
 
+- 列表分页：GitHub 一次取一页（GraphQL 的 `first` 上限 100），返回 `nextCursor`，
+  宿主用 `snapshot.loadMore` 按游标追加；GitLab、Gitea 与本地 Markdown 一次取全，没有 `nextCursor`。
+  增量刷新保留已追加的窗口与游标（合并结果不裁剪）；「全量刷新」或「只加载了一部分却没有游标」的
+  旧缓存才回到第一页。
 - 详情只在打开详情时请求，不进入列表快照；创建人、评论作者与分配人都是结构化用户
   （登录名 / 展示名 / 头像地址），与列表的创建人同源同形：GitHub 的 `author.login` + `avatarUrl`、
   GitLab 的 `username` + `avatar_url`、Gitea 的 `login` + `avatar_url`（相对地址按实例基准补全）；

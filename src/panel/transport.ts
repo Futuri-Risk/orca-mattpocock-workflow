@@ -53,6 +53,11 @@ export interface PanelClient {
     options?: { readonly full?: boolean },
   ): Promise<RpcResult<WorkspaceSnapshot>>
   /**
+   * 按快照给出的游标取下一段工单，追加到已加载的列表。
+   * 没有更多时原样返回当前快照。
+   */
+  loadMore(workspaceRoot: string): Promise<RpcResult<WorkspaceSnapshot>>
+  /**
    * 读取本地快照库的信息；`clear` 为 true 时按确认词清空它。
    */
   cache(
@@ -162,6 +167,8 @@ export function createPanelClient(request: RequestLike = defaultRequest): PanelC
         options?.full === true ? { workspaceRoot, full: true } : { workspaceRoot }
       return call(request, RPC_METHODS.snapshotRefresh, params, isSnapshotResult)
     },
+    loadMore: (workspaceRoot) =>
+      call(request, RPC_METHODS.snapshotLoadMore, { workspaceRoot }, isSnapshotResult),
     cache: (workspaceRoot, options) => {
       const params: SnapshotCacheParams =
         options?.clear === true
@@ -293,6 +300,7 @@ function isWorkspaceSnapshot(value: unknown): value is WorkspaceSnapshot {
   if (!('fetchedAt' in value) || typeof value.fetchedAt !== 'number') return false
   if (!('loaded' in value) || typeof value.loaded !== 'number') return false
   if (!('total' in value) || typeof value.total !== 'number') return false
+  if (!('hasMore' in value) || typeof value.hasMore !== 'boolean') return false
   if (!('tickets' in value) || !Array.isArray(value.tickets)) return false
   if (!value.tickets.every(hasSkillAction)) return false
   if (!('metrics' in value) || typeof value.metrics !== 'object' || value.metrics === null) {

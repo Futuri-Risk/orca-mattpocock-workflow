@@ -2,9 +2,16 @@
  * GitHub 工单后端：通过注入的 {@link CommandRunner} 调用 `git` 与 `gh`，
  * 把输出映射成 core 的工单模型。远端解析复用 core，只接受 `github.com`。
  *
- * 列表走 GraphQL 一次取全；详情与变更在 `detail.ts`，只在打开详情或提交变更时执行。
+ * 列表走 GraphQL 按游标取页：一次取一页，`nextCursor` 交给宿主按需追加；
+ * 详情与变更在 `detail.ts`，只在打开详情或提交变更时执行。
  */
-import type { CommandRunner, Tracker, TrackerChanges, TrackerSnapshot } from '../../core/ticket.ts'
+import type {
+  CommandRunner,
+  SnapshotPage,
+  Tracker,
+  TrackerChanges,
+  TrackerSnapshot,
+} from '../../core/ticket.ts'
 import { TrackerError } from '../../core/tracker-error.ts'
 import { deleteGithubTicket, readGithubDeletePermission } from './delete.ts'
 import { applyGithubChanges, readGithubDetail } from './detail.ts'
@@ -22,7 +29,7 @@ import { callGh, readRepository, repositoryLabel, type GithubRepository } from '
 export interface GithubTrackerDeps {
   readonly run: CommandRunner
   readonly now: () => number
-  /** 单次拉取的票数上限；GitHub GraphQL 的 `first` 最大为 100。 */
+  /** 单页票数上限；GitHub GraphQL 的 `first` 最大为 100。 */
   readonly limit?: number
 }
 
@@ -44,10 +51,11 @@ const ISSUE_NODES = `nodes {
         issueDependenciesSummary { blockedBy }
       }`
 
-const ISSUE_QUERY = `query ($owner: String!, $name: String!, $limit: Int!) {
+const ISSUE_QUERY = `query ($owner: String!, $name: String!, $limit: Int!, $after: String) {
   repository(owner: $owner, name: $name) {
-    issues(first: $limit, orderBy: { field: UPDATED_AT, direction: DESC }) {
+    issues(first: $limit, after: $after, orderBy: { field: UPDATED_AT, direction: DESC }) {
       totalCount
+      pageInfo { hasNextPage endCursor }
       ${ISSUE_NODES}
     }
   }
@@ -80,9 +88,10 @@ export function createGithubTracker(deps: GithubTrackerDeps): Tracker {
   const limit = normalizeLimit(deps.limit ?? DEFAULT_LIMIT)
 
   return {
-    async fetchSnapshot(workspaceRoot: string): Promise<TrackerSnapshot> {
+    async fetchSnapshot(workspaceRoot: string, page?: SnapshotPage): Promise<TrackerSnapshot> {
       const repository = await readRepository(deps.run, workspaceRoot)
-      const tickets = await readTickets(deps, workspaceRoot, repository, limit)
+      const tickets = await readTickets(deps, workspaceRoot, repository, limit, page?.cursor)
+      const nextCursor = tickets.nextCursor
 
       return {
         repository: repositoryLabel(repository),
@@ -90,8 +99,8 @@ export function createGithubTracker(deps: GithubTrackerDeps): Tracker {
         loaded: tickets.tickets.length,
         total: tickets.total,
         tickets: tickets.tickets,
-        // GitHub 的列表一次只取一页，这份快照只覆盖最近更新的 N 张票。
-        windowLimit: limit,
+        // 还有下一页时给出游标；这份快照只覆盖到这一页。
+        ...(nextCursor === undefined ? {} : { nextCursor }),
       }
     },
 
@@ -124,6 +133,7 @@ async function readTickets(
   workspaceRoot: string,
   repository: GithubRepository,
   limit: number,
+  cursor: string | undefined,
 ): Promise<ParsedIssues> {
   const args = [
     'api',
@@ -136,6 +146,7 @@ async function readTickets(
     `name=${repository.name}`,
     '-F',
     `limit=${String(limit)}`,
+    ...(cursor === undefined ? [] : ['-f', `after=${cursor}`]),
   ]
 
   return parseIssueGraphql(await callGh(deps.run, workspaceRoot, args))

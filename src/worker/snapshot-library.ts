@@ -46,6 +46,8 @@ export interface SnapshotLibraryDeps {
  */
 export interface CachedWorkspace {
   readonly kind: BackendKind
+  /** 仓库身份：后端类型 + 实例主机 + 仓库路径；换远端或换后端时身份对不上。 */
+  readonly repositoryKey: string
   /** 远端实例主机；列表与补齐两阶段共用同一份，本地 Markdown 为 null。 */
   readonly repositoryHost: string | null
   /** 后端的原始列表，补齐后按它重新判定，避免丢失标签。 */
@@ -122,7 +124,7 @@ export async function writeStored(
     fetchedAt: raw.fetchedAt,
     loaded: raw.tickets.length,
     total: raw.total,
-    ...(raw.windowLimit === undefined ? {} : { windowLimit: raw.windowLimit }),
+    ...(raw.nextCursor === undefined ? {} : { nextCursor: raw.nextCursor }),
     tickets: raw.tickets,
   }
   try {
@@ -164,6 +166,7 @@ export function buildStoredSnapshot(
     fetchedAt: raw.fetchedAt,
     loaded: tickets.length,
     total: raw.total,
+    hasMore: raw.nextCursor !== undefined,
     blockersFinalized: false,
     metrics,
     source: 'cache',
@@ -203,6 +206,7 @@ export function storedEntry(
 ): CachedWorkspace {
   return {
     kind: stored.backend,
+    repositoryKey: stored.repositoryKey,
     repositoryHost: stored.repositoryHost,
     raw: rawOf(stored),
     snapshot,
@@ -298,7 +302,7 @@ function rawOf(stored: SnapshotStoreEntry): TrackerSnapshot {
     loaded: stored.tickets.length,
     total: stored.total,
     tickets: stored.tickets,
-    ...(stored.windowLimit === undefined ? {} : { windowLimit: stored.windowLimit }),
+    ...(stored.nextCursor === undefined ? {} : { nextCursor: stored.nextCursor }),
   }
 }
 
