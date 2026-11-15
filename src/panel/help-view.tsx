@@ -1,6 +1,6 @@
 /**
  * 流程帮助视图：按场景分页签，每次只看一张竖向排版的 SVG 流程图，
- * 讲清入池、triage 状态机、需求链、缺陷链，以及访谈与画图的取舍。
+ * 讲清入池、triage 状态机、需求链、缺陷链、访谈与画图的取舍，以及实现之后的收尾。
  *
  * 图里的命令、归属与交接关系全部来自 protocol 的流程定义；图本身不可点击。
  * 颜色走面板的主题变量，深色/浅色主题都能读。
@@ -21,6 +21,8 @@ import {
 export interface HelpViewProps {
   /** 返回打开帮助前所在的面板视图。 */
   readonly onBack: () => void
+  /** 初始打开的场景 id；默认是第一张图。 */
+  readonly initialDiagramId?: string
 }
 
 const SVG_WIDTH = 300
@@ -85,7 +87,9 @@ const DIAGRAM_MAX_WIDTH = 360
  * @returns 返回按钮、场景页签、当前场景的流程图与图例。
  */
 export function HelpView(props: HelpViewProps): React.ReactElement {
-  const [activeId, setActiveId] = React.useState(FLOW_DIAGRAMS[0]?.id ?? '')
+  const [activeId, setActiveId] = React.useState(
+    props.initialDiagramId ?? FLOW_DIAGRAMS[0]?.id ?? '',
+  )
   const active = FLOW_DIAGRAMS.find((diagram) => diagram.id === activeId) ?? FLOW_DIAGRAMS[0]
 
   return (
@@ -439,7 +443,13 @@ function NodeShape(props: { readonly placed: PlacedNode }): React.ReactElement {
         </text>
       )}
       {node.stops ? (
-        <circle cx={placed.x + placed.width} cy={placed.y} r={3.5} fill={COLORS.warn} />
+        <circle
+          data-testid="flow-stop"
+          cx={placed.x + placed.width}
+          cy={placed.y}
+          r={3.5}
+          fill={COLORS.warn}
+        />
       ) : null}
     </g>
   )

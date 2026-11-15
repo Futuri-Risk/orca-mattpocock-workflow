@@ -36,6 +36,8 @@ export const FLOW_COMMANDS = {
     summary: '诊断难查的缺陷',
   },
   implement: { name: PANEL_SKILLS.implement, owner: 'matt', summary: '按规格实现' },
+  codeReview: { name: PANEL_SKILLS.codeReview, owner: 'matt', summary: '两轴评审改动' },
+  pr: { name: PANEL_SKILLS.pr, owner: 'matt', summary: '写 PR 正文' },
 } as const satisfies Record<string, FlowCommand>
 
 /** 流程命令的 id。 */
@@ -141,7 +143,7 @@ export interface FlowDiagram {
 /** 命令节点的公共字段；`stops` 默认 true，终点节点再单独覆盖。 */
 const STOPPING_COMMAND_NODE = { command: null, state: null, note: null, stops: true } as const
 
-/** 帮助页的四张图：入池状态机、需求链、缺陷链，以及访谈与画图的取舍。 */
+/** 帮助页的五张图：入池状态机、需求链、缺陷链、访谈与画图的取舍，以及实现之后的收尾。 */
 export const FLOW_DIAGRAMS: readonly FlowDiagram[] = [
   {
     id: 'intake-triage',
@@ -234,6 +236,20 @@ export const FLOW_DIAGRAMS: readonly FlowDiagram[] = [
         ],
       },
       { nodes: [{ ...STOPPING_COMMAND_NODE, command: 'toSpec', note: null }] },
+    ],
+  },
+  {
+    id: 'after-implement',
+    title: '实现之后',
+    summary: '实现完成后先评审；评审意见修完再写 PR 正文，合并后关票。',
+    rows: [
+      { nodes: [{ command: null, state: '实现完成', note: null, stops: false }] },
+      { nodes: [{ ...STOPPING_COMMAND_NODE, command: 'codeReview', note: '两轴评审' }] },
+      { nodes: [{ command: null, state: '评审意见已修完', note: null, stops: false }] },
+      { nodes: [{ ...STOPPING_COMMAND_NODE, command: 'pr', note: '写 PR 正文' }] },
+      {
+        nodes: [{ command: null, state: '已合并、票已关闭', note: null, stops: false }],
+      },
     ],
   },
 ]
