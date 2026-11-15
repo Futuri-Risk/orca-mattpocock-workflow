@@ -1,0 +1,136 @@
+# 开发
+
+用 Orca 命令行把本仓库加载成开发插件，边改边看。全部命令都在本仓库根目录执行。
+
+## 准备
+
+```bash
+pnpm install      # 会自动跑一次 build
+pnpm typecheck
+pnpm test
+pnpm build        # 产物 dist/worker/main.mjs、dist/panel/panel.{html,js}
+```
+
+清单（`orca-plugin.json`）指向 `dist/` 里的产物，`dist/` 不进版本库。**改了 `src/` 必须先
+`pnpm build`，否则 worker 跑的还是旧代码**——这一点最容易踩：`orca plugin dev reload`
+重启的是 worker，不是构建。
+
+Orca 命令行与桌面端版本要一致（`orca --version` 与应用内版本同源）。本机已装的 CLI 在
+`/Applications/Orca.app/Contents/Resources/bin/orca`。
+
+## 加载与审批
+
+```bash
+orca plugin validate .          # 离线校验清单，不跑插件代码；退出码 0/1/2/3
+orca plugin dev load .          # 加载成开发插件
+```
+
+插件会跑代码、也要工作区读写权限，所以第一次加载会被拦下，命令打印授权清单与指纹：
+
+```
+local.mattpocock-workflow 0.1.0 needs approval before it can run.
+Approving MattWorkflow (…) grants:
+- Runs its own code in a separate Node.js process …
+Fingerprint: ap1-014bde73684c890b2bbec2b2ac55dd75
+Next step: To approve, run: orca plugin dev load . --approve ap1-014bde73684c890b2bbec2b2ac55dd75
+```
+
+照抄那条带 `--approve` 的命令重新执行即可：
+
+```bash
+orca plugin dev load . --approve ap1-014bde73684c890b2bbec2b2ac55dd75
+```
+
+退出码含义：`0` 成功，`1` 出错，`2` 插件无效，`3` 需要审批（或指纹过期）。
+指纹绑在这个插件、版本、文件与权限组合上：之后改代码不再问，新增权限或改命令才要重新批。
+
+审批后的插件 key 是 `local.mattpocock-workflow`，后面几条命令按它指代。
+
+## 日常循环
+
+```bash
+orca plugin dev watch .          # 加载 + 持续打印日志与重载，Ctrl-C 退出
+```
+
+`watch` 是开发时最常用的一条：加载目录、打印面板与 worker 的每一行日志、每次文件改动触发的
+重载、以及状态变化（errored / invalid 会带错误）。`Ctrl-C` 会卸载这个开发目录（如果它本来就是
+加载状态，则保留）。加 `--check` 每次加载与重载后都跑一遍 `orca plugin check`；加
+`--shot <目录> --shot-panel tickets` 每次重载后存一张面板 PNG。
+
+不想一直挂着时，用手动重载：
+
+```bash
+pnpm build                     # 先构建
+orca plugin dev reload .      # 再重载（漏掉的文件改动也用它补）
+```
+
+改了命令或快捷键后要重新审批，`reload` 会提示新的指纹。
+
+## 看面板
+
+```bash
+orca plugin open local.mattpocock-workflow --panel tickets   # 在右侧栏打开
+orca plugin shot local.mattpocock-workflow --panel tickets --out shots/tickets.png
+orca plugin dev inspect local.mattpocock-workflow            # 面板 DevTools（仅桌面端）
+orca plugin logs local.mattpocock-workflow                  # worker 最近打印的日志
+orca plugin list --json                                      # 所有插件的状态，dev 目录标 isDev
+```
+
+面板在 iframe 里跑，没有网络权限：日志里出现
+`blocked img-src https://avatars.githubusercontent.com` 属于正常，远程头像显示不出来而已。
+
+## 调 worker
+
+面板请求走 `orca.plugin.request(name, input)`，落到 worker 里 `orca.panels.handle(name, …)`
+注册的同名处理器。命令行可以绕过面板直接调：
+
+```bash
+orca plugin dev request . snapshot.get --data '{}' --json
+orca plugin dev request . workspace.current --data '{}' --json
+```
+
+名字取自 `src/protocol/tracker.ts` 的 `RPC_METHODS`，外加三个面板专用处理器：
+`workspace.current`、`workspace.open`、`skills.install`。`--data` 是入参 JSON，省略时处理器收到
+`null`；`--panel` 指定调用方面板 id（默认 `orca-cli`）；`--timeout-ms` 限制等待时间。
+
+装了（非开发目录）的插件会被拒绝调用，要用 `dev request` 就得把目录加载成开发插件。
+
+刚在 `src/` 里新增或改名处理器后，要先 `pnpm build` 再 `orca plugin dev reload`：
+worker 只有重启才会重新注册 handler，否则报 `unknown_method: no panel handler named …`。
+
+## 造事件
+
+worker 与面板都订阅 `workspace.changed`，可以手动造一次：
+
+```bash
+orca plugin dev emit . workspace.changed --data '{"context":{"branch":"main","displayName":"demo","terminals":[]}}' --json
+```
+
+载荷按宿主的 schema 校验，不合法会直接被拒。`workspace.changed` 的载荷是
+`{ context: { workspaceId?, branch, displayName, terminals: [{ id, title? }] } }`；
+`branch` 与 `displayName` 必填，`workspaceId` 可选。输出里的 `delivered` 分别说明 worker 与
+多少个打开的面板收到了。
+
+## 类型
+
+```bash
+orca plugin types .             # 写 .orca/types/orca/*.d.ts 与 tsconfig.json
+```
+
+`.orca/` 已在 `.gitignore` 里，`orca plugin dev load` 遇到用 TypeScript 的目录会自动刷新它。
+本仓库没有把 `tsconfig.json` 指向这份类型：`src/worker/orca-types.ts` 是手写的最小接口集，
+只覆盖用到的宿主 API，改动面比跟随整份类型小。
+
+## 收尾
+
+```bash
+orca plugin dev unload .        # 摘掉开发目录
+```
+
+卸载不需要审批；同 key 的已安装插件会回来，并按它自己的权限重新要求审批。
+
+## 相关文档
+
+- `docs/agents/issue-tracker.md`——工单后端与 `gh` / `glab` / `tea` 的约定。
+- `docs/agents/triage-labels.md`——七个 triage 标签。
+- `src/protocol/README.md`——面板与 worker 之间的请求名与返回形状。

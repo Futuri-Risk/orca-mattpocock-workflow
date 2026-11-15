@@ -18,7 +18,7 @@
 仓库从 `git remote -v` 推断，在克隆目录内 `gh` 自动完成。
 
 只往用户自己的仓库建票。**绝不要**往 `mattpocock/skills`（这些技能的来源仓库）建票，除非用户就是它的 owner。
-在 fork 里 `gh` 可能默认指向上游父仓库，所以每次会话第一次 `gh issue create` 之前，先用
+`gh` 有可能默认指到别的仓库，所以每次会话第一次 `gh issue create` 之前，先用
 `gh repo view --json nameWithOwner` 确认目标是 `cnzgray/orca-mattpocock-workflow`，不一致就问用户。
 
 ## 发布到工单后端

@@ -19,6 +19,7 @@
 ├── GLOSSARY.md            ← 领域术语表
 ├── docs/adr/              ← 架构决策记录，0001-*.md 起编号
 ├── docs/agents/           ← agent 读的约定（本文件所在处）
+├── docs/development.md    ← Orca 命令行加载开发插件的流程
 ├── src/                   ← adapters / core / panel / protocol / worker
 └── skills/                ← 随插件分发的入池技能
 ```
