@@ -388,12 +388,14 @@ export const CARD_FOCUSED_STYLE: CSSProperties = {
   background: `color-mix(in srgb, ${COLORS.accent} 7%, transparent)`,
 }
 
-/** 行按钮：编号一列，标题与元信息共用第二列，标题换行时编号仍贴着第一行。 */
+/**
+ * 行按钮：单列。编号是标题的行内前缀，标题折行时回到卡片左缘，
+ * 元信息也从左缘起排，不再为编号单独留一整列。
+ */
 export const CARD_STYLE: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'auto minmax(0, 1fr)',
+  gridTemplateColumns: 'minmax(0, 1fr)',
   alignItems: 'start',
-  columnGap: 8,
   rowGap: 2,
   minWidth: 0,
   padding: 0,
@@ -404,21 +406,19 @@ export const CARD_STYLE: CSSProperties = {
   font: 'inherit',
   textAlign: 'left',
 }
+/** 编号：标题前的行内前缀，弱化成辅助色，不加粗。 */
 export const NUMBER_BADGE_STYLE: CSSProperties = {
-  gridColumn: '1',
-  gridRow: '1',
-  // 两位数编号刚好放下，标题在常见编号下对齐；更长的编号自然撑开。
-  minWidth: '3ch',
+  marginRight: 6,
   color: COLORS.tertiary,
   fontSize: 12,
+  // 编号在标题的 500 字重里，单独压回常规字重。
+  fontWeight: 400,
   fontVariantNumeric: 'tabular-nums',
   lineHeight: '20px',
   whiteSpace: 'nowrap',
 }
 
 export const CARD_TITLE_STYLE: CSSProperties = {
-  gridColumn: '2',
-  gridRow: '1',
   minWidth: 0,
   fontWeight: 500,
   lineHeight: '20px',

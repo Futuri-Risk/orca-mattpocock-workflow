@@ -136,14 +136,16 @@ function TicketRow(props: {
           data-focused={props.focused ? 'true' : undefined}
           style={CARD_STYLE}
         >
-          <span
-            data-testid="ticket-ref"
-            style={NUMBER_BADGE_STYLE}
-            {...(display.full === undefined ? {} : { title: display.full })}
-          >
-            {display.text}
+          <span style={CARD_TITLE_STYLE}>
+            <span
+              data-testid="ticket-ref"
+              style={NUMBER_BADGE_STYLE}
+              {...(display.full === undefined ? {} : { title: display.full })}
+            >
+              {display.text}
+            </span>
+            {ticket.title}
           </span>
-          <span style={CARD_TITLE_STYLE}>{ticket.title}</span>
           <MetaRow ticket={ticket} now={props.now} />
         </button>
         <div style={ACTION_COLUMN_STYLE}>

@@ -8,8 +8,6 @@ import { COLORS } from './task-panel-styles.ts'
 
 /** 标题下的一行小字：状态在前、分类在后，都是次要信息。 */
 export const CARD_META_STYLE: CSSProperties = {
-  gridColumn: '2',
-  gridRow: '2',
   display: 'flex',
   flexWrap: 'wrap',
   alignItems: 'center',
