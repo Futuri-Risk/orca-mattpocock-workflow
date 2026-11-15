@@ -14,12 +14,11 @@ import type { BackendKind } from '../protocol/backend.ts'
 import type { ErrorCode, RpcErrorBody, TicketSnapshot, TicketWorktreeResult } from '../protocol/tracker.ts'
 import { copyText } from './clipboard.ts'
 import { errorText, isEnvIssue } from './error-text.ts'
+import { useMessages, type Translate } from './i18n.ts'
 import { PlusIcon } from './icons.tsx'
 import type { PanelClient } from './transport.ts'
 import { BUTTON_STYLE, COLORS, SKILL_BADGE_BUTTON_STYLE } from './task-panel-styles.ts'
 import {
-  WORKTREE_REASONS,
-  WORKTREE_RESULT_TEXT,
   blockedWorktreeReason,
   worktreeButtonHint,
   worktreeButtonLabel,
@@ -46,6 +45,7 @@ export function worktreeAvailability(
   ticket: TicketSnapshot,
   backend: BackendKind,
   workspaceRoot: string | undefined,
+  t: Translate,
 ): WorktreeAvailability {
   if (workspaceRoot === undefined) {
     return { visible: false, enabled: false, reason: null }
@@ -54,17 +54,17 @@ export function worktreeAvailability(
     return {
       visible: true,
       enabled: false,
-      reason: WORKTREE_REASONS.localOnly,
+      reason: t('worktree.reason.localOnly'),
     }
   }
   if (ticket.status === 'closed') {
-    return { visible: true, enabled: false, reason: WORKTREE_REASONS.closed }
+    return { visible: true, enabled: false, reason: t('worktree.reason.closed') }
   }
   if (ticket.status === 'blocked') {
     return {
       visible: true,
       enabled: false,
-      reason: blockedWorktreeReason(ticket.openBlockers),
+      reason: blockedWorktreeReason(ticket.openBlockers, t),
     }
   }
   return { visible: true, enabled: true, reason: null }
@@ -143,9 +143,10 @@ export function WorktreeCreateButton(props: {
   /** 列表行里的紧凑版：22px 高、与技能徽标同排。 */
   readonly compact?: boolean
 }): React.ReactElement | null {
+  const t = useMessages()
   if (!props.availability.visible) return null
-  const label = worktreeButtonLabel(props.busy, props.compact === true)
-  const hint = worktreeButtonHint(props.availability.reason, props.busy)
+  const label = worktreeButtonLabel(props.busy, props.compact === true, t)
+  const hint = worktreeButtonHint(props.availability.reason, props.busy, t)
 
   return (
     <button
@@ -154,7 +155,7 @@ export function WorktreeCreateButton(props: {
       data-hover="soft"
       disabled={!props.availability.enabled || props.busy}
       title={hint}
-      aria-label={`${WORKTREE_RESULT_TEXT.action}：${hint}`}
+      aria-label={t('worktree.aria', { action: t('worktree.action'), hint })}
       onClick={(event) => {
         // 工单行整体可点：这个动作不打开详情。
         event.stopPropagation()
@@ -182,6 +183,7 @@ export function WorktreeOutcome(props: {
   readonly onOpenEnvCheck?: ((code: ErrorCode) => void) | undefined
   readonly compact?: boolean
 }): React.ReactElement | null {
+  const t = useMessages()
   if (props.error !== null) {
     const error = props.error
     return (
@@ -190,7 +192,7 @@ export function WorktreeOutcome(props: {
         data-testid="worktree-error"
         style={{ ...ERROR_STYLE, ...(props.compact === true ? ERROR_COMPACT_STYLE : undefined) }}
       >
-        <div>{errorText(error)}</div>
+        <div>{errorText(error, t)}</div>
         {isEnvIssue(error.code) && props.onOpenEnvCheck !== undefined ? (
           <button
             type="button"
@@ -201,7 +203,7 @@ export function WorktreeOutcome(props: {
             }}
             style={{ ...BUTTON_STYLE, marginTop: 4 }}
           >
-            {WORKTREE_RESULT_TEXT.openEnvCheck}
+            {t('worktree.openEnvCheck')}
           </button>
         ) : null}
       </div>
@@ -216,28 +218,29 @@ function WorktreeSuccess(props: {
   readonly result: TicketWorktreeResult
   readonly compact: boolean
 }): React.ReactElement {
+  const t = useMessages()
   const { result } = props
   const copied = useCopyPath(result.path)
 
   return (
     <div data-testid="worktree-result" style={props.compact ? RESULT_COMPACT_STYLE : RESULT_STYLE}>
       <div data-testid="worktree-notice" style={NOTICE_STYLE}>
-        {worktreeResultNotice(result.created)}
+        {worktreeResultNotice(result.created, t)}
       </div>
       <div style={LINE_STYLE}>
-        <span style={LABEL_STYLE}>{WORKTREE_RESULT_TEXT.branch}</span>
+        <span style={LABEL_STYLE}>{t('worktree.branch')}</span>
         <code data-testid="worktree-branch" style={CODE_STYLE}>
           {result.branch}
         </code>
       </div>
       <div style={LINE_STYLE}>
-        <span style={LABEL_STYLE}>{WORKTREE_RESULT_TEXT.path}</span>
+        <span style={LABEL_STYLE}>{t('worktree.path')}</span>
         <code data-testid="worktree-path" style={CODE_STYLE}>
           {result.path}
         </code>
       </div>
       <div style={LINE_STYLE}>
-        <span style={LABEL_STYLE}>{WORKTREE_RESULT_TEXT.reference}</span>
+        <span style={LABEL_STYLE}>{t('worktree.reference')}</span>
         <a
           data-testid="worktree-reference"
           href={result.reference}
@@ -258,13 +261,11 @@ function WorktreeSuccess(props: {
           }}
           style={COPY_BUTTON_STYLE}
         >
-          {copied.state === 'copied'
-            ? WORKTREE_RESULT_TEXT.copiedPath
-            : WORKTREE_RESULT_TEXT.copyPath}
+          {copied.state === 'copied' ? t('worktree.copiedPath') : t('worktree.copyPath')}
         </button>
         {copied.state === 'failed' ? (
           <span role="status" data-testid="worktree-copy-error" style={COPY_ERROR_STYLE}>
-            {WORKTREE_RESULT_TEXT.copyFailed}
+            {t('worktree.copyFailed')}
           </span>
         ) : null}
       </div>

@@ -3,6 +3,8 @@
 worker 与面板之间的消息类型和常量。
 
 - 只放类型和常量，不放逻辑；
+- `i18n.ts` 是面板与 worker 共用的消息目录（`zh-CN` / `en` 两份，键一一对应），
+  语言解析与插值在 `src/panel/i18n.ts`；
 - 不依赖任何其他目录（由 `protocol-is-leaf` 规则检查）；
 - 面板只能通过这里定义的类型与 worker 通信，不能直接导入 `core`、`adapters`、`worker`。
 

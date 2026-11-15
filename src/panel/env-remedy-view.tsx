@@ -17,6 +17,7 @@ import {
   ENV_REMEDY_STYLE,
 } from './env-check-styles.ts'
 import { envCheckTitle } from './env-check-text.ts'
+import { useMessages, type Translate } from './i18n.ts'
 import { usePromptCopy, type PromptCopy } from './injection.ts'
 import { PromptCopyArea } from './prompt-copy.tsx'
 import { remedyContent, type RemedyAction } from './env-remedy-text.ts'
@@ -41,16 +42,21 @@ export function RemedySection(props: {
   readonly report: EnvCheckReport
   readonly handlers: RemedyHandlers
 }): React.ReactElement | null {
+  const t = useMessages()
   const remedy = props.item.remedy
   if (remedy === null) return null
 
-  const content = remedyContent(remedy.code, {
-    backend: props.report.backend,
-    repository: props.report.repository,
-    subject: remedy.subject ?? props.item.subject,
-    title: envCheckTitle(props.item),
-    detail: props.item.detail,
-  })
+  const content = remedyContent(
+    remedy.code,
+    {
+      backend: props.report.backend,
+      repository: props.report.repository,
+      subject: remedy.subject ?? props.item.subject,
+      title: envCheckTitle(props.item, t),
+      detail: props.item.detail,
+    },
+    t,
+  )
 
   return (
     <div data-testid="env-remedy" data-code={remedy.code} style={ENV_REMEDY_STYLE}>
@@ -77,6 +83,7 @@ function RemedyActionView(props: {
   readonly action: RemedyAction
   readonly handlers: RemedyHandlers
 }): React.ReactElement {
+  const t = useMessages()
   switch (props.action.kind) {
     case 'command':
       return (
@@ -86,8 +93,8 @@ function RemedyActionView(props: {
           </pre>
           <CopyButton
             text={props.action.command}
-            label="复制命令"
-            noun="命令"
+            label={t('env.remedy.copyCommand')}
+            noun={t('env.remedy.commandNoun')}
             testId="env-remedy-copy-command"
           />
         </div>
@@ -105,7 +112,7 @@ function RemedyActionView(props: {
           onClick={props.handlers.onRetry}
           style={BUTTON_STYLE}
         >
-          {props.handlers.busy ? '检查中…' : '重新检查'}
+          {props.handlers.busy ? t('common.recheckBusy') : t('common.recheck')}
         </button>
       )
   }
@@ -113,6 +120,7 @@ function RemedyActionView(props: {
 
 /** 安装技能：交给 worker 装到宿主扫描的技能目录，并把结果说清楚。 */
 function InstallSkillAction(props: { readonly skill: string }): React.ReactElement {
+  const t = useMessages()
   const [busy, setBusy] = React.useState(false)
   const [result, setResult] = React.useState<string | null>(null)
 
@@ -126,12 +134,12 @@ function InstallSkillAction(props: { readonly skill: string }): React.ReactEleme
           setBusy(true)
           void installSkills().then((outcome) => {
             setBusy(false)
-            setResult(installSummary(outcome))
+            setResult(installSummary(outcome, t))
           })
         }}
         style={BUTTON_STYLE}
       >
-        {busy ? '安装中…' : `安装 ${props.skill}`}
+        {busy ? t('env.remedy.installing') : t('env.remedy.install', { skill: props.skill })}
       </button>
       {result === null ? null : (
         <span role="status" data-testid="env-remedy-install-result" style={ENV_REMEDY_NOTICE_STYLE}>
@@ -143,12 +151,16 @@ function InstallSkillAction(props: { readonly skill: string }): React.ReactEleme
 }
 
 /** 安装结果的说明：装成功几个、失败几个、失败的原因。 */
-function installSummary(outcome: RpcResult<SkillsInstallResult>): string {
-  if (!outcome.ok) return `安装失败：${outcome.error.message}`
+function installSummary(outcome: RpcResult<SkillsInstallResult>, t: Translate): string {
+  if (!outcome.ok) return t('env.remedy.installFailed', { detail: outcome.error.message })
   const { installed, failed } = outcome.result
-  if (failed.length === 0) return `已安装 ${String(installed.length)} 个技能。`
-  const reason = failed[0]?.reason ?? '未知原因'
-  return `已安装 ${String(installed.length)} 个技能，${String(failed.length)} 个失败：${reason}`
+  if (failed.length === 0) return t('env.remedy.installSummary', { count: installed.length })
+  const reason = failed[0]?.reason ?? t('env.remedy.unknownReason')
+  return t('env.remedy.installSummaryPartial', {
+    installed: installed.length,
+    failed: failed.length,
+    reason,
+  })
 }
 
 /** 解决提示词：复制到剪贴板，或展开只读的手动复制区。 */
@@ -156,6 +168,7 @@ function PromptAction(props: {
   readonly prompt: string
   readonly copy: PromptCopy
 }): React.ReactElement {
+  const t = useMessages()
   const { state, copy, showManual, dismiss } = usePromptCopy(props.copy)
 
   return (
@@ -163,25 +176,25 @@ function PromptAction(props: {
       <button
         type="button"
         data-testid="env-remedy-copy-prompt"
-        aria-label="复制提示词"
+        aria-label={t('env.remedy.copyPromptAria')}
         disabled={!props.copy.canCopy}
         onClick={() => {
           void copy(props.prompt)
         }}
         style={BUTTON_STYLE}
       >
-        复制提示词
+        {t('env.remedy.copyPrompt')}
       </button>
       <button
         type="button"
         data-testid="env-remedy-manual-prompt"
-        aria-label="手动复制提示词"
+        aria-label={t('env.remedy.manualPromptAria')}
         onClick={() => {
           showManual(props.prompt)
         }}
         style={BUTTON_STYLE}
       >
-        手动复制
+        {t('env.remedy.manualPrompt')}
       </button>
       <div style={{ flexBasis: '100%' }}>
         <PromptCopyArea state={state} onDismiss={dismiss} />
@@ -196,6 +209,7 @@ function CopyButton(props: {
   readonly noun: string
   readonly testId: string
 }): React.ReactElement {
+  const t = useMessages()
   const [state, setState] = React.useState<'idle' | 'copied' | 'failed'>('idle')
 
   React.useEffect(() => {
@@ -220,11 +234,11 @@ function CopyButton(props: {
         }}
         style={BUTTON_STYLE}
       >
-        {state === 'copied' ? '已复制' : props.label}
+        {state === 'copied' ? t('env.remedy.copied') : props.label}
       </button>
       {state === 'failed' ? (
         <span role="status" data-testid={`${props.testId}-failed`} style={ENV_REMEDY_NOTICE_STYLE}>
-          复制失败，请手动选择{props.noun}。
+          {t('env.remedy.copyFailed', { noun: props.noun })}
         </span>
       ) : null}
     </div>

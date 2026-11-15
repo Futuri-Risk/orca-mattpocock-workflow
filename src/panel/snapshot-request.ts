@@ -8,6 +8,7 @@
 import * as React from 'react'
 
 import type { RpcErrorBody, WorkspaceSnapshot } from '../protocol/tracker.ts'
+import { useMessages, type Translate } from './i18n.ts'
 import type { PanelClient } from './transport.ts'
 
 /** 请求阶段。 */
@@ -39,16 +40,18 @@ type RequestMode = 'get' | 'refresh' | 'refresh-full'
  * 说明数据不是最新的。
  * @param snapshot - 当前快照；没有数据时为 null。
  * @param refreshError - 客户端最近一次刷新失败的原因。
+ * @param t - 当前语言的翻译函数。
  * @returns 要显示的原因文案；没有原因时为 null。
  */
 export function snapshotRefreshNotice(
   snapshot: WorkspaceSnapshot | null,
   refreshError: RpcErrorBody | null,
+  t: Translate,
 ): string | null {
   if (refreshError !== null) return refreshError.message
   const hostMessage = snapshot?.refreshError?.message
   if (hostMessage !== undefined) return hostMessage
-  if (snapshot?.stale === true) return '数据可能不是最新的'
+  if (snapshot?.stale === true) return t('error.staleData')
   return null
 }
 
@@ -129,6 +132,7 @@ export function useSnapshotRequest(
  * @returns 当前状态与发起请求的入口。
  */
 function useSnapshotLoader(client: PanelClient, workspaceRoot: string | undefined): Loader {
+  const t = useMessages()
   const [snapshot, setSnapshot] = React.useState<WorkspaceSnapshot | null>(null)
   const [error, setError] = React.useState<RpcErrorBody | null>(null)
   const [refreshError, setRefreshError] = React.useState<RpcErrorBody | null>(null)
@@ -148,7 +152,7 @@ function useSnapshotLoader(client: PanelClient, workspaceRoot: string | undefine
       if (workspaceRoot === undefined) {
         setSnapshot(null)
         hasData.current = false
-        setError({ code: 'invalid-params', message: '当前会话没有工作区目录，无法读取工单。' })
+        setError({ code: 'invalid-params', message: t('error.noWorkspaceTickets') })
         setPhase('error')
         return null
       }
@@ -194,7 +198,7 @@ function useSnapshotLoader(client: PanelClient, workspaceRoot: string | undefine
 
       return applied
     },
-    [client, workspaceRoot],
+    [client, workspaceRoot, t],
   )
 
   // 换工作区时清掉上一份数据，不让旧仓库的票留在新仓库的列表里。

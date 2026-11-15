@@ -7,6 +7,7 @@
  * 界面仍按错误码给提示。
  */
 import type { EnvCheckReport } from '../protocol/env-check.ts'
+import { activeTranslate, type Translate } from './i18n.ts'
 import { readFrame } from './host.ts'
 import {
   TICKET_ACTION_REASONS,
@@ -234,7 +235,7 @@ const REQUEST_TIMEOUT_MS = 120_000
 function defaultRequest(name: string, input: unknown): Promise<unknown> {
   const bridge = readFrame()?.plugin
   if (bridge === undefined || typeof bridge.request !== 'function') {
-    return Promise.reject(new Error('Orca 插件桥不可用'))
+    return Promise.reject(new Error(activeTranslate()('error.bridgeUnavailable')))
   }
   return bridge.request(name, input, { timeoutMs: REQUEST_TIMEOUT_MS })
 }
@@ -248,20 +249,20 @@ async function call<T>(
   try {
     const body = await request(method, params)
     if (!isResult(body)) {
-      return failure(ERROR_CODES.fetchFailed, 'worker 返回的响应格式不正确。')
+      return failure(ERROR_CODES.fetchFailed, activeTranslate()('error.badResponse'))
     }
     return body
   } catch (error) {
-    return failure(ERROR_CODES.fetchFailed, requestFailureMessage(error))
+    return failure(ERROR_CODES.fetchFailed, requestFailureMessage(error, activeTranslate()))
   }
 }
 
 /** 请求失败时的说明：带上宿主给的错误码，用户能分辨是超时还是方法没注册。 */
-function requestFailureMessage(error: unknown): string {
-  if (!(error instanceof Error)) return '请求 worker 失败：未知错误'
+function requestFailureMessage(error: unknown, t: Translate): string {
+  if (!(error instanceof Error)) return t('error.requestFailedUnknown')
   const code = 'code' in error && typeof error.code === 'string' ? error.code : null
-  const suffix = code === null ? '' : `（${code}）`
-  return `请求 worker 失败：${error.message}${suffix}`
+  const suffix = code === null ? '' : t('error.requestCodeSuffix', { code })
+  return t('error.requestFailed', { message: error.message, suffix })
 }
 
 function failure<T>(code: ErrorCode, message: string): RpcResult<T> {

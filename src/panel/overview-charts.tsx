@@ -5,6 +5,7 @@
 import * as React from 'react'
 
 import type { PressureTier } from '../protocol/tracker.ts'
+import { useMessages, type Translate } from './i18n.ts'
 import { shortDate, tierLevel, type AgeBucket, type FlowBucket } from './overview-chart-data.ts'
 import {
   AGE_BAR_STYLE,
@@ -69,6 +70,7 @@ const CLOSED_COLOR = NEUTRAL_FILL
 
 /** 每周新开与关闭的成对柱状图。 */
 export function FlowChart(props: { readonly buckets: readonly FlowBucket[] }): React.ReactElement {
+  const t = useMessages()
   const { buckets } = props
   const [active, setActive] = React.useState<number | null>(null)
   const hasClosed = buckets.some((bucket) => bucket.closed !== null)
@@ -92,7 +94,7 @@ export function FlowChart(props: { readonly buckets: readonly FlowBucket[] }): R
             key={bucket.start}
             data-testid="flow-week"
             tabIndex={0}
-            aria-label={flowSummary(bucket)}
+            aria-label={flowSummary(bucket, t)}
             onPointerEnter={() => {
               setActive(index)
             }}
@@ -129,7 +131,7 @@ export function FlowChart(props: { readonly buckets: readonly FlowBucket[] }): R
       <div aria-hidden="true" style={FLOW_AXIS_STYLE}>
         {buckets.map((bucket, index) => (
           <span key={bucket.start} style={FLOW_AXIS_LABEL_STYLE}>
-            {axisLabel(bucket, buckets.length - 1 - index)}
+            {axisLabel(bucket, buckets.length - 1 - index, t)}
           </span>
         ))}
       </div>
@@ -159,16 +161,17 @@ function FlowBar(props: {
 }
 
 function FlowLegend(props: { readonly hasClosed: boolean }): React.ReactElement {
+  const t = useMessages()
   return (
     <div style={LEGEND_STYLE}>
       <span style={LEGEND_ITEM_STYLE}>
         <span aria-hidden="true" style={{ ...SERIES_KEY_STYLE, background: OPENED_COLOR }} />
-        新开
+        {t('chart.opened')}
       </span>
       {props.hasClosed ? (
         <span style={LEGEND_ITEM_STYLE}>
           <span aria-hidden="true" style={{ ...SERIES_KEY_STYLE, background: CLOSED_COLOR }} />
-          关闭
+          {t('chart.closed')}
         </span>
       ) : null}
     </div>
@@ -176,16 +179,19 @@ function FlowLegend(props: { readonly hasClosed: boolean }): React.ReactElement 
 }
 
 function FlowReadout(props: { readonly bucket: FlowBucket }): React.ReactElement {
+  const t = useMessages()
   const { bucket } = props
   return (
     <div data-testid="flow-readout" aria-live="polite" style={READOUT_STYLE}>
       <span>{flowRange(bucket)}</span>
       <span>
-        <span style={READOUT_VALUE_STYLE}>{String(bucket.opened)}</span> 新开
+        <span style={READOUT_VALUE_STYLE}>{String(bucket.opened)}</span>{' '}
+        {t('chart.readoutOpened')}
       </span>
       {bucket.closed === null ? null : (
         <span>
-          <span style={READOUT_VALUE_STYLE}>{String(bucket.closed)}</span> 关闭
+          <span style={READOUT_VALUE_STYLE}>{String(bucket.closed)}</span>{' '}
+          {t('chart.readoutClosed')}
         </span>
       )}
     </div>
@@ -193,8 +199,8 @@ function FlowReadout(props: { readonly bucket: FlowBucket }): React.ReactElement
 }
 
 /** 横轴隔一周标一次起始日期，最近一周标“本周”，窄面板里不挤。 */
-function axisLabel(bucket: FlowBucket, weeksAgo: number): string {
-  if (weeksAgo === 0) return '本周'
+function axisLabel(bucket: FlowBucket, weeksAgo: number, t: Translate): string {
+  if (weeksAgo === 0) return t('chart.thisWeek')
   return weeksAgo % 2 === 0 ? shortDate(bucket.start) : ''
 }
 
@@ -203,15 +209,21 @@ function flowRange(bucket: FlowBucket): string {
   return `${shortDate(bucket.start)}–${shortDate(bucket.end - 1)}`
 }
 
-function flowSummary(bucket: FlowBucket): string {
-  const closed = bucket.closed === null ? '' : `，关闭 ${String(bucket.closed)} 张`
-  return `${flowRange(bucket)}：新开 ${String(bucket.opened)} 张${closed}`
+function flowSummary(bucket: FlowBucket, t: Translate): string {
+  const closed =
+    bucket.closed === null ? '' : t('chart.flowSummaryClosed', { n: bucket.closed })
+  return t('chart.flowSummary', {
+    range: flowRange(bucket),
+    opened: bucket.opened,
+    closed,
+  })
 }
 
 /** 开放票按未更新天数分档的横向条形图；条长按最大档归一。 */
 export function AgeHistogram(props: {
   readonly buckets: readonly AgeBucket[]
 }): React.ReactElement {
+  const t = useMessages()
   const peak = Math.max(1, ...props.buckets.map((bucket) => bucket.count))
 
   return (
@@ -219,7 +231,10 @@ export function AgeHistogram(props: {
       {props.buckets.map((bucket) => (
         <React.Fragment key={bucket.key}>
           <span style={AGE_LABEL_STYLE}>{bucket.label}</span>
-          <span style={AGE_TRACK_STYLE} title={`${bucket.label}：${String(bucket.count)} 张`}>
+          <span
+            style={AGE_TRACK_STYLE}
+            title={t('chart.ageTooltip', { label: bucket.label, count: bucket.count })}
+          >
             <span
               style={{
                 ...AGE_BAR_STYLE,
@@ -247,14 +262,18 @@ export function SegmentedBar(props: {
   readonly title: string
   readonly segments: readonly DistributionSegment[]
 }): React.ReactElement {
+  const t = useMessages()
   const total = props.segments.reduce((sum, segment) => sum + segment.count, 0)
   const visible = props.segments.filter((segment) => segment.count > 0)
   const summary = props.segments
-    .map(
-      (segment) =>
-        `${segment.label} ${String(segment.count)}（${formatPercent(segmentRatio(segment, total))}）`,
+    .map((segment) =>
+      t('chart.segmentSummaryItem', {
+        label: segment.label,
+        count: segment.count,
+        percent: formatPercent(segmentRatio(segment, total)),
+      }),
     )
-    .join('，')
+    .join(t('common.comma'))
 
   return (
     <div data-testid={props.testId} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -262,13 +281,21 @@ export function SegmentedBar(props: {
       {visible.length === 0 ? (
         <div style={EMPTY_BAR_STYLE} />
       ) : (
-        <div role="img" aria-label={`${props.title}：${summary}`} style={SEGMENTED_BAR_STYLE}>
+        <div
+          role="img"
+          aria-label={t('chart.segmentTitle', { title: props.title, summary })}
+          style={SEGMENTED_BAR_STYLE}
+        >
           {visible.map((segment) => {
             const ratio = segmentRatio(segment, total)
             return (
               <span
                 key={segment.key}
-                title={`${segment.label}：${String(segment.count)} 张（${formatPercent(ratio)}）`}
+                title={t('chart.segmentTooltip', {
+                  label: segment.label,
+                  count: segment.count,
+                  percent: formatPercent(ratio),
+                })}
                 style={{
                   ...SEGMENT_STYLE,
                   flex: `${String(segment.count)} 1 0`,
@@ -293,7 +320,11 @@ export function SegmentedBar(props: {
               aria-hidden="true"
               style={{ ...LEGEND_DOT_STYLE, background: SEGMENT_COLORS[segment.key] }}
             />
-            {segment.label} {String(segment.count)}（{formatPercent(segmentRatio(segment, total))}）
+            {t('chart.segmentSummaryItem', {
+              label: segment.label,
+              count: segment.count,
+              percent: formatPercent(segmentRatio(segment, total)),
+            })}
           </span>
         ))}
       </div>

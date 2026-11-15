@@ -7,6 +7,7 @@
 import * as React from 'react'
 
 import type { PromptCopyState } from './injection.ts'
+import { useMessages } from './i18n.ts'
 import { COLORS } from './task-panel-styles.ts'
 
 /** 反馈区样式：贴在视图底部，不遮住列表。 */
@@ -56,6 +57,7 @@ export function PromptCopyArea(props: {
   readonly state: PromptCopyState
   readonly onDismiss?: (() => void) | undefined
 }): React.ReactElement | null {
+  const t = useMessages()
   const { state } = props
   if (state.notice === null && state.manual === null) return null
 
@@ -79,7 +81,7 @@ export function PromptCopyArea(props: {
           onClick={props.onDismiss}
           style={DISMISS_STYLE}
         >
-          收起
+          {t('common.dismiss')}
         </button>
       )}
     </div>
@@ -88,6 +90,7 @@ export function PromptCopyArea(props: {
 
 /** 手动复制框：挂载后全选，用户直接 ⌘C。 */
 function ManualCopyField(props: { readonly text: string }): React.ReactElement {
+  const t = useMessages()
   const field = React.useRef<HTMLTextAreaElement>(null)
 
   React.useEffect(() => {
@@ -104,7 +107,7 @@ function ManualCopyField(props: { readonly text: string }): React.ReactElement {
       readOnly
       spellCheck={false}
       value={props.text}
-      aria-label="提示词，手动复制"
+      aria-label={t('copy.fieldAria')}
       onFocus={(event) => {
         event.currentTarget.select()
       }}

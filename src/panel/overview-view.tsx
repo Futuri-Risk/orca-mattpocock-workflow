@@ -10,8 +10,9 @@ import type {
   SnapshotSource,
   WorkspaceSnapshot,
 } from '../protocol/tracker.ts'
-import { BACKEND_LABELS } from './backend-label.ts'
+import { backendLabel } from './backend-label.ts'
 import { ErrorBanner } from './error-banner.tsx'
+import { useMessages } from './i18n.ts'
 import { FolderIcon, RefreshIcon } from './icons.tsx'
 import { updateAgeBuckets, weeklyFlow } from './overview-chart-data.ts'
 import { CHART_CAPTION_STYLE, CHART_CARD_STYLE } from './overview-chart-styles.ts'
@@ -86,6 +87,7 @@ export interface OverviewViewProps {
 
 /** 概览视图。 */
 export function OverviewView(props: OverviewViewProps): React.ReactElement {
+  const t = useMessages()
   const clock = props.now ?? Date.now
   const { snapshot, error, refreshError, phase, refresh } = useSnapshotRequest(
     props.client,
@@ -105,14 +107,14 @@ export function OverviewView(props: OverviewViewProps): React.ReactElement {
         now={nowValue}
         loading={phase === 'loading'}
         busy={busy}
-        notice={snapshotRefreshNotice(snapshot, refreshError)}
+        notice={snapshotRefreshNotice(snapshot, refreshError, t)}
         onRefresh={refresh}
       />
       {error === null ? null : <ErrorBanner error={error} onOpenEnvCheck={props.onOpenEnvCheck} />}
       {snapshot === null ? (
         phase === 'loading' ? (
           <div data-testid="overview-loading" style={EMPTY_STYLE}>
-            正在读取工单…
+            {t('common.loadingTickets')}
           </div>
         ) : null
       ) : (
@@ -130,6 +132,7 @@ export function OverviewView(props: OverviewViewProps): React.ReactElement {
 
 /** 数据来源徽标：本地缓存的指标不是实时的，标出来才不会误判。 */
 function SourceBadge(props: { readonly source: SnapshotSource }): React.ReactElement {
+  const t = useMessages()
   return (
     <span
       data-testid="overview-source"
@@ -138,7 +141,7 @@ function SourceBadge(props: { readonly source: SnapshotSource }): React.ReactEle
         color: props.source === 'cache' ? COLORS.warn : COLORS.secondary,
       }}
     >
-      {props.source === 'cache' ? '本地缓存' : '实时'}
+      {props.source === 'cache' ? t('common.cache') : t('common.live')}
     </span>
   )
 }
@@ -152,6 +155,7 @@ function Identity(props: {
   readonly notice: string | null
   readonly onRefresh: () => void
 }): React.ReactElement {
+  const t = useMessages()
   const snapshot = props.snapshot
   const host = snapshot?.repositoryHost ?? null
 
@@ -165,12 +169,13 @@ function Identity(props: {
             style={REPO_NAME_STYLE}
             {...(snapshot === null ? {} : { title: snapshot.repository })}
           >
-            {snapshot?.repository ?? (props.loading ? '正在识别仓库…' : '未识别到仓库')}
+            {snapshot?.repository ??
+              (props.loading ? t('common.identifyingRepository') : t('common.unknownRepository'))}
           </span>
         </div>
         {snapshot === null ? null : (
           <span data-testid="overview-backend" style={BACKEND_BADGE_STYLE}>
-            {BACKEND_LABELS[snapshot.backend]}
+            {backendLabel(snapshot.backend, t)}
           </span>
         )}
         {/* 数据来源：本地缓存的指标不是实时的，必须标出来。 */}
@@ -183,7 +188,9 @@ function Identity(props: {
       </div>
       <div style={IDENTITY_META_STYLE}>
         <span data-testid="overview-age" style={{ ...AGE_STYLE, fontSize: 'inherit' }}>
-          {snapshot === null ? '尚无快照' : formatAge(snapshot.fetchedAt, props.now)}
+          {snapshot === null
+            ? t('common.noSnapshot')
+            : formatAge(snapshot.fetchedAt, props.now, t)}
         </span>
         {props.notice === null ? null : (
           <span
@@ -200,9 +207,9 @@ function Identity(props: {
         <span data-testid="overview-loaded">
           {snapshot === null
             ? props.loading
-              ? '正在读取工单…'
-              : '未读取到工单'
-            : `已加载 ${String(snapshot.loaded)} / 共 ${String(snapshot.total)} 张`}
+              ? t('common.loadingTickets')
+              : t('overview.noTicketsLoaded')
+            : t('overview.loadedTickets', { loaded: snapshot.loaded, total: snapshot.total })}
         </span>
         <button
           type="button"
@@ -218,7 +225,7 @@ function Identity(props: {
           }}
         >
           <RefreshIcon />
-          {props.busy ? '刷新中…' : '刷新'}
+          {props.busy ? t('common.refreshBusy') : t('common.refresh')}
         </button>
       </div>
     </header>
@@ -229,40 +236,46 @@ function Identity(props: {
 const FLOW_WEEKS = 8
 
 function FlowSection(props: { readonly snapshot: WorkspaceSnapshot }): React.ReactElement {
+  const t = useMessages()
   const { metrics, tickets, fetchedAt } = props.snapshot
   const truncated = metrics.coverage.truncated
-  const sample = sampleNote(props.snapshot)
-  const count = (value: number): string => `${String(value)} 张`
+  const sample = sampleNote(props.snapshot, t)
+  const count = (value: number): string => t('overview.count', { n: value })
 
   return (
     <section data-testid="flow" style={SECTION_STYLE}>
-      <div style={SECTION_TITLE_STYLE}>流量</div>
+      <div style={SECTION_TITLE_STYLE}>{t('overview.section.flow')}</div>
       <div style={CHART_CARD_STYLE}>
         <div style={FLOW_STATS_STYLE}>
           <MetricCard
             testId="metric-opened"
-            label="近 30 天新开"
-            value={metricText(metrics.openedLast30Days, count)}
-            note={joinNotes(gapNote(metrics.openedLast30Days), sample)}
+            label={t('overview.opened30')}
+            value={metricText(metrics.openedLast30Days, count, t)}
+            note={joinNotes(gapNote(metrics.openedLast30Days, t), sample)}
           />
           <MetricCard
             testId="metric-closed"
-            label="近 30 天关闭"
-            value={metricText(metrics.closedLast30Days, count)}
+            label={t('overview.closed30')}
+            value={metricText(metrics.closedLast30Days, count, t)}
             note={joinNotes(
-              gapNote(metrics.closedLast30Days),
-              truncated ? '可能低估' : undefined,
+              gapNote(metrics.closedLast30Days, t),
+              truncated ? t('overview.underestimate') : undefined,
               sample,
             )}
           />
           <MetricCard
             testId="metric-net-flow"
-            label="净流入"
+            label={t('overview.netFlow')}
             value={metricText(
               metrics.netFlow,
               (value) => `${value > 0 ? '+' : ''}${String(value)}`,
+              t,
             )}
-            note={joinNotes(gapNote(metrics.netFlow), truncated ? '可能高估' : undefined, sample)}
+            note={joinNotes(
+              gapNote(metrics.netFlow, t),
+              truncated ? t('overview.overestimate') : undefined,
+              sample,
+            )}
           />
         </div>
         {hasTicketTimes(props.snapshot) ? (
@@ -288,17 +301,18 @@ function hasTicketTimes(snapshot: WorkspaceSnapshot): boolean {
 
 /** 时效分布只在有真实工单时间时出现；本地 Markdown 的文件时间不算。 */
 function AgeSection(props: { readonly snapshot: WorkspaceSnapshot }): React.ReactElement | null {
+  const t = useMessages()
   const { tickets, fetchedAt } = props.snapshot
   if (!hasTicketTimes(props.snapshot)) return null
 
   return (
     <section data-testid="age" style={SECTION_STYLE}>
       <div style={SECTION_TITLE_STYLE}>
-        <span>时效</span>
-        <span style={CHART_CAPTION_STYLE}>开放票距上次更新</span>
+        <span>{t('overview.section.age')}</span>
+        <span style={CHART_CAPTION_STYLE}>{t('overview.ageCaption')}</span>
       </div>
       <div style={CHART_CARD_STYLE}>
-        <AgeHistogram buckets={updateAgeBuckets(tickets, fetchedAt)} />
+        <AgeHistogram buckets={updateAgeBuckets(tickets, fetchedAt, t)} />
       </div>
     </section>
   )
@@ -324,19 +338,20 @@ function MetricCard(props: {
 }
 
 function CompositionSection(props: { readonly snapshot: WorkspaceSnapshot }): React.ReactElement {
+  const t = useMessages()
   return (
     <section data-testid="composition" style={SECTION_STYLE}>
-      <div style={SECTION_TITLE_STYLE}>构成</div>
+      <div style={SECTION_TITLE_STYLE}>{t('overview.section.composition')}</div>
       <div style={{ ...CHART_CARD_STYLE, gap: 14 }}>
         <SegmentedBar
           testId="status-distribution"
-          title="状态分布"
-          segments={statusSegments(props.snapshot.tickets)}
+          title={t('overview.statusDistribution')}
+          segments={statusSegments(props.snapshot.tickets, t)}
         />
         <SegmentedBar
           testId="category-distribution"
-          title="分类分布"
-          segments={categorySegments(props.snapshot.tickets)}
+          title={t('overview.categoryDistribution')}
+          segments={categorySegments(props.snapshot.tickets, t)}
         />
       </div>
     </section>
@@ -347,15 +362,18 @@ function AttentionSection(props: {
   readonly items: SnapshotMetrics['attention']
   readonly onOpenTicket: (ref: string) => void
 }): React.ReactElement {
+  const t = useMessages()
   return (
     <section data-testid="attention" style={SECTION_STYLE}>
       <div style={SECTION_TITLE_STYLE}>
-        <span>关注清单</span>
-        <span style={CARD_BASIS_STYLE}>{String(props.items.length)} 张</span>
+        <span>{t('overview.section.attention')}</span>
+        <span style={CARD_BASIS_STYLE}>
+          {t('overview.attentionCount', { n: props.items.length })}
+        </span>
       </div>
       {props.items.length === 0 ? (
         <div data-testid="attention-empty" style={NOTE_STYLE}>
-          没有需要特别关注的票。
+          {t('overview.attentionEmpty')}
         </div>
       ) : (
         <div style={ATTENTION_LIST_STYLE}>
@@ -378,7 +396,7 @@ function AttentionSection(props: {
               <span style={ATTENTION_TITLE_STYLE} title={item.title}>
                 {item.title}
               </span>
-              <span style={ATTENTION_REASON_STYLE}>{attentionText(item)}</span>
+              <span style={ATTENTION_REASON_STYLE}>{attentionText(item, t)}</span>
             </button>
           ))}
         </div>

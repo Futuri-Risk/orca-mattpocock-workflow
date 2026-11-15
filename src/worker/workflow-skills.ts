@@ -14,7 +14,11 @@ import {
   type IntakeCommandDefinition,
   type IntakeKind,
 } from '../protocol/flow.ts'
+import { MESSAGES, type MessageId } from '../protocol/i18n.ts'
 import { TRACKER_LABELS, type TrackerLabelNames } from '../protocol/labels.ts'
+
+/** 技能正文固定用中文目录：技能是给 agent 读的规约，不随界面语言变化。 */
+const ZH = MESSAGES['zh-CN']
 
 /** 一个入池技能的定义。 */
 export interface WorkflowSkillDefinition {
@@ -26,23 +30,32 @@ export interface WorkflowSkillDefinition {
 
 interface IntakeCopy {
   /** 命令在做什么；第一段正文。 */
-  readonly intro: string
+  readonly intro: MessageId
   /** 建票缺了就要追问的硬信息。 */
-  readonly hardInfo: string
+  readonly hardInfo: MessageId
   /** 票正文的小节标题。 */
-  readonly sections: readonly string[]
+  readonly sections: readonly MessageId[]
 }
 
 const INTAKE_COPY: Record<IntakeKind, IntakeCopy> = {
   bug: {
-    intro: '你在把用户报的缺陷写进当前仓库的工单池。这一步只建票，不定性、不处理。',
-    hardInfo: '现象、复现步骤、预期行为',
-    sections: ['发生了什么', '预期', '复现步骤', '补充信息'],
+    intro: 'flow.skill.intake.bug.intro',
+    hardInfo: 'flow.skill.intake.bug.hardInfo',
+    sections: [
+      'flow.skill.intake.bug.section1',
+      'flow.skill.intake.bug.section2',
+      'flow.skill.intake.bug.section3',
+      'flow.skill.intake.bug.section4',
+    ],
   },
   feature: {
-    intro: '你在把用户说的需求写进当前仓库的工单池。这一步只建票，不访谈、不写规格。',
-    hardInfo: '问题、期望结果',
-    sections: ['问题', '期望结果', '背景'],
+    intro: 'flow.skill.intake.feature.intro',
+    hardInfo: 'flow.skill.intake.feature.hardInfo',
+    sections: [
+      'flow.skill.intake.feature.section1',
+      'flow.skill.intake.feature.section2',
+      'flow.skill.intake.feature.section3',
+    ],
   },
 }
 
@@ -84,7 +97,7 @@ function createWorkflowSkill(
   const command = FLOW_COMMANDS[intake.command]
   return {
     name: command.name,
-    description: `${command.summary}；只入池，不处理。`,
+    description: ZH[intake.descriptionKey],
     content: intakeContent(intake, labels),
   }
 }
@@ -94,7 +107,7 @@ function intakeContent(intake: IntakeCommandDefinition, labels: TrackerLabelName
   const labelList = intake.labelRoles.map((role) => labels[role]).join('、')
 
   return [
-    copy.intro,
+    ZH[copy.intro],
     '',
     '## 先读',
     '- 仓库里的领域术语表，用项目自己的词写标题和正文。',
@@ -104,7 +117,7 @@ function intakeContent(intake: IntakeCommandDefinition, labels: TrackerLabelName
     '- 不翻代码、不复现、不定位根因；不自行拆票、不建父票、不声明阻塞关系。',
     '- 用户明确说了拆成多张、或者合成一张时，就直接照做。',
     '- 用户给的槽位只是引导。没填的槽位视为缺信息，不要把槽位原文或空标题写进票里。',
-    `- 缺硬信息（${copy.hardInfo}）时，你自己判断要不要追问：够用就直接建票，不够就先问，最多问两三个问题。`,
+    `- 缺硬信息（${ZH[copy.hardInfo]}）时，你自己判断要不要追问：够用就直接建票，不够就先问，最多问两三个问题。`,
     '- 建票前先查一遍跟踪器里疑似重复的开放票；查到就停下来，把候选票给用户确认。',
     '- 用户一次说了几件事、又没讲清要拆还是合时，先问用户。',
     '- 标题和正文跟随仓库里已有工单的语言惯例。',
@@ -118,7 +131,7 @@ function intakeContent(intake: IntakeCommandDefinition, labels: TrackerLabelName
     '## 建票',
     '- 标题用一句话说清是什么。',
     '- 正文按下面的结构组织；没有内容的小节整节删掉：',
-    ...copy.sections.map((section, index) => `  ${String(index + 1)}. ${section}`),
+    ...copy.sections.map((section, index) => `  ${String(index + 1)}. ${ZH[section]}`),
     '- 不写文件路径和行号。',
     `- 打上这些标签：${labelList}。`,
     '- 按上面读到的跟踪方式建票。',
@@ -134,6 +147,6 @@ function intakeContent(intake: IntakeCommandDefinition, labels: TrackerLabelName
 function nextStepLine(id: IntakeCommandDefinition['nextSteps'][number]): string {
   const step = NEXT_STEPS[id]
   const name = FLOW_COMMANDS[step.command].name
-  const reminder = step.reminder === null ? '' : `（${step.reminder}）`
-  return `- /${name} <票的引用> —— ${step.when}${reminder}`
+  const reminder = step.reminderKey === null ? '' : `（${ZH[step.reminderKey]}）`
+  return `- /${name} ${ZH['flow.skill.ticketReference']} —— ${ZH[step.whenKey]}${reminder}`
 }

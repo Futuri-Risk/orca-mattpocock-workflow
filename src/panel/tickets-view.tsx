@@ -12,8 +12,10 @@ import type {
   TicketSnapshot,
   WorkspaceSnapshot,
 } from '../protocol/tracker.ts'
-import { BACKEND_LABELS } from './backend-label.ts'
+import type { MessageId } from '../protocol/i18n.ts'
+import { backendLabel } from './backend-label.ts'
 import { ErrorBanner } from './error-banner.tsx'
+import { useMessages } from './i18n.ts'
 import { FolderIcon, PlusIcon, RefreshIcon } from './icons.tsx'
 import type { PromptCopy } from './injection.ts'
 import { newBugPrompt, newFeaturePrompt } from './prompts.ts'
@@ -110,6 +112,7 @@ export interface TicketsViewProps {
 
 /** 工单列表视图。 */
 export function TicketsView(props: TicketsViewProps): React.ReactElement {
+  const t = useMessages()
   const clock = props.now ?? Date.now
   const { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore } =
     useSnapshotRequest(props.client, props.workspaceRoot, props.refreshToken ?? 0)
@@ -138,7 +141,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
         now={nowValue}
         loading={phase === 'loading'}
         busy={busy}
-        notice={snapshotRefreshNotice(snapshot, refreshError)}
+        notice={snapshotRefreshNotice(snapshot, refreshError, t)}
         onRefresh={refresh}
         onRefreshFull={refreshFull}
       />
@@ -179,7 +182,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
         </>
       ) : phase === 'loading' ? (
         <div data-testid="loading" style={EMPTY_STYLE}>
-          正在读取工单…
+          {t('common.loadingTickets')}
         </div>
       ) : null}
       <PromptCopyArea state={actions.copyState} onDismiss={actions.dismiss} />
@@ -233,15 +236,21 @@ function TicketRows(props: {
   readonly onPick: (ticket: TicketSnapshot) => void
   readonly onSkillAction: (ticket: TicketSnapshot) => void
 }): React.ReactElement {
+  const t = useMessages()
   const remaining = Math.max(0, props.snapshot.total - props.snapshot.loaded)
   return (
     <>
       <div data-testid="loaded-total" style={LOADED_STYLE}>
-        已加载 {props.snapshot.loaded} / 共 {props.snapshot.total}
+        {t('tickets.loadedTotal', {
+          loaded: props.snapshot.loaded,
+          total: props.snapshot.total,
+        })}
       </div>
       <TicketList
         tickets={props.visible}
-        emptyText={props.ticketCount === 0 ? '这个仓库还没有工单。' : '没有符合筛选条件的工单。'}
+        emptyText={
+          props.ticketCount === 0 ? t('tickets.emptyRepo') : t('tickets.emptyFiltered')
+        }
         copied={props.copied}
         focused={props.focused}
         now={props.now}
@@ -260,11 +269,15 @@ function TicketRows(props: {
             data-testid="load-more"
             data-hover="soft"
             disabled={props.appending}
-            title={remaining > 0 ? `还有 ${String(remaining)} 张未加载` : '继续加载后面的工单'}
+            title={
+              remaining > 0
+                ? t('tickets.loadMoreRemaining', { count: remaining })
+                : t('tickets.loadMoreHint')
+            }
             onClick={props.onLoadMore}
             style={{ ...SECONDARY_BUTTON_STYLE, opacity: props.appending ? 0.6 : 1 }}
           >
-            {props.appending ? '加载中…' : '加载更多'}
+            {props.appending ? t('tickets.loadingMore') : t('tickets.loadMore')}
           </button>
         </div>
       ) : null}
@@ -274,6 +287,7 @@ function TicketRows(props: {
 
 /** 数据来源徽标：本地缓存的数据不是实时的，标出来才不会误判。 */
 function SourceBadge(props: { readonly source: SnapshotSource }): React.ReactElement {
+  const t = useMessages()
   return (
     <span
       data-testid="snapshot-source"
@@ -282,7 +296,7 @@ function SourceBadge(props: { readonly source: SnapshotSource }): React.ReactEle
         color: props.source === 'cache' ? COLORS.warn : COLORS.secondary,
       }}
     >
-      {props.source === 'cache' ? '本地缓存' : '实时'}
+      {props.source === 'cache' ? t('common.cache') : t('common.live')}
     </span>
   )
 }
@@ -297,6 +311,8 @@ function Header(props: {
   readonly onRefresh: () => void
   readonly onRefreshFull: () => void
 }): React.ReactElement {
+  const t = useMessages()
+
   return (
     <header style={HEADER_STYLE}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
@@ -307,12 +323,13 @@ function Header(props: {
             style={REPO_NAME_STYLE}
             {...(props.snapshot === null ? {} : { title: props.snapshot.repository })}
           >
-            {props.snapshot?.repository ?? (props.loading ? '正在识别仓库…' : '未识别到仓库')}
+            {props.snapshot?.repository ??
+              (props.loading ? t('common.identifyingRepository') : t('common.unknownRepository'))}
           </span>
         </div>
         {props.snapshot === null ? null : (
           <span data-testid="backend-badge" style={BACKEND_BADGE_STYLE}>
-            {BACKEND_LABELS[props.snapshot.backend]}
+            {backendLabel(props.snapshot.backend, t)}
           </span>
         )}
         {/* 数据来源：本地缓存的数据不是实时的，必须让用户一眼看出来。 */}
@@ -331,8 +348,8 @@ function Header(props: {
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 'none' }}>
         <span data-testid="snapshot-age" style={AGE_STYLE}>
           {props.snapshot === null
-            ? '尚无快照'
-            : formatRelativeTime(props.snapshot.fetchedAt, props.now)}
+            ? t('common.noSnapshot')
+            : formatRelativeTime(props.snapshot.fetchedAt, props.now, t)}
         </span>
         {props.notice === null ? null : (
           <span data-testid="refresh-error" title={props.notice} style={REFRESH_ERROR_STYLE}>
@@ -348,7 +365,7 @@ function Header(props: {
           style={{ ...REFRESH_BUTTON_STYLE, opacity: props.busy ? 0.6 : 1 }}
         >
           <RefreshIcon />
-          {props.busy ? '刷新中…' : '刷新'}
+          {props.busy ? t('common.refreshBusy') : t('common.refresh')}
         </button>
         <button
           type="button"
@@ -358,7 +375,7 @@ function Header(props: {
           onClick={props.onRefreshFull}
           style={{ ...SECONDARY_BUTTON_STYLE, opacity: props.busy ? 0.6 : 1 }}
         >
-          全量刷新
+          {t('tickets.refreshFull')}
         </button>
       </div>
     </header>
@@ -370,30 +387,32 @@ function ActionBar(props: {
   readonly onNewFeature: (prompt: string) => void
   readonly onNewBug: (prompt: string) => void
 }): React.ReactElement {
+  const t = useMessages()
+
   return (
     <div style={ACTION_BAR_STYLE}>
       {props.counts === null ? <span /> : <StatsRow counts={props.counts} />}
       <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
         <IntakeAction
           testId="new-feature"
-          label="新建需求"
-          title="把需求入池提示词复制到剪贴板"
-          ariaLabel="新建需求：复制提示词"
+          label={t('tickets.newFeature')}
+          title={t('tickets.newFeatureHint')}
+          ariaLabel={t('tickets.newFeatureLabel')}
           style={FEATURE_ACTION_STYLE}
           hover="primary"
           onCopy={() => {
-            props.onNewFeature(newFeaturePrompt())
+            props.onNewFeature(newFeaturePrompt(t))
           }}
         />
         <IntakeAction
           testId="new-bug"
-          label="bug"
-          title="把缺陷入池提示词复制到剪贴板"
-          ariaLabel="bug：复制提示词"
+          label={t('tickets.newBug')}
+          title={t('tickets.newBugHint')}
+          ariaLabel={t('tickets.newBugLabel')}
           style={BUG_ACTION_STYLE}
           hover="secondary"
           onCopy={() => {
-            props.onNewBug(newBugPrompt())
+            props.onNewBug(newBugPrompt(t))
           }}
         />
       </div>
@@ -431,19 +450,30 @@ function IntakeAction(props: {
 }
 
 function StatsRow(props: { readonly counts: TicketCounts }): React.ReactElement {
+  const t = useMessages()
   return (
     <div style={STATS_STYLE}>
-      <Stat testId="stat-ready" label="可接" value={props.counts.ready} color={COLORS.success} />
-      <Stat testId="stat-blocked" label="阻塞" value={props.counts.blocked} color={COLORS.warn} />
+      <Stat
+        testId="stat-ready"
+        label={t('tickets.stat.ready')}
+        value={props.counts.ready}
+        color={COLORS.success}
+      />
+      <Stat
+        testId="stat-blocked"
+        label={t('tickets.stat.blocked')}
+        value={props.counts.blocked}
+        color={COLORS.warn}
+      />
       <Stat
         testId="stat-open"
-        label="其他开放"
+        label={t('tickets.stat.open')}
         value={props.counts.open}
         color={COLORS.secondary}
       />
       <Stat
         testId="stat-closed"
-        label="已关闭"
+        label={t('tickets.stat.closed')}
         value={props.counts.closed}
         color={COLORS.tertiary}
       />
@@ -476,26 +506,32 @@ function Toolbar(props: {
   readonly onFilter: (filter: TicketFilter) => void
   readonly onSort: (key: TicketSortKey) => void
 }): React.ReactElement {
+  const t = useMessages()
   const ascending = props.direction === 'asc'
   return (
     <div style={TOOLBAR_STYLE}>
-      <div role="group" aria-label="状态过滤" data-scroll-x="" style={FILTER_SEGMENTED_STYLE}>
+      <div
+        role="group"
+        aria-label={t('tickets.filterGroup')}
+        data-scroll-x=""
+        style={FILTER_SEGMENTED_STYLE}
+      >
         {FILTERS.map((item) => (
           <Chip
-            key={item.value}
-            testId={`filter-${item.value}`}
-            label={item.label}
-            active={props.filter === item.value}
+            key={item}
+            testId={`filter-${item}`}
+            label={t(FILTER_LABELS[item])}
+            active={props.filter === item}
             onClick={() => {
-              props.onFilter(item.value)
+              props.onFilter(item)
             }}
           />
         ))}
       </div>
-      <div role="group" aria-label="排序" style={SORT_GROUP_STYLE}>
+      <div role="group" aria-label={t('tickets.sortGroup')} style={SORT_GROUP_STYLE}>
         <select
           data-testid="sort-key"
-          aria-label="排序字段"
+          aria-label={t('tickets.sortField')}
           value={props.sortKey}
           onChange={(event) => {
             // 换字段时用该字段的默认方向；同字段不会触发 change。
@@ -504,8 +540,8 @@ function Toolbar(props: {
           style={SORT_SELECT_STYLE}
         >
           {SORT_OPTIONS.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
+            <option key={item} value={item}>
+              {t(SORT_LABELS[item])}
             </option>
           ))}
         </select>
@@ -513,8 +549,8 @@ function Toolbar(props: {
           type="button"
           data-testid="sort-direction"
           data-hover="soft"
-          title={ascending ? '升序，点击改为降序' : '降序，点击改为升序'}
-          aria-label={ascending ? '升序，点击改为降序' : '降序，点击改为升序'}
+          title={ascending ? t('tickets.sortAscHint') : t('tickets.sortDescHint')}
+          aria-label={ascending ? t('tickets.sortAscHint') : t('tickets.sortDescHint')}
           onClick={() => {
             // 对当前字段再切一次 = 翻转方向。
             props.onSort(props.sortKey)
@@ -526,6 +562,22 @@ function Toolbar(props: {
       </div>
     </div>
   )
+}
+
+const FILTER_LABELS: Readonly<Record<TicketFilter, MessageId>> = {
+  all: 'tickets.filter.all',
+  open: 'tickets.filter.open',
+  closed: 'tickets.filter.closed',
+  blocked: 'tickets.filter.blocked',
+  ready: 'tickets.filter.ready',
+}
+
+const SORT_LABELS: Readonly<Record<TicketSortKey, MessageId>> = {
+  status: 'tickets.sort.status',
+  updated: 'tickets.sort.updated',
+  created: 'tickets.sort.created',
+  number: 'tickets.sort.number',
+  title: 'tickets.sort.title',
 }
 
 function Chip(props: {

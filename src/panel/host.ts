@@ -3,6 +3,15 @@
  * 这里只声明面板真正用到的那一部分，形状与 `orca/frame` 的公开类型一致。
  */
 
+/** 插件设置里的 JSON 值；语言设置只用到字符串。 */
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue }
+
 /** 插件请求的可选项。 */
 export interface RequestOptions {
   /** 这次请求的截止时间；宿主上限 120 秒。 */
@@ -31,10 +40,26 @@ export interface Disposable {
   dispose(): void
 }
 
+/** 插件设置（`settings:own`）：面板读自己的设置并在变更时重渲染。 */
+export interface SettingsBridge {
+  /** 读全部设置；面板语言只需要一个键，按 key 取。 */
+  get(): Promise<Record<string, JsonValue>>
+  /** 读一个设置；缺失时返回 undefined。 */
+  get(key: string): Promise<JsonValue | undefined>
+  /** 写一个设置；宿主按清单里的类型校验。 */
+  set(key: string, value: JsonValue): Promise<void>
+  /** 订阅设置变更；宿主设置面板与其它面板的写入都会通知到这里。 */
+  onDidChange(listener: (change: { readonly key: string }) => void): Disposable
+}
+
 /** 面板窗口里的 `window.orca`。 */
 export interface OrcaFrame {
   readonly plugin: PluginBridge
   readonly storage: StorageBridge
+  /** 插件设置；旧宿主可能没有这个入口，语言切换器仍可在本次运行内生效。 */
+  readonly settings?: SettingsBridge
+  /** Orca 的界面语言（BCP-47）；旧宿主可能缺席。 */
+  readonly locale?: string
   /** 订阅宿主事件；返回退订句柄。 */
   on(event: string, handler: (payload: unknown) => void): Disposable
 }

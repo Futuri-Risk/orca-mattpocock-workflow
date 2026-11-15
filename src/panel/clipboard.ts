@@ -7,11 +7,11 @@
  * 两条路都失败时把原因交给界面，界面永远保留可全选的只读地址。
  */
 
-/** 一次复制的结果。 */
+/** 一次复制的结果。失败原因用稳定码表示，界面层负责翻成文案。 */
 export interface CopyOutcome {
   readonly status: 'copied' | 'failed'
-  /** 失败原因，给用户看的；成功时没有。 */
-  readonly message?: string
+  /** 失败原因码；成功时为 null。 */
+  readonly reason: 'unavailable' | null
 }
 
 /**
@@ -35,15 +35,15 @@ export async function copyText(text: string): Promise<CopyOutcome> {
   if (typeof clipboard?.writeText === 'function') {
     try {
       await clipboard.writeText(text)
-      return { status: 'copied' }
+      return { status: 'copied', reason: null }
     } catch {
       // 多半是权限策略拒绝；继续走 execCommand，别把可用环境判成不可用。
     }
   }
 
-  if (copyWithSelection(text)) return { status: 'copied' }
+  if (copyWithSelection(text)) return { status: 'copied', reason: null }
 
-  return { status: 'failed', message: '复制失败：当前环境不允许写入剪贴板。' }
+  return { status: 'failed', reason: 'unavailable' }
 }
 
 /**
