@@ -5,9 +5,13 @@ Orca 右侧栏里的 MattWorkflow 面板（`ui: "html"`，独立 frame 里跑的
 ## 结构
 
 - `main.tsx`：入口。挂载 React、接宿主事件（`workspace.candidates` / `snapshot.refreshed` /
-  `workspace.changed`）、在工作区认领不到时渲染候选列表。
+  `workspace.changed`）、在工作区认领不到时渲染候选列表。启动与 `workspace.changed` 后都问一次
+  worker 的 `workspace.current`，由 worker 决定当前路径与候选；失败不自动重试，只在聚焦上下文
+  变化或用户主动刷新时重新请求。
+- `workspace-picker.tsx`：面板顶部的候选选择区。每行显示项目、名称、分支与路径，点「使用」
+  选定；同一分支上的多个工作区靠这些字段区分。
 - `transport.ts`：面板与 worker 的唯一通道。方法名与入参出参沿用 `src/protocol/tracker.ts`，
-  底层是 `orca.plugin.request`；另外提供 `skills.install` 这一个额外处理器。
+  底层是 `orca.plugin.request`；另外提供 `skills.install` 与 `workspace.current` 两个额外处理器。
 - `clipboard.ts`：剪贴板写入的两级路径（剪贴板 API → 隐藏 textarea + `execCommand('copy')`），
   提示词、命令与工单链接的复制共用。
 - `worktree-action.tsx`：工单列表行与详情头部的「建 worktree」入口，以及创建结果的原地回报；

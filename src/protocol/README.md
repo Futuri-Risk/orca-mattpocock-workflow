@@ -18,8 +18,10 @@ RPC 方法（面板用 `orca.plugin.request(方法名, 参数)` 调用，worker 
 - `ticket.worktree`：为一张远端工单创建 Orca 托管的 worktree，参数是 `{ workspaceRoot, ref, number }`，
   返回 worktree 标识、绝对路径、分支名、显示名、挂上的工单链接与 `created`（同分支已有工作区时为 false）。
 
-`workspaceRoot` 由 worker 自己解析：面板不填路径，worker 认领不到工作区时把候选列表推给面板，
-用户选定后由面板在后续请求里带上候选的 `path`。
+`workspaceRoot` 由 worker 自己解析：面板不填路径，worker 认领不到工作区时通过
+`workspace.candidates` 事件把候选推一次（附带所属聚焦上下文键，面板据此判断选择是否还有效）；
+用户选定后由面板在后续请求里带上候选的 `path`，worker 把它记在当前聚焦上下文里，
+之后省略 `workspaceRoot` 的请求与刷新命令都沿用它。
 
 错误码里与详情相关的是 `ticket-not-found`（编号不存在或已被删除）与
 `capability-unsupported`（当前后端不提供所请求的详情、补全候选、写 / 删除能力或远端链接）。

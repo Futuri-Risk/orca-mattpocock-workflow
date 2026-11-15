@@ -15,13 +15,14 @@ import { TRACKER_LABELS } from '../protocol/labels.ts'
 import { ERROR_CODES, RPC_METHODS, type RpcResult } from '../protocol/tracker.ts'
 import { createBackendResolver } from './backend-resolver.ts'
 import { createEnvCheckService } from './env-check-service.ts'
-import { createLog } from './log.ts'
+import { createLog, type LogSink } from './log.ts'
 import type { OrcaWorkerApi } from './orca-types.ts'
 import { createProbeDeadline, ENV_PROBE_TIMEOUT_MS } from './probe-deadline.ts'
 import {
-  postWorkspaceCandidates,
+  reportWorkspaceFailure,
   registerRpcHandlers,
   SNAPSHOT_REFRESHED_EVENT,
+  workspaceFailureMessage,
 } from './rpc-bridge.ts'
 import { createSkillCatalog } from './skill-catalog.ts'
 import { createSnapshotService, type SnapshotService } from './snapshot-service.ts'
@@ -72,12 +73,14 @@ export default function activate(orca: OrcaWorkerApi): void {
     log,
   })
 
-  const workspace = createWorkspaceResolver(orca.host)
+  const workspace = createWorkspaceResolver(orca.host, orca.storage)
 
   registerRpcHandlers(orca, { snapshot, ticket, worktree, envCheck, workspace, log })
 
   orca.commands.register(REFRESH_COMMAND_ID, async () => {
-    const result = await refreshWorkspace(orca, { snapshot, workspace })
+    // 主动刷新时重新认领一次：工作区可能刚被重命名、新建或关闭。
+    workspace.invalidate()
+    const result = await refreshWorkspace(orca, { snapshot, workspace, log })
     orca.panels.post(SNAPSHOT_REFRESHED_EVENT, { result })
     return result
   })
@@ -85,14 +88,14 @@ export default function activate(orca: OrcaWorkerApi): void {
   orca.commands.register(OPEN_WORKSPACE_COMMAND_ID, async () => {
     const resolution = await workspace.resolve()
     if (resolution.status !== 'resolved') {
-      postWorkspaceCandidates(orca, resolution.candidates)
-      return '认不到当前工作区，请在面板里选一个。'
+      reportWorkspaceFailure(orca, resolution, log)
+      return '认不到当前工作区，请在面板顶部选一个。'
     }
     await orca.host.call('workspace.open', { workspaceId: resolution.candidate.id })
     return `已在 Orca 里打开 ${resolution.candidate.path}`
   })
 
-  // 工作区切换后缓存的解析结果失效，下一次请求重新认领工作区。
+  // 工作区切换后缓存的解析结果失效，面板随后用 workspace.current 重新问一次。
   orca.events.on('workspace.changed', () => {
     workspace.invalidate()
   })
@@ -102,21 +105,22 @@ export default function activate(orca: OrcaWorkerApi): void {
 interface RefreshDeps {
   readonly snapshot: SnapshotService
   readonly workspace: WorkspaceResolver
+  readonly log: LogSink
 }
 
-/** 触发一次全量刷新；工作区认领不到时把候选推给面板。 */
-async function refreshWorkspace(
+/** 触发一次全量刷新；工作区认领不到时把候选推给面板（同一上下文只推一次）。 */
+export async function refreshWorkspace(
   orca: OrcaWorkerApi,
   deps: RefreshDeps,
 ): Promise<RpcResult<unknown>> {
   const resolution = await deps.workspace.resolve()
   if (resolution.status !== 'resolved') {
-    postWorkspaceCandidates(orca, resolution.candidates)
+    reportWorkspaceFailure(orca, resolution, deps.log)
     return {
       ok: false,
       error: {
         code: ERROR_CODES.invalidParams,
-        message: '无法确定当前工作区，请在面板里选择一个工作区后重试。',
+        message: workspaceFailureMessage(resolution),
       },
     }
   }

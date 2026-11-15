@@ -88,7 +88,22 @@ export interface PanelClient {
     ref: string,
     number: number | null,
   ): Promise<RpcResult<TicketWorktreeResult>>
+  /**
+   * 读取 worker 当前认领的工作区与候选。面板启动与 `workspace.changed` 后用它同步：
+   * 候选不依赖推送是否被去重，面板重载也不会丢掉选择区。
+   */
+  currentWorkspace(): Promise<RpcResult<WorkspaceClaim>>
 }
+
+/** worker 当前认领的工作区；认领不到时带上候选。 */
+export interface WorkspaceClaim {
+  readonly root: string | null
+  readonly contextKey: string
+  readonly candidates: readonly WorkspaceCandidate[]
+}
+
+/** 读取当前认领结果的方法名。不在协议方法表里，是插件自己的额外处理器。 */
+export const WORKSPACE_CURRENT_METHOD = 'workspace.current'
 
 /**
  * 安装入池技能的方法名。不在协议的方法表里，是插件自己的额外处理器：
@@ -173,6 +188,8 @@ export function createPanelClient(request: RequestLike = defaultRequest): PanelC
         { workspaceRoot, ref, number },
         isTicketWorktreeResult,
       ),
+    currentWorkspace: () =>
+      call(request, WORKSPACE_CURRENT_METHOD, {}, isWorkspaceClaimResult),
   }
 }
 
@@ -276,15 +293,28 @@ function isWorkspaceSnapshot(value: unknown): value is WorkspaceSnapshot {
   return true
 }
 
+/** 一次候选事件：候选与它所属的聚焦上下文键。 */
+export interface WorkspaceCandidatesEvent {
+  readonly contextKey: string
+  readonly candidates: readonly WorkspaceCandidate[]
+}
+
 /**
  * 解析 worker 推送的工作区候选。推送内容不可信，逐个字段核对。
  * @param payload - 事件的载荷。
- * @returns 能认出来的候选；没有候选时是空数组。
+ * @returns 上下文键与能认出来的候选；没有候选时是空数组。
  */
-export function parseWorkspaceCandidates(payload: unknown): readonly WorkspaceCandidate[] {
-  if (typeof payload !== 'object' || payload === null) return []
-  if (!('candidates' in payload) || !Array.isArray(payload.candidates)) return []
-  return payload.candidates.filter(isWorkspaceCandidate)
+export function parseWorkspaceCandidatesEvent(payload: unknown): WorkspaceCandidatesEvent {
+  if (typeof payload !== 'object' || payload === null) {
+    return { contextKey: '', candidates: [] }
+  }
+  const contextKey =
+    'contextKey' in payload && typeof payload.contextKey === 'string' ? payload.contextKey : ''
+  const candidates =
+    'candidates' in payload && Array.isArray(payload.candidates)
+      ? payload.candidates.filter(isWorkspaceCandidate)
+      : []
+  return { contextKey, candidates }
 }
 
 function isWorkspaceCandidate(value: unknown): value is WorkspaceCandidate {
@@ -296,6 +326,18 @@ function isWorkspaceCandidate(value: unknown): value is WorkspaceCandidate {
   if (!('project' in value) || typeof value.project !== 'string') return false
   if (!('kind' in value) || typeof value.kind !== 'string') return false
   return true
+}
+
+function isWorkspaceClaimResult(value: unknown): value is RpcResult<WorkspaceClaim> {
+  return isRpcResult(value, isWorkspaceClaim)
+}
+
+function isWorkspaceClaim(value: unknown): value is WorkspaceClaim {
+  if (typeof value !== 'object' || value === null) return false
+  if (!('root' in value) || !(value.root === null || typeof value.root === 'string')) return false
+  if (!('contextKey' in value) || typeof value.contextKey !== 'string') return false
+  if (!('candidates' in value) || !Array.isArray(value.candidates)) return false
+  return value.candidates.every(isWorkspaceCandidate)
 }
 
 /** 失败响应体：错误码与说明都要有，缺一个就当作格式不对。 */

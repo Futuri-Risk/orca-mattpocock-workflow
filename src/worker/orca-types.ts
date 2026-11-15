@@ -36,6 +36,15 @@ export type OrcaHostCall = (
   options?: { readonly signal?: AbortSignal },
 ) => Promise<unknown>
 
+/**
+ * 插件私有存储（`storage:own`）：面板与 worker 共用同一份。
+ * 这里只声明工作区选择用到的读写。
+ */
+export interface OrcaWorkerStorage {
+  get(key: string): Promise<unknown>
+  set(key: string, value: unknown): Promise<void>
+}
+
 /** worker 拿到的 Orca API。 */
 export interface OrcaWorkerApi {
   /** 宿主 API 版本；插件按它判断可用的能力。 */
@@ -54,6 +63,8 @@ export interface OrcaWorkerApi {
     /** 宿主是否实现了这个方法；不实现时不要调用。 */
     has(method: string): boolean
   }
+  /** 插件私有存储；宿主没提供时缺席，选择只记在进程内。 */
+  readonly storage?: OrcaWorkerStorage
   panels: {
     handle(name: string, handler: OrcaPanelRequestHandler): OrcaDisposable
     post(event: string, payload?: unknown, options?: { readonly panel?: string }): void
