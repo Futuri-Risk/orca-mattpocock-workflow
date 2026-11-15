@@ -34,6 +34,7 @@ function host(
 
 /** 聚焦上下文；`terminals` 与宿主返回的形状一致。 */
 interface ContextRow {
+  readonly workspaceId?: string
   readonly displayName: string
   readonly branch: string
   readonly terminals?: readonly { readonly id: string; readonly title?: string }[]
@@ -345,6 +346,46 @@ describe('工作区根目录的解析', () => {
     const restarted = createWorkspaceResolver(testHost, storage)
     const resolution = await restarted.resolve()
 
+    expect(resolution.status === 'resolved' && resolution.root).toBe('/repo/b')
+  })
+
+  it('宿主给了工作区 id 时按 id 认领，不受同名同分支干扰', async () => {
+    const { host: testHost, setContext } = mutableHost(
+      { workspaceId: 'ws-a', displayName: 'main', branch: 'main' },
+      [
+        { id: 'ws-a', name: 'main', path: '/repo/a', branch: 'main' },
+        { id: 'ws-b', name: 'main', path: '/repo/b', branch: 'main' },
+      ],
+    )
+    const resolver = createWorkspaceResolver(testHost)
+
+    const first = await resolver.resolve()
+    expect(first.status === 'resolved' && first.root).toBe('/repo/a')
+
+    setContext({ workspaceId: 'ws-b', displayName: 'main', branch: 'main' })
+    const second = await resolver.resolve()
+    expect(second.status === 'resolved' && second.root).toBe('/repo/b')
+    expect(second.contextKey).not.toBe(first.contextKey)
+  })
+
+  it('切到另一个同名同分支的工作区后，面板回传的旧路径不会被沿用', async () => {
+    const { host: testHost, setContext } = mutableHost(
+      { workspaceId: 'ws-a', displayName: 'main', branch: 'main' },
+      [
+        { id: 'ws-a', name: 'main', path: '/repo/a', branch: 'main' },
+        { id: 'ws-b', name: 'main', path: '/repo/b', branch: 'main' },
+      ],
+    )
+    const resolver = createWorkspaceResolver(testHost, memoryStorage())
+
+    // 面板每个请求都带上已认领的路径，worker 把它记成显式选择。
+    await resolver.prefer('/repo/a')
+    setContext({ workspaceId: 'ws-b', displayName: 'main', branch: 'main' })
+    // 切换后、面板同步前的请求仍可能带着旧路径。
+    await resolver.prefer('/repo/a')
+    resolver.invalidate()
+
+    const resolution = await resolver.resolve()
     expect(resolution.status === 'resolved' && resolution.root).toBe('/repo/b')
   })
 

@@ -4,8 +4,9 @@
  * Orca 的面板拿不到工作区路径，
  * 只能由 worker 自己解析：读当前工作区的上下文，再在全部工作区里认领一个。
  *
- * 认领规则：先看用户在同一聚焦上下文里显式选过的工作区，再按上下文里的显示名
- * 与工作区名精确匹配，再按分支匹配，唯一命中才采用；命中不了就把候选列表交给
+ * 认领规则：宿主在上下文里给了工作区 id（worker 侧的 `workspace.readContext` 会带）
+ * 就按 id 精确认领；否则先看用户在同一聚焦上下文里显式选过的工作区，再按上下文里的
+ * 显示名与工作区名精确匹配，再按分支匹配，唯一命中才采用；命中不了就把候选列表交给
  * 面板让用户选。
  *
  * 显示名与分支都不是可靠的唯一线索：空白显示名不参与匹配；未命名工作区的显示名
@@ -175,14 +176,25 @@ export function createWorkspaceResolver(
 
 /** 当前工作区的显示名与分支。 */
 interface WorkspaceContext {
+  /**
+   * 宿主给的工作区 id，与 `workspace.list` 的 id 同源；旧宿主或拿不到时缺席。
+   * 有它就能区分同名同分支的工作区（两个仓库的 `main`）。
+   */
+  readonly workspaceId?: string
   readonly displayName: string
   readonly branch: string
   /** 聚焦工作区的终端标题；标题里常带工作目录，是重名时的线索。 */
   readonly terminalTitles: readonly string[]
 }
 
-/** 聚焦上下文的键：显示名 + 分支，宿主事件与解析器用同一组成。 */
+/**
+ * 聚焦上下文的键。宿主给了工作区 id 就用 id；否则退回显示名 + 分支。
+ *
+ * 只用显示名 + 分支时，两个仓库的 `main` 会共用一个键：切过去后缓存与显式选择
+ * 都会沿用前一个工作区，面板也看不出上下文变了。
+ */
 function contextKeyOf(context: WorkspaceContext): string {
+  if (context.workspaceId !== undefined) return `id\u0000${context.workspaceId}`
   return `${context.displayName}\u0000${context.branch}`
 }
 
@@ -202,7 +214,13 @@ async function readContext(host: OrcaWorkerApi['host']): Promise<WorkspaceContex
           )
           .filter((title) => title.length > 0)
       : []
-    return { displayName, branch, terminalTitles }
+    const workspaceId = raw['workspaceId']
+    return {
+      ...(typeof workspaceId === 'string' && workspaceId.length > 0 ? { workspaceId } : {}),
+      displayName,
+      branch,
+      terminalTitles,
+    }
   } catch {
     // 宿主读不到上下文时不猜工作区。
     return undefined
@@ -331,6 +349,12 @@ async function matchWorkspace(
   const key = contextKeyOf(context)
   const workspaces = await listWorkspaces(host)
   if (workspaces.length === 0) return { status: 'unresolved', candidates: [], contextKey: key }
+
+  // 宿主直接告诉了是哪个工作区：这是唯一可靠的线索，压过显式选择与一切猜测。
+  if (context.workspaceId !== undefined) {
+    const exact = workspaces.find((workspace) => workspace.id === context.workspaceId)
+    if (exact !== undefined) return resolved(exact, key)
+  }
 
   // 用户在同一个聚焦上下文里显式选过：直接沿用，不再猜。
   if (preferred !== undefined && preferred.contextKey === key) {
