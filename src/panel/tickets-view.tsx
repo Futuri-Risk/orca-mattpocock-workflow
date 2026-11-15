@@ -46,7 +46,10 @@ import {
   STATS_STYLE,
   STAT_STYLE,
   STAT_VALUE_STYLE,
-  SEGMENTED_STYLE,
+  FILTER_SEGMENTED_STYLE,
+  SORT_DIRECTION_STYLE,
+  SORT_GROUP_STYLE,
+  SORT_SELECT_STYLE,
   TOOLBAR_STYLE,
 } from './task-panel-styles.ts'
 import {
@@ -441,9 +444,10 @@ function Toolbar(props: {
   readonly onFilter: (filter: TicketFilter) => void
   readonly onSort: (key: TicketSortKey) => void
 }): React.ReactElement {
+  const ascending = props.direction === 'asc'
   return (
     <div style={TOOLBAR_STYLE}>
-      <div role="group" aria-label="状态过滤" style={SEGMENTED_STYLE}>
+      <div role="group" aria-label="状态过滤" data-scroll-x="" style={FILTER_SEGMENTED_STYLE}>
         {FILTERS.map((item) => (
           <Chip
             key={item.value}
@@ -456,19 +460,37 @@ function Toolbar(props: {
           />
         ))}
       </div>
-      <div role="group" aria-label="排序" style={SEGMENTED_STYLE}>
-        {SORT_OPTIONS.map((item) => (
-          <Chip
-            key={item.value}
-            testId={`sort-${item.value}`}
-            label={item.label}
-            active={props.sortKey === item.value}
-            suffix={props.sortKey === item.value ? (props.direction === 'asc' ? ' ↑' : ' ↓') : ''}
-            onClick={() => {
-              props.onSort(item.value)
-            }}
-          />
-        ))}
+      <div role="group" aria-label="排序" style={SORT_GROUP_STYLE}>
+        <select
+          data-testid="sort-key"
+          aria-label="排序字段"
+          value={props.sortKey}
+          onChange={(event) => {
+            // 换字段时用该字段的默认方向；同字段不会触发 change。
+            props.onSort(event.target.value as TicketSortKey)
+          }}
+          style={SORT_SELECT_STYLE}
+        >
+          {SORT_OPTIONS.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          data-testid="sort-direction"
+          data-hover="soft"
+          title={ascending ? '升序，点击改为降序' : '降序，点击改为升序'}
+          aria-label={ascending ? '升序，点击改为降序' : '降序，点击改为升序'}
+          onClick={() => {
+            // 对当前字段再切一次 = 翻转方向。
+            props.onSort(props.sortKey)
+          }}
+          style={SORT_DIRECTION_STYLE}
+        >
+          {ascending ? '↑' : '↓'}
+        </button>
       </div>
     </div>
   )

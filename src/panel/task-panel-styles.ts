@@ -263,12 +263,78 @@ export const STAT_VALUE_STYLE: CSSProperties = {
   fontVariantNumeric: 'tabular-nums',
 }
 
+/**
+ * 筛选与排序同一行；放不下时排序整组换到下一行并靠右，
+ * 不会把任何一组挤出页边距。
+ */
 export const TOOLBAR_STYLE: CSSProperties = {
   display: 'flex',
   flexWrap: 'wrap',
   alignItems: 'center',
   gap: 8,
-  padding: '0 12px 4px',
+  padding: '0 12px 6px',
+}
+
+/**
+ * 状态筛选：五段始终一行。极窄时整组横向滚动（滚动条隐藏），不折成两行。
+ */
+export const FILTER_SEGMENTED_STYLE: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 2,
+  padding: 2,
+  borderRadius: 8,
+  background: COLORS.track,
+  maxWidth: '100%',
+  minWidth: 0,
+  boxSizing: 'border-box',
+  overflowX: 'auto',
+  scrollbarWidth: 'none',
+}
+
+/** 排序：下拉选键 + 方向按钮，宽度固定在一个分段的量级，窄侧栏也放得下。 */
+export const SORT_GROUP_STYLE: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 2,
+  padding: 2,
+  borderRadius: 8,
+  background: COLORS.track,
+  marginLeft: 'auto',
+  flex: 'none',
+}
+
+export const SORT_SELECT_STYLE: CSSProperties = {
+  appearance: 'none',
+  border: 'none',
+  borderRadius: 6,
+  // 右侧给自绘的下拉箭头留位置。
+  padding: '2px 22px 2px 10px',
+  color: COLORS.text,
+  backgroundColor: COLORS.surfaceRaised,
+  backgroundImage: `linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%)`,
+  backgroundPosition: 'right 11px center, right 7px center',
+  backgroundSize: '4px 4px, 4px 4px',
+  backgroundRepeat: 'no-repeat',
+  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.08)',
+  cursor: 'pointer',
+  font: 'inherit',
+  fontSize: 12,
+  fontWeight: 500,
+  lineHeight: '20px',
+}
+
+/** 排序方向按钮：和分段一样高，只放一个箭头。 */
+export const SORT_DIRECTION_STYLE: CSSProperties = {
+  border: 'none',
+  borderRadius: 6,
+  minWidth: 24,
+  padding: '2px 6px',
+  color: COLORS.secondary,
+  cursor: 'pointer',
+  font: 'inherit',
+  fontSize: 12,
+  lineHeight: '20px',
 }
 
 export const LOADED_STYLE: CSSProperties = {
@@ -531,6 +597,10 @@ export const PANEL_SHEET = `
 [data-mattwf-panel] [data-hover="card"] { transition: background-color 150ms ease-out, border-color 150ms ease-out; }
 [data-mattwf-panel] button:disabled { cursor: default; opacity: 0.5; }
 [data-mattwf-panel] input { transition: border-color 150ms ease-out; }
+[data-mattwf-panel] [data-scroll-x]::-webkit-scrollbar { display: none; }
+[data-mattwf-panel] select option { background: ${COLORS.surfaceRaised}; color: ${COLORS.text}; }
+[data-mattwf-panel] select:focus { outline: none; }
+[data-mattwf-panel] select:focus-visible { outline: 2px solid ${COLORS.accent}; outline-offset: 1px; }
 [data-mattwf-panel] input::placeholder { color: ${COLORS.tertiary}; opacity: 1; }
 [data-mattwf-panel] input:disabled { opacity: 0.6; }
 [data-mattwf-panel] input:focus { outline: none; }
