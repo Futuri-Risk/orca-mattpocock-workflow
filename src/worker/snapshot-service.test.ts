@@ -1,14 +1,33 @@
-import { describe, expect, it } from 'vitest'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
-import type { SnapshotStore } from '../adapters/fs/snapshot-store.ts'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
+import { createNodeSnapshotStore, type SnapshotStore } from '../adapters/fs/snapshot-store.ts'
+import { storeKeyOf } from '../core/repository-scope.ts'
 import { SNAPSHOT_STORE_VERSION, type SnapshotStoreEntry } from '../core/snapshot-store.ts'
-import type { SnapshotPage, Ticket, Tracker, TrackerChanges, TrackerSnapshot } from '../core/ticket.ts'
+import type {
+  SnapshotPage,
+  Ticket,
+  TicketPatch,
+  TicketReference,
+  Tracker,
+  TrackerChanges,
+  TrackerSnapshot,
+} from '../core/ticket.ts'
 import { TrackerError } from '../core/tracker-error.ts'
 import type { BackendChoice } from '../core/backend.ts'
 import { TRACKER_LABELS } from '../protocol/labels.ts'
-import { RPC_METHODS, type RpcResult, type WorkspaceSnapshot } from '../protocol/tracker.ts'
+import {
+  RPC_METHODS,
+  TICKET_DELETE_CONFIRMATION,
+  type RpcResult,
+  type WorkspaceSnapshot,
+} from '../protocol/tracker.ts'
 import type { ResolvedBackend } from './backend-resolver.ts'
 import { createSnapshotService } from './snapshot-service.ts'
+import { createTicketService } from './ticket-service.ts'
 
 const NOW = 1_700_000_000_000
 const ROOT = '/workspace'
@@ -90,13 +109,13 @@ function memoryStore(): SnapshotStore & { readonly entries: Map<string, Snapshot
   const entries = new Map<string, SnapshotStoreEntry>()
   return {
     entries,
-    read: (workspaceRoot) => Promise.resolve(entries.get(workspaceRoot)),
+    read: (key) => Promise.resolve(entries.get(key)),
     write: (entry) => {
-      entries.set(entry.workspaceRoot, entry)
+      entries.set(storeKeyOf(entry.backend, entry.scopeRoot, entry.workspaceRoot), entry)
       return Promise.resolve()
     },
-    remove: (workspaceRoot) => {
-      entries.delete(workspaceRoot)
+    remove: (key) => {
+      entries.delete(key)
       return Promise.resolve()
     },
     list: () => Promise.resolve([...entries.values()]),
@@ -116,6 +135,7 @@ function memoryStore(): SnapshotStore & { readonly entries: Map<string, Snapshot
 function storeEntry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreEntry {
   return {
     version: SNAPSHOT_STORE_VERSION,
+    scopeRoot: ROOT,
     workspaceRoot: ROOT,
     backend: 'github',
     repository: 'cnzgray/repo',
@@ -142,6 +162,7 @@ function service(
   }
   return createSnapshotService({
     resolve: () => Promise.resolve(resolved),
+    scope: (workspaceRoot) => Promise.resolve(workspaceRoot),
     now,
     labels: TRACKER_LABELS,
     log: () => {},
@@ -262,6 +283,7 @@ describe('快照分页', () => {
           choice: CHOICE,
           address: { host: 'github.com', path },
         }),
+      scope: (workspaceRoot) => Promise.resolve(workspaceRoot),
       now: () => NOW,
       labels: TRACKER_LABELS,
       log: () => {},
@@ -345,5 +367,337 @@ describe('快照分页持久化', () => {
     expect(refs(snapshot)).toEqual(['#6', '#5', '#4', '#1'])
     expect(snapshot.hasMore).toBe(true)
     expect(store.entries.get(ROOT)?.nextCursor).toBe('cursor-3')
+  })
+})
+
+/** 主 worktree 与它的附属 worktree；两者属于同一个仓库。 */
+const MAIN_ROOT = '/repo'
+const ATTACHED_ROOT = '/repo-feature'
+
+/** 作用域按仓库解析：同一仓库的多个 worktree 归到主 worktree 根目录。 */
+function scopedService(
+  scopes: Readonly<Record<string, string>>,
+  tracker: Tracker,
+  store: SnapshotStore = memoryStore(),
+) {
+  const resolved: ResolvedBackend = {
+    kind: 'github',
+    tracker,
+    choice: CHOICE,
+    address: { host: 'github.com', path: 'cnzgray/repo' },
+  }
+  return createSnapshotService({
+    resolve: () => Promise.resolve(resolved),
+    scope: (workspaceRoot) => Promise.resolve(scopes[workspaceRoot] ?? workspaceRoot),
+    now: () => NOW,
+    labels: TRACKER_LABELS,
+    log: () => {},
+    store,
+  })
+}
+
+/** 本地 Markdown 后端：作用域仍是仓库，但缓存键退回工作区。 */
+function markdownService(
+  scopes: Readonly<Record<string, string>>,
+  tracker: Tracker,
+  store: SnapshotStore = memoryStore(),
+) {
+  const resolved: ResolvedBackend = {
+    kind: 'markdown',
+    tracker,
+    choice: { kind: 'markdown', source: 'no-remote' },
+    address: undefined,
+  }
+  return createSnapshotService({
+    resolve: () => Promise.resolve(resolved),
+    scope: (workspaceRoot) => Promise.resolve(scopes[workspaceRoot] ?? workspaceRoot),
+    now: () => NOW,
+    labels: TRACKER_LABELS,
+    log: () => {},
+    store,
+  })
+}
+
+describe('仓库作用域', () => {
+  it('同一仓库的两个 worktree 共用一份缓存：第二个不再拉取工单列表', async () => {
+    const { tracker, calls } = pagedTracker(new Map([['', page([ticket(1)])]]))
+    const snapshots = scopedService({ [MAIN_ROOT]: MAIN_ROOT, [ATTACHED_ROOT]: MAIN_ROOT }, tracker)
+
+    await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: MAIN_ROOT })
+    const second = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ATTACHED_ROOT }),
+    )
+
+    expect(calls).toEqual([undefined])
+    expect(refs(second)).toEqual(['#1'])
+  })
+
+  it('同一仓库的两个 worktree 同时首屏只拉一次', async () => {
+    const { tracker, calls } = pagedTracker(new Map([['', page([ticket(1)])]]))
+    const snapshots = scopedService({ [MAIN_ROOT]: MAIN_ROOT, [ATTACHED_ROOT]: MAIN_ROOT }, tracker)
+
+    const [first, second] = await Promise.all([
+      snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: MAIN_ROOT }),
+      snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ATTACHED_ROOT }),
+    ])
+
+    expect(calls).toEqual([undefined])
+    expect(refs(resultOf(first))).toEqual(['#1'])
+    expect(refs(resultOf(second))).toEqual(['#1'])
+  })
+
+  it('并发首屏共享作用域时，本地 Markdown 仍各读各的', async () => {
+    const store = memoryStore()
+    const { tracker, calls } = pagedTracker(new Map([['', page([ticket(1)])]]))
+    const snapshots = markdownService(
+      { [MAIN_ROOT]: MAIN_ROOT, [ATTACHED_ROOT]: MAIN_ROOT },
+      tracker,
+      store,
+    )
+
+    const [first, second] = await Promise.all([
+      snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: MAIN_ROOT }),
+      snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ATTACHED_ROOT }),
+    ])
+
+    // 两次拉取：共享到的那份属于主 worktree，附属 worktree 自己再读一次。
+    expect(calls).toEqual([undefined, undefined])
+    expect(refs(resultOf(first))).toEqual(['#1'])
+    expect(refs(resultOf(second))).toEqual(['#1'])
+    expect(store.entries.has(MAIN_ROOT)).toBe(true)
+    expect(store.entries.has(ATTACHED_ROOT)).toBe(true)
+  })
+
+  it('两个 worktree 共用一条增量链，刷新写回共享条目', async () => {
+    const store = memoryStore()
+    store.entries.set(
+      MAIN_ROOT,
+      storeEntry({
+        scopeRoot: MAIN_ROOT,
+        workspaceRoot: MAIN_ROOT,
+        fetchedAt: NOW - 60_000,
+        loaded: 2,
+        total: 2,
+      }),
+    )
+    const { tracker, calls, changeCalls } = pagedTracker(new Map(), () => ({
+      tickets: [],
+      truncated: false,
+    }))
+    const snapshots = scopedService({ [MAIN_ROOT]: MAIN_ROOT, [ATTACHED_ROOT]: MAIN_ROOT }, tracker, store)
+
+    await snapshots.handle(RPC_METHODS.snapshotRefresh, { workspaceRoot: ATTACHED_ROOT })
+
+    // 窗口起点取共享条目的 fetchedAt，再向前重叠一分钟。
+    expect(changeCalls).toEqual([NOW - 120_000])
+    expect(calls).toEqual([])
+    expect(store.entries.get(MAIN_ROOT)?.workspaceRoot).toBe(ATTACHED_ROOT)
+  })
+
+  it('两个仓库各存各的，互不命中', async () => {
+    const store = memoryStore()
+    const first = pagedTracker(new Map([['', page([ticket(1)])]]))
+    const second = pagedTracker(new Map([['', page([ticket(2)])]]))
+    const snapshots = createSnapshotService({
+      resolve: (root) =>
+        Promise.resolve({
+          kind: 'github',
+          tracker: root === '/repo-a' ? first.tracker : second.tracker,
+          choice: CHOICE,
+          address: { host: 'github.com', path: root === '/repo-a' ? 'owner/a' : 'owner/b' },
+        }),
+      scope: (root) => Promise.resolve(root),
+      now: () => NOW,
+      labels: TRACKER_LABELS,
+      log: () => {},
+      store,
+    })
+
+    await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: '/repo-a' })
+    await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: '/repo-b' })
+
+    expect(first.calls).toEqual([undefined])
+    expect(second.calls).toEqual([undefined])
+    expect(store.entries.size).toBe(2)
+  })
+
+  it('本地 Markdown 按工作区隔离：另一个 worktree 不命中共享作用域', async () => {
+    const store = memoryStore()
+    const { tracker, calls } = pagedTracker(new Map([['', page([ticket(1)])]]))
+    const snapshots = markdownService(
+      { [MAIN_ROOT]: MAIN_ROOT, [ATTACHED_ROOT]: MAIN_ROOT },
+      tracker,
+      store,
+    )
+
+    await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: MAIN_ROOT })
+    const second = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ATTACHED_ROOT }),
+    )
+
+    expect(calls).toEqual([undefined, undefined])
+    expect(refs(second)).toEqual(['#1'])
+    // 两份缓存各存各的：键是工作区，不是共享作用域。
+    expect(store.entries.has(MAIN_ROOT)).toBe(true)
+    expect(store.entries.has(ATTACHED_ROOT)).toBe(true)
+  })
+
+  it('远端失败时另一个 worktree 仍显示共享缓存并带上原因', async () => {
+    const store = memoryStore()
+    store.entries.set(
+      MAIN_ROOT,
+      storeEntry({ scopeRoot: MAIN_ROOT, workspaceRoot: MAIN_ROOT }),
+    )
+    const tracker: Tracker = {
+      fetchSnapshot: () => Promise.reject(new TrackerError('fetch-failed', '远端挂了')),
+    }
+    const snapshots = scopedService({ [MAIN_ROOT]: MAIN_ROOT, [ATTACHED_ROOT]: MAIN_ROOT }, tracker, store)
+
+    const snapshot = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotRefresh, { workspaceRoot: ATTACHED_ROOT }),
+    )
+
+    expect(snapshot.stale).toBe(true)
+    expect(snapshot.refreshError).toMatchObject({ code: 'fetch-failed' })
+    expect(refs(snapshot)).toEqual(['#5', '#4'])
+  })
+})
+
+describe('写操作跨 worktree 可见（端到端）', () => {
+  let cacheRoot = ''
+
+  beforeEach(async () => {
+    cacheRoot = await mkdtemp(join(tmpdir(), 'mattwf-e2e-'))
+  })
+
+  afterEach(async () => {
+    await rm(cacheRoot, { recursive: true, force: true })
+  })
+
+  /** 真实的文件快照库：两个服务（以及「重启后」的新服务）共用同一个目录。 */
+  function fileStore(): SnapshotStore {
+    return createNodeSnapshotStore({ root: join(cacheRoot, 'cache'), home: cacheRoot, tmp: cacheRoot })
+  }
+
+  /**
+   * 远端固定返回 #1、#2，增量永远报「没有变化」：
+   * 读到的改动只可能来自共享缓存，不可能来自远端。
+   */
+  function remote() {
+    const lists: string[] = []
+    const writes: string[] = []
+    const tracker: Tracker = {
+      fetchSnapshot: () => {
+        lists.push('list')
+        return Promise.resolve(page([ticket(1), ticket(2)]))
+      },
+      fetchChanges: () => Promise.resolve({ tickets: [], truncated: false }),
+      updateTicket: (_root: string, reference: TicketReference, patch: TicketPatch) => {
+        writes.push(`update ${reference.ref} ${JSON.stringify(patch)}`)
+        return Promise.resolve()
+      },
+      canDeleteTickets: () => Promise.resolve(true),
+      deleteTicket: (_root: string, reference: TicketReference) => {
+        writes.push(`delete ${reference.ref}`)
+        return Promise.resolve()
+      },
+    }
+    return { tracker, lists, writes }
+  }
+
+  /** 与 main.ts 相同的装配：快照服务与工单服务共用解析器、作用域与快照库。 */
+  function host(tracker: Tracker, store: SnapshotStore) {
+    const resolved: ResolvedBackend = {
+      kind: 'github',
+      tracker,
+      choice: CHOICE,
+      address: { host: 'github.com', path: 'cnzgray/repo' },
+    }
+    const scopes: Readonly<Record<string, string>> = {
+      [MAIN_ROOT]: MAIN_ROOT,
+      [ATTACHED_ROOT]: MAIN_ROOT,
+    }
+    const deps = {
+      resolve: () => Promise.resolve(resolved),
+      scope: (workspaceRoot: string) => Promise.resolve(scopes[workspaceRoot] ?? workspaceRoot),
+      now: () => NOW,
+      log: () => {},
+      store,
+    }
+    return {
+      snapshots: createSnapshotService({ ...deps, labels: TRACKER_LABELS }),
+      tickets: createTicketService(deps),
+    }
+  }
+
+  function ticketOf(snapshot: WorkspaceSnapshot, ref: string) {
+    return snapshot.tickets.find((item) => item.ref === ref)
+  }
+
+  it('附属 worktree 打的标签，主 worktree 刷新后读到更新后的票', async () => {
+    const { tracker, lists, writes } = remote()
+    const { snapshots, tickets } = host(tracker, fileStore())
+
+    await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: MAIN_ROOT })
+    const updated = await tickets.handle(RPC_METHODS.ticketUpdate, {
+      workspaceRoot: ATTACHED_ROOT,
+      ref: '#1',
+      number: 1,
+      patch: { labels: ['bug'] },
+    })
+    expect(updated.ok).toBe(true)
+    // 面板写入成功后会刷新一次；随后切回主 worktree 读取。
+    await snapshots.handle(RPC_METHODS.snapshotRefresh, { workspaceRoot: ATTACHED_ROOT })
+    const seen = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: MAIN_ROOT }),
+    )
+
+    expect(writes).toEqual(['update #1 {"labels":["bug"]}'])
+    expect(ticketOf(seen, '#1')?.labels).toEqual(['bug'])
+    // 全程只发过一次列表查询：刷新走的是共享增量链。
+    expect(lists).toEqual(['list'])
+  })
+
+  it('附属 worktree 打的标签，宿主重启后主 worktree 直接从共享缓存读到', async () => {
+    const { tracker, lists } = remote()
+    const before = host(tracker, fileStore())
+    await before.snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: MAIN_ROOT })
+    await before.tickets.handle(RPC_METHODS.ticketUpdate, {
+      workspaceRoot: ATTACHED_ROOT,
+      ref: '#1',
+      number: 1,
+      patch: { labels: ['bug'] },
+    })
+
+    // 新的宿主进程：内存是空的，只有磁盘上的快照库。
+    const after = host(tracker, fileStore())
+    const seen = resultOf(
+      await after.snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: MAIN_ROOT }),
+    )
+
+    expect(ticketOf(seen, '#1')?.labels).toEqual(['bug'])
+    expect(lists).toEqual(['list'])
+  })
+
+  it('附属 worktree 删掉的票，主 worktree 的缓存里也不再留着它', async () => {
+    const { tracker, lists, writes } = remote()
+    const before = host(tracker, fileStore())
+    await before.snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: MAIN_ROOT })
+    const deleted = await before.tickets.handle(RPC_METHODS.ticketDelete, {
+      workspaceRoot: ATTACHED_ROOT,
+      ref: '#1',
+      number: 1,
+      confirm: TICKET_DELETE_CONFIRMATION,
+    })
+    expect(deleted.ok).toBe(true)
+
+    const after = host(tracker, fileStore())
+    const seen = resultOf(
+      await after.snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: MAIN_ROOT }),
+    )
+
+    expect(writes).toEqual(['delete #1'])
+    expect(refs(seen)).toEqual(['#2'])
+    expect(lists).toEqual(['list'])
   })
 })

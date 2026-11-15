@@ -10,6 +10,7 @@ import {
 function entry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreEntry {
   return {
     version: SNAPSHOT_STORE_VERSION,
+    scopeRoot: '/workspace',
     workspaceRoot: '/workspace',
     backend: 'github',
     repository: 'cnzgray/repo',
@@ -59,6 +60,18 @@ describe('本地快照库条目', () => {
 
   it('格式版本不符时按没有缓存处理', () => {
     const raw = serializeSnapshotStoreEntry(entry({ version: 99 }))
+
+    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  })
+
+  it('升级前按工作区存的旧条目（版本 1）读不出来', () => {
+    const raw = JSON.stringify({ ...entry(), version: 1 })
+
+    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  })
+
+  it('缺少仓库作用域时按没有缓存处理', () => {
+    const raw = JSON.stringify({ ...entry(), scopeRoot: undefined })
 
     expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
   })

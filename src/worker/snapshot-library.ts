@@ -1,6 +1,10 @@
 /**
  * 本地快照库在宿主侧的那一半：读写条目、把库里的数据组装成快照、读取与清空缓存。
  *
+ * 缓存按仓库归并：托管后端的条目存在仓库作用域的键上，同一仓库的多个 worktree
+ * 共用一份；本地 Markdown 的条目存在工作区键上，一个 worktree 的 `.scratch/`
+ * 不会串到另一个。
+ *
  * 与快照服务分开是因为这里只关心「缓存里的数据」，不关心拉取流程：
  * 快照服务决定什么时候读、什么时候写，这里负责读出来的东西对不对。
  */
@@ -9,6 +13,7 @@ import { classifyTickets, type ClassifiedTicket } from '../core/classify.ts'
 import { isRecord } from '../core/json.ts'
 import { computeMetrics } from '../core/metrics.ts'
 import type { RepositoryAddress } from '../core/remote.ts'
+import { scopedKeysOf } from '../core/repository-scope.ts'
 import { withSkillActions } from '../core/skill-action.ts'
 import { SNAPSHOT_STORE_VERSION, type SnapshotStoreEntry } from '../core/snapshot-store.ts'
 import type {
@@ -41,11 +46,15 @@ export interface SnapshotLibraryDeps {
 }
 
 /**
- * 一个工作区的缓存条目。刷新会用新条目替换旧条目；
+ * 一份缓存。刷新会用新条目替换旧条目；
  * 补齐结果靠条目身份判断是否过期，旧条目写不回缓存。
  */
 export interface CachedWorkspace {
   readonly kind: BackendKind
+  /** 仓库作用域根目录；同一仓库的多个 worktree 共用一个条目。 */
+  readonly scopeRoot: string
+  /** 拉取这份数据的工作区根目录；本地 Markdown 按它隔离。 */
+  readonly workspaceRoot: string
   /** 仓库身份：后端类型 + 实例主机 + 仓库路径；换远端或换后端时身份对不上。 */
   readonly repositoryKey: string
   /** 远端实例主机；列表与补齐两阶段共用同一份，本地 Markdown 为 null。 */
@@ -67,33 +76,78 @@ export type BlockerResolver = (
 /**
  * 读取本地快照库里的条目。
  * @param deps - 宿主依赖。
- * @param workspaceRoot - 工作区根目录。
+ * @param key - 缓存键：仓库作用域（托管后端）或工作区根目录（本地 Markdown）。
  * @returns 条目；没有库或没有条目时是 undefined。
  */
 export async function readStored(
   deps: SnapshotLibraryDeps,
-  workspaceRoot: string,
+  key: string,
 ): Promise<SnapshotStoreEntry | undefined> {
   if (deps.store === undefined) return undefined
   try {
-    return await deps.store.read(workspaceRoot)
+    return await deps.store.read(key)
   } catch {
     return undefined
   }
 }
 
+/** 一次缓存命中：条目与它所在的缓存键（失效时按这个键删）。 */
+export interface StoredHit {
+  readonly key: string
+  readonly entry: SnapshotStoreEntry
+}
+
+/**
+ * 按「仓库作用域 → 工作区」的顺序找可用缓存。
+ *
+ * 托管后端的条目存在作用域键上，同一仓库的任一 worktree 都能读到；
+ * 本地 Markdown 的条目存在工作区键上，读到别的 worktree 的条目时跳过。
+ * @param deps - 宿主依赖。
+ * @param scopeRoot - 仓库作用域根目录。
+ * @param workspaceRoot - 当前工作区根目录。
+ * @returns 命中的条目与键；没有可用缓存时是 undefined。
+ */
+export async function readStoredFor(
+  deps: SnapshotLibraryDeps,
+  scopeRoot: string,
+  workspaceRoot: string,
+): Promise<StoredHit | undefined> {
+  const keys = scopedKeysOf(scopeRoot, workspaceRoot)
+  for (const key of keys) {
+    const entry = await readStored(deps, key)
+    if (entry === undefined) continue
+    if (!belongsToWorkspace(entry.backend, entry.workspaceRoot, workspaceRoot)) continue
+    return { key, entry }
+  }
+  return undefined
+}
+
+/**
+ * 条目是否属于这个工作区：托管后端按仓库共享，本地 Markdown 按工作区隔离。
+ *
+ * 判据只写这一处：读快照库与读内存缓存共用同一份规则。
+ * @param backend - 条目属于哪个后端。
+ * @param entryWorkspaceRoot - 条目是在哪个工作区拉到的。
+ * @param workspaceRoot - 当前工作区根目录。
+ * @returns 这份缓存能不能交给当前工作区。
+ */
+export function belongsToWorkspace(
+  backend: BackendKind,
+  entryWorkspaceRoot: string,
+  workspaceRoot: string,
+): boolean {
+  return backend !== 'markdown' || entryWorkspaceRoot === workspaceRoot
+}
+
 /**
  * 删除本地快照库里的条目。
  * @param deps - 宿主依赖。
- * @param workspaceRoot - 工作区根目录。
+ * @param key - 缓存键。
  */
-export async function removeStored(
-  deps: SnapshotLibraryDeps,
-  workspaceRoot: string,
-): Promise<void> {
+export async function removeStored(deps: SnapshotLibraryDeps, key: string): Promise<void> {
   if (deps.store === undefined) return
   try {
-    await deps.store.remove(workspaceRoot)
+    await deps.store.remove(key)
   } catch {
     // 删不掉就留着：下一轮刷新会用仓库身份判定把它作废。
   }
@@ -102,12 +156,14 @@ export async function removeStored(
 /**
  * 把一次成功拉取写进本地快照库。
  * @param deps - 宿主依赖。
- * @param workspaceRoot - 工作区根目录。
+ * @param scopeRoot - 仓库作用域根目录。
+ * @param workspaceRoot - 这次拉取所在的工作区根目录。
  * @param resolved - 解析出的后端。
  * @param raw - 后端返回的原始列表。
  */
 export async function writeStored(
   deps: SnapshotLibraryDeps,
+  scopeRoot: string,
   workspaceRoot: string,
   resolved: ResolvedBackend,
   raw: TrackerSnapshot,
@@ -116,6 +172,7 @@ export async function writeStored(
   if (store === undefined) return
   const entry: SnapshotStoreEntry = {
     version: SNAPSHOT_STORE_VERSION,
+    scopeRoot,
     workspaceRoot,
     backend: resolved.kind,
     repository: raw.repository,
@@ -206,6 +263,8 @@ export function storedEntry(
 ): CachedWorkspace {
   return {
     kind: stored.backend,
+    scopeRoot: stored.scopeRoot,
+    workspaceRoot: stored.workspaceRoot,
     repositoryKey: stored.repositoryKey,
     repositoryHost: stored.repositoryHost,
     raw: rawOf(stored),

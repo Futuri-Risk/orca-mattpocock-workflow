@@ -12,6 +12,7 @@ import { createGitlabEnvProbe } from '../adapters/gitlab/env.ts'
 import { createLocalIssuesProbe } from '../adapters/markdown/env.ts'
 import { createNodeWorkspaceFiles } from '../adapters/markdown/files.ts'
 import { TRACKER_LABELS } from '../protocol/labels.ts'
+import { LOG_EVENTS } from '../protocol/log-events.ts'
 import { ERROR_CODES, RPC_METHODS, type RpcResult } from '../protocol/tracker.ts'
 import { createAvatarService } from './avatar-service.ts'
 import { createBackendResolver } from './backend-resolver.ts'
@@ -19,6 +20,7 @@ import { createEnvCheckService } from './env-check-service.ts'
 import { createLog, type LogSink } from './log.ts'
 import type { OrcaWorkerApi } from './orca-types.ts'
 import { createProbeDeadline, ENV_PROBE_TIMEOUT_MS } from './probe-deadline.ts'
+import { createRepositoryScopeResolver } from './repository-scope.ts'
 import {
   reportWorkspaceFailure,
   registerRpcHandlers,
@@ -51,14 +53,24 @@ export default function activate(orca: OrcaWorkerApi): void {
   const now = (): number => Date.now()
   const files = createNodeWorkspaceFiles()
 
-  const resolve = createBackendResolver({ run, now, files })
+  // 仓库作用域：同一仓库的多个 worktree 共用一份缓存，命令仍在各自工作区里跑。
+  const scope = createRepositoryScopeResolver({ run })
+  const resolve = createBackendResolver({ run, now, files, scope })
   // 环境检查每次都重新探测后端：刚装好 glab / tea 或刚加上远端时要能马上看到变化。
   const resolveFresh = createBackendResolver({ run, now, files, cache: false })
   // 本地快照库：跨进程保存最近一次成功拉取的工单数据，宿主重启后面板仍能先出数据。
   const store = createNodeSnapshotStore()
+  // 启动清理一次：删掉版本不符的旧条目（升级前按 worktree 存的文件）、
+  // 作用域已不存在的条目与超过保留期的条目，并按仓库执行条目上限。
+  void store.prune(now()).catch((error: unknown) => {
+    log('warn', LOG_EVENTS.snapshot, {
+      result: 'error',
+      reason: error instanceof Error ? error.message : String(error),
+    })
+  })
 
-  const snapshot = createSnapshotService({ resolve, now, labels: TRACKER_LABELS, log, store })
-  const ticket = createTicketService({ resolve, now, log, store })
+  const snapshot = createSnapshotService({ resolve, scope, now, labels: TRACKER_LABELS, log, store })
+  const ticket = createTicketService({ resolve, scope, now, log, store })
   const worktree = createTicketWorktreeService({ resolve, run, now, log })
   // 面板 frame 没有网络：头像由 worker 下载后转成 data URL。
   const avatar = createAvatarService()
