@@ -22,7 +22,7 @@
 - 补全候选的归一化也在这里：`normalizeLabelColor` 把颜色统一成小写 `#rrggbb`，
   `dedupeBy` 按名字去重并保留首次出现的顺序；
 - `markdown.ts` 里的 `parseMarkdownDetail` 把本地工单文件切成标题、正文与评论段落；
-- `worktree.ts` 推导 worktree 的分支名、显示名与注释，拼装 Orca 命令行参数，并解析它的 JSON 输出；
+- `worktree.ts` 推导 worktree 的分支名、工作区名与注释（工作区名与分支名同值），拼装 Orca 命令行参数，并解析它的 JSON 输出；
 - `orca-cli.ts` 决定 Orca 命令行的候选顺序并校验 `--version` 输出，Linux 上同名读屏软件会被排除。
 
 ## 指标与压力判档（`metrics.ts`）

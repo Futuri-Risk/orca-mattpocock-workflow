@@ -434,7 +434,7 @@ export interface TicketWorktreeResult {
   readonly path: string
   /** Git 分支名，例如 `feat/6-ticket-one-click`。 */
   readonly branch: string
-  /** Orca 侧边栏里的显示名，通常就是工单标题。 */
+  /** Orca 侧边栏里的显示名；新建时与分支名同值，既有工作区沿用 Orca 记下的名字。 */
   readonly name: string
   /** 挂到 worktree 上的工单链接，取自后端详情。 */
   readonly reference: string

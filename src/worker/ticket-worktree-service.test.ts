@@ -185,7 +185,7 @@ describe('工单 worktree 服务', () => {
         'worktree',
         'create',
         '--name',
-        'Ticket one',
+        'feat/6-ticket-one',
         '--branch',
         'feat/6-ticket-one',
         '--reference',
@@ -218,6 +218,25 @@ describe('工单 worktree 服务', () => {
     expect(result).toMatchObject({ ok: true, result: { branch } })
     const createCall = fake.calls.find((call) => call.args.includes('create'))
     expect(createCall?.args).toContain(branch)
+  })
+
+  it.each([
+    ['英文标题', 'Fix crash on login', ['bug'], 'bugfix/6-fix-crash-on-login'],
+    ['纯中文标题', '修复登录崩溃', [], 'feat/6'],
+    ['含标点的标题', '登录崩溃：/api 超时', [], 'feat/6-api'],
+  ])('工作区名与分支名一致：%s', async (_label, title, labels, branch) => {
+    const fake = runner({})
+    const create = service(resolver('github', { title, labels }), fake)
+
+    await create.handle(RPC_METHODS.ticketWorktree, {
+      workspaceRoot: WORKSPACE,
+      ref: '#6',
+      number: 6,
+    })
+
+    const createCall = fake.calls.find((call) => call.args.includes('create'))
+    expect(createCall?.args[createCall.args.indexOf('--name') + 1]).toBe(branch)
+    expect(createCall?.args[createCall.args.indexOf('--comment') + 1]).toBe(`#6 ${title}`)
   })
 
   it('超长标题的分支名截断到 40 字符 slug', async () => {
@@ -380,7 +399,7 @@ describe('工单 worktree 服务', () => {
 
     expect(result).toMatchObject({
       ok: true,
-      result: { path, branch, created: false },
+      result: { path, branch, created: false, name: branch },
     })
     expect(fake.calls.some((call) => call.args.includes('create'))).toBe(false)
   })

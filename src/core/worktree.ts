@@ -1,10 +1,10 @@
 /**
- * 为工单创建 Orca worktree 的纯逻辑：分支名推导、显示名与注释、命令行参数拼装，
+ * 为工单创建 Orca worktree 的纯逻辑：分支名与工作区名推导、注释、命令行参数拼装，
  * 以及 Orca `--json` 输出的解析。
  *
  * 这里不做 IO：命令由 worker 用注入的执行器跑，面板只展示结果。
  * 命名规则与仓库里既有的 `feat/4-…`、`bugfix/1-…` 保持一致：
- * 缺陷票用 `bugfix`，其余（含增强与未分类）用 `feat`。
+ * 缺陷票用 `bugfix`，其余（含增强与未分类）用 `feat`；工作区名直接复用分支名。
  */
 import { isRecord } from './json.ts'
 
@@ -31,7 +31,7 @@ export interface CurrentWorktree extends WorktreeRecord {
 
 /** 创建 worktree 所需的命名与引用。 */
 export interface WorktreePlan {
-  /** 工单标题的单行形式。 */
+  /** Orca 工作区名（侧栏显示名与目录名）；与 `branch` 同值。 */
   readonly name: string
   /** `<类型>/<票号>-<slug>`；slug 为空时为 `<类型>/<票号>`。 */
   readonly branch: string
@@ -79,7 +79,7 @@ export function worktreeBranchName(
 }
 
 /**
- * 标题作为 worktree 显示名：去掉换行与多余空白，按单行使用。
+ * 标题的单行形式：去掉换行与多余空白。只用于注释，不参与分支名与工作区名。
  * @param title - 工单标题。
  * @returns 单行标题。
  */
@@ -99,6 +99,9 @@ export function worktreeComment(ticketRef: string, title: string): string {
 
 /**
  * 一次创建的全部命名与引用。
+ *
+ * 工作区名与分支名取同一个值：工单标题可能很长、含中文或标点，不适合当
+ * 目录名与侧栏显示名；标题仍进 `comment`，作为人类可读的摘要。
  * @param input - 编号、标题、分类与后端给出的链接。
  * @returns 可直接拼进命令行的计划。
  */
@@ -108,9 +111,10 @@ export function planWorktree(input: {
   readonly category: WorktreeCategory
   readonly reference: string
 }): WorktreePlan {
+  const branch = worktreeBranchName(input.number, input.title, input.category)
   return {
-    name: worktreeDisplayName(input.title),
-    branch: worktreeBranchName(input.number, input.title, input.category),
+    name: branch,
+    branch,
     reference: input.reference,
     comment: worktreeComment(`#${String(input.number)}`, input.title),
   }

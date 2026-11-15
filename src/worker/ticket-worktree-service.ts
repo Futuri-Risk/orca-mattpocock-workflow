@@ -214,10 +214,10 @@ async function listExisting(
 }
 
 /**
- * 把 Orca 记录整理成协议结果。显示名缺失时退回标题，分支去掉 `refs/heads/`。
+ * 把 Orca 记录整理成协议结果。显示名缺失时退回本次计划的工作区名，分支去掉 `refs/heads/`。
  * @param record - Orca 返回的 worktree。
  * @param reference - 后端详情里的工单链接。
- * @param fallbackName - 显示名缺失时的标题。
+ * @param fallbackName - 显示名缺失时退回的工作区名（与分支名同值）。
  * @param created - 本次是否新建。
  * @returns 协议结果。
  */
