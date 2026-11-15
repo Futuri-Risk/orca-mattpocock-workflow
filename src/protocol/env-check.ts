@@ -62,7 +62,7 @@ export const ENV_REMEDY_CODES = {
   checkNetwork: 'check-network',
   /** 检查并设置宿主进程的主目录。 */
   checkHome: 'check-home',
-  /** 查看 DSH 日志。 */
+  /** 查看宿主日志。 */
   checkLogs: 'check-logs',
   /** 修复后端选择：远端地址或 CLI 登录。 */
   fixBackend: 'fix-backend',
@@ -112,26 +112,6 @@ export interface CapabilityDiagnostic {
   readonly category: CapabilityCategory
   readonly status: CapabilityState
 }
-
-/** 宿主侧用到的 DSH 服务。 */
-export const HOST_CAPABILITY_IDS = ['subprocess', 'timer', 'connection', 'skills'] as const
-
-/** 宿主服务 id。 */
-export type HostCapabilityId = (typeof HOST_CAPABILITY_IDS)[number]
-
-/** 界面侧用到的 DSH 服务和扩展点。 */
-export const UI_CAPABILITY_IDS = [
-  'slots',
-  'sidebarRightTabs',
-  'sessions',
-  'conversation',
-  'uiWorkspace',
-  'sidebar.right.pane.tab',
-  'sidebar.right.pane.tab.title',
-] as const
-
-/** 界面扩展点 id。 */
-export type UiCapabilityId = (typeof UI_CAPABILITY_IDS)[number]
 
 /** 一次环境检查的结果。 */
 export interface EnvCheckReport {

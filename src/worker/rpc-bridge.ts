@@ -1,8 +1,7 @@
 /**
  * 面板 RPC 桥。
  *
- * 原实现把 RPC 挂在 DSH 的私有 HTTP 路由上；Orca 里面板用
- * `orca.plugin.request(name, input)` 找 worker 里的同名处理器，
+ * 面板用 `orca.plugin.request(name, input)` 找 worker 里的同名处理器，
  * 所以这里按协议里的方法名逐个注册，入参与出参形状保持不变。
  */
 import { isRecord } from '../core/json.ts'

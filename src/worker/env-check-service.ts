@@ -6,10 +6,9 @@
  * - 同一工作区有检查在跑时，新请求复用进行中的那一次；
  * - 日志只记耗时和通过/失败数量，不记命令原始输出。
  *
- * 与 DSH 版不同的是「能力诊断」：宿主没有 subprocess / timer / connection / skills
- * 服务可探测，这里改成 Orca 侧真实存在的条件——三个后端 CLI 是否安装与登录、
+ * 「能力诊断」列的是 Orca 侧真实存在的条件——三个后端 CLI 是否安装与登录、
  * 仓库有没有远端、工作区有没有初始化、本地工单目录能不能读、
- * 入池技能与上游 matt 技能装没装。
+ * 入池技能与 matt 技能装没装。
  */
 import { join } from 'node:path'
 
@@ -418,7 +417,7 @@ function unprobedSkills(): readonly SkillProbeFact[] {
 }
 
 /**
- * 探测上游 matt 技能是否装在 agent 会扫描的目录里。
+ * 探测 matt 技能是否装在 agent 会扫描的目录里。
  * @param deps - 服务依赖。
  * @param workspaceRoot - 工作区根目录。
  * @returns 每项技能的探测结果。
@@ -509,7 +508,7 @@ async function readLoggedInHosts(
  * @param workspaceRoot - 工作区根目录。
  * @param backend - 后端判定结果。
  * @param tools - 三个 CLI 的状态。
- * @param skills - 上游 matt 技能的探测结果。
+ * @param skills - matt 技能的探测结果。
  * @param localIssues - 本地工单目录的探测事实。
  * @param workspace - 工作区初始化的探测结果。
  * @returns 能力诊断列表。
@@ -533,7 +532,7 @@ async function buildCapabilities(
     ),
   )
 
-  const upstreamSkills = skills.map(
+  const mattSkills = skills.map(
     (skill): CapabilityDiagnostic => ({
       id: `skill.${skill.name}`,
       category: 'host-service',
@@ -581,7 +580,7 @@ async function buildCapabilities(
       status: localIssues?.status === 'found' ? 'present' : 'missing',
     },
     ...poolSkills,
-    ...upstreamSkills,
+    ...mattSkills,
   ]
 }
 

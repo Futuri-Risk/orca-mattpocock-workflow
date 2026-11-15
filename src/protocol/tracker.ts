@@ -9,9 +9,6 @@ import type { BackendKind } from './backend.ts'
 import type { EnvCheckParams } from './env-check.ts'
 import type { TicketActionReason, TicketSkillAction } from './labels.ts'
 
-/** 插件私有的 HTTP 路由。宿主用 `connection.fetch.register` 挂载，界面用同源 fetch 调用。 */
-export const RPC_PATH = '/api/dsh-mattpocock-workflow'
-
 /** 当前版本提供的方法：读缓存、强制刷新、补齐阻塞信息、环境检查与工单详情。 */
 export const RPC_METHODS = {
   /** 读缓存；没有缓存时拉取一次。阻塞信息可能尚未定稿。 */

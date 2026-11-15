@@ -16,7 +16,7 @@ let root = ''
 let workspace = ''
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'dsh-mattwf-store-'))
+  root = await mkdtemp(join(tmpdir(), 'mattwf-store-'))
   workspace = join(root, 'workspace')
 })
 

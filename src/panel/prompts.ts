@@ -9,7 +9,7 @@
  * 技能徽标按工单的技能动作组装，只给技能手势和工单引用（`/implement #40`）。
  * 步骤由技能正文负责：会话发送时按手势加载技能，`implement` 会自己取票、复述标题、
  * 按 tdd 实现、跑检查、过 code-review 再提交。面板再写一遍是第二份规则，
- * 上游技能升级后就会和正文分叉。
+ * 技能升级后就会和正文分叉。
  * 技能名取自 protocol 的面板技能常量，环境检查不会和这里脱节。
  */
 import { SKILL_ACTION_SKILLS } from '../protocol/env-check.ts'

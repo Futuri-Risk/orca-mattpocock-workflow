@@ -1,5 +1,5 @@
 /**
- * 本地 Markdown 工单的解析。上游约定：
+ * 本地 Markdown 工单的解析。文件约定：
  * `.scratch/<feature>/issues/NN-<slug>.md`，`Status:` 行记录分诊状态，
  * `Blocked by: NN, NN` 行记录同一 feature 内的阻塞关系。
  *
@@ -168,7 +168,7 @@ function blockedByLine(content: string): string | undefined {
 }
 
 /**
- * 只看 `## Comments` 之前的内容：上游把评论追加在这个标题下，
+ * 只看 `## Comments` 之前的内容：评论追加在这个标题下，
  * 评论里引用的 `Status:` / `Blocked by:` 不能改变这张票的判定。
  */
 function preambleOf(content: string): string {

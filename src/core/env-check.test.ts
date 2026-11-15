@@ -45,7 +45,7 @@ function facts(overrides: Partial<EnvCheckFacts> = {}): EnvCheckFacts {
     cli: pass('/opt/homebrew/bin/gh'),
     auth: pass('已登录'),
     repository: pass('可访问 owner/repo'),
-    skills: [{ name: 'to-spec', outcome: pass('DSH 技能清单已收录') }],
+    skills: [{ name: 'to-spec', outcome: pass('/Users/dev/.claude/skills/to-spec/SKILL.md') }],
     setupSkill: SETUP,
     ...overrides,
   }
@@ -368,7 +368,7 @@ describe('环境检查判定', () => {
     const items = buildEnvCheckItems(
       facts({
         workspace: failure('未找到 docs/agents/issue-tracker.md', 'workspace-uninitialized'),
-        skills: [{ name: SETUP, outcome: pass('DSH 技能清单已收录') }],
+        skills: [{ name: SETUP, outcome: pass('/Users/dev/.claude/skills/to-spec/SKILL.md') }],
       }),
     )
 

@@ -1,5 +1,5 @@
 /**
- * worker 侧的计时服务。Orca 没有暴露 DSH 的 timer 服务，
+ * worker 侧的计时服务。Orca 没有暴露计时服务，
  * 这里直接用 `setTimeout`，语义保持一致：注册超时回调，返回取消函数。
  */
 
