@@ -17,13 +17,16 @@
 
 | 后端          | 详情正文       | 评论                           | 链接地址 | 标签写 | 分配人写                        | 状态写 | 补全候选                                                   | 删除                                                               |
 | ------------- | -------------- | ------------------------------ | -------- | ------ | ------------------------------- | ------ | ---------------------------------------------------------- | ------------------------------------------------------------------ |
-| GitHub        | 是             | `gh issue view`                | 是       | 是     | 是                              | 是     | `gh label list`；`gh api .../assignees --paginate --slurp` | `gh issue delete --yes`；`viewerPermission` 为 `ADMIN`             |
+| GitHub        | 是             | GraphQL（评论按 `hasNextPage` 翻页，单页 100） | 是       | 是     | 是                              | 是     | `gh label list`；`gh api .../assignees --paginate --slurp` | `gh issue delete --yes`；`viewerPermission` 为 `ADMIN`             |
 | GitLab        | 是             | notes 接口（跳过 system note） | 是       | 是     | 是（整体替换，清空用 `!` 前缀） | 是     | labels 与 members/all 分页（只保留 active 成员）           | `glab api --method DELETE`；Owner（access_level ≥ 50）或实例管理员 |
 | Gitea         | 是             | comments 接口                  | 是       | 是     | 是（`--set-assignees`）         | 是     | labels 分页（每页 50 条）与 assignees                      | `tea api --method DELETE`；`permissions.admin`                     |
 | 本地 Markdown | 是（文件正文） | `## Comments` 段按空行分段     | 否       | 否     | 否                              | 否     | 否                                                         | 否（不改用户手写的文件）                                           |
 
-- 详情只在打开详情时请求，不进入列表快照；作者来源：GitHub 的 `author.login`、GitLab 的
-  `author.username`、Gitea 的 `user.login`，本地 Markdown 为 null；
+- 详情只在打开详情时请求，不进入列表快照；创建人、评论作者与分配人都是结构化用户
+  （登录名 / 展示名 / 头像地址），与列表的创建人同源同形：GitHub 的 `author.login` + `avatarUrl`、
+  GitLab 的 `username` + `avatar_url`、Gitea 的 `login` + `avatar_url`（相对地址按实例基准补全）；
+  本地 Markdown 没有远端用户，创建人与评论作者为 null、分配人为空数组。
+  GitHub 详情整条走 GraphQL，一次取全作者、分配人与评论作者的头像；变更前的当前值也只读一次。
 - 补全候选把标签颜色统一成小写 `#rrggbb`，重复的标签名 / 用户名只保留第一次出现的项；
 - 删除前宿主会再查一次权限；删除成功后不可撤销，编号不存在映射为 `ticket-not-found`；
 - 权限查询失败在宿主按“没有权限”处理，详情仍然正常返回，只把删除能力置为 false；

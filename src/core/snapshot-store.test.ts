@@ -69,4 +69,21 @@ describe('本地快照库条目', () => {
 
     expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
   })
+
+  it('老记录没有头像字段时按没有头像处理', () => {
+    const old = entry()
+    const legacy = {
+      ...old,
+      tickets: [
+        {
+          ...old.tickets[0],
+          author: { login: 'cnzgray', displayName: null },
+        },
+      ],
+    }
+
+    const parsed = parseSnapshotStoreEntry(JSON.stringify(legacy))
+
+    expect(parsed?.tickets[0]?.author?.avatarUrl).toBeNull()
+  })
 })

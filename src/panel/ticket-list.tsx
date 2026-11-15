@@ -25,13 +25,13 @@ import {
   STATUS_DOT_STYLE,
   STATUS_LABELS,
 } from './task-panel-styles.ts'
-import { TicketAvatar } from './ticket-avatar.tsx'
 import {
   AUTHOR_NAME_STYLE,
   CARD_META_STYLE,
   LABEL_BADGE_STYLE,
   ROW_AGE_STYLE,
 } from './ticket-row-styles.ts'
+import { UserAvatar } from './user-avatar.tsx'
 import {
   WorktreeCreateButton,
   WorktreeOutcome,
@@ -242,7 +242,7 @@ function AuthorMeta(props: {
 
   return (
     <>
-      <TicketAvatar author={author} />
+      <UserAvatar user={author} role="创建人" size={16} testId="ticket-avatar" />
       <span data-testid="ticket-author" title={full} style={AUTHOR_NAME_STYLE}>
         {name}
       </span>

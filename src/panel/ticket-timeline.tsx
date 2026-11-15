@@ -1,12 +1,15 @@
 /**
  * 详情的时间线：正文是第一张卡片，评论按时间依次排在后面，卡片之间用一段竖线相连。
  *
- * 卡片头部是头像、作者和时间；工单作者自己的评论头部带强调色浅底和“作者”徽标，
- * 和 GitHub issue 页的读法一致。正文与评论都按 Markdown 渲染。
+ * 卡片头部是远端头像、作者和时间；工单作者自己的评论头部带强调色浅底和“作者”徽标，
+ * 和 GitHub issue 页的读法一致。作者徽标按登录名判定，服务改了显示名也不会认错。
+ * 正文与评论都按 Markdown 渲染。
  */
 import * as React from 'react'
 
-import type { TicketComment, TicketDetail } from '../protocol/tracker.ts'
+import type { TicketAuthor, TicketComment, TicketDetail } from '../protocol/tracker.ts'
+import { authorName, authorTitle } from './author-text.ts'
+import type { AvatarRole } from './avatar-display.ts'
 import { MarkdownBody } from './markdown-body.tsx'
 import {
   TIMELINE_AUTHOR_BADGE_STYLE,
@@ -20,7 +23,7 @@ import {
   TIMELINE_STYLE,
   TIMELINE_TIME_STYLE,
 } from './ticket-timeline-styles.ts'
-import { Avatar } from './ticket-visuals.tsx'
+import { UserAvatar } from './user-avatar.tsx'
 
 /** 正文卡片加全部评论。 */
 export function Timeline(props: { readonly detail: TicketDetail }): React.ReactElement {
@@ -33,6 +36,7 @@ export function Timeline(props: { readonly detail: TicketDetail }): React.ReactE
         testId="detail-body-section"
         authorTestId="detail-author"
         author={detail.author}
+        avatarRole="创建人"
         verb="创建于"
         time={detail.createdAt}
         isTicketAuthor={false}
@@ -57,7 +61,7 @@ export function Timeline(props: { readonly detail: TicketDetail }): React.ReactE
         ) : (
           detail.comments.map((comment, index) => (
             <CommentCard
-              key={`${comment.author ?? ''}:${comment.createdAt ?? ''}:${String(index)}`}
+              key={`${comment.author?.login ?? ''}:${comment.createdAt ?? ''}:${String(index)}`}
               comment={comment}
               ticketAuthor={detail.author}
             />
@@ -70,9 +74,15 @@ export function Timeline(props: { readonly detail: TicketDetail }): React.ReactE
 
 function CommentCard(props: {
   readonly comment: TicketComment
-  readonly ticketAuthor: string | null
+  readonly ticketAuthor: TicketAuthor | null
 }): React.ReactElement {
   const { comment } = props
+  // 服务改了显示名时登录名不变：作者徽标只按登录名判定。
+  const isTicketAuthor =
+    comment.author !== null &&
+    props.ticketAuthor !== null &&
+    comment.author.login === props.ticketAuthor.login
+
   return (
     <>
       <div style={TIMELINE_CONNECTOR_STYLE} />
@@ -80,10 +90,11 @@ function CommentCard(props: {
         testId="detail-comment"
         authorTestId="comment-author"
         author={comment.author}
+        avatarRole="评论作者"
         verb="评论于"
         time={comment.createdAt}
-        isTicketAuthor={comment.author !== null && comment.author === props.ticketAuthor}
-        ariaLabel={`${comment.author ?? '未署名'}的评论`}
+        isTicketAuthor={isTicketAuthor}
+        ariaLabel={`${comment.author === null ? '未署名' : authorName(comment.author)}的评论`}
       >
         <MarkdownBody source={comment.body} />
       </TimelineCard>
@@ -94,7 +105,9 @@ function CommentCard(props: {
 function TimelineCard(props: {
   readonly testId: string
   readonly authorTestId: string
-  readonly author: string | null
+  readonly author: TicketAuthor | null
+  /** 这个头像代表什么：创建人 / 评论作者。 */
+  readonly avatarRole: AvatarRole
   readonly verb: string
   readonly time: string | null
   readonly isTicketAuthor: boolean
@@ -108,9 +121,14 @@ function TimelineCard(props: {
   return (
     <article data-testid={props.testId} aria-label={props.ariaLabel} style={TIMELINE_CARD_STYLE}>
       <header style={header}>
-        <Avatar name={props.author} />
+        <UserAvatar user={props.author} role={props.avatarRole} size={20} />
         <span data-testid={props.authorTestId} style={TIMELINE_TIME_STYLE}>
-          <span style={TIMELINE_NAME_STYLE}>{props.author ?? '未署名'}</span>
+          <span
+            style={TIMELINE_NAME_STYLE}
+            {...(props.author === null ? {} : { title: authorTitle(props.author) })}
+          >
+            {props.author === null ? '未署名' : authorName(props.author)}
+          </span>
           {props.time === null ? '' : ` ${props.verb} ${formatTime(props.time)}`}
         </span>
         {props.isTicketAuthor ? (

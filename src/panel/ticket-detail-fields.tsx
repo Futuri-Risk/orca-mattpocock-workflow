@@ -12,6 +12,8 @@ import * as React from 'react'
 
 import { BACKEND_LABELS } from '../protocol/backend.ts'
 import type { TicketDetail, TicketPatch } from '../protocol/tracker.ts'
+import { authorName, authorTitle } from './author-text.ts'
+import type { AvatarUser } from './avatar-display.ts'
 import { CheckIcon, CloseIcon, LinkIcon, PersonIcon, PlusIcon, TagIcon } from './icons.tsx'
 import { COLORS } from './task-panel-styles.ts'
 import { TokenEditor, type SuggestionSource } from './ticket-combobox.tsx'
@@ -32,7 +34,8 @@ import {
   HEADER_TEXT_BUTTON_STYLE,
   VISUALLY_HIDDEN_STYLE,
 } from './ticket-detail-styles.ts'
-import { Avatar, labelColorStyle } from './ticket-visuals.tsx'
+import { labelColorStyle } from './ticket-visuals.tsx'
+import { UserAvatar } from './user-avatar.tsx'
 
 /** 写操作相关的共用参数。 */
 export interface FieldProps {
@@ -154,8 +157,11 @@ export function PropertyStrip(
           kind="label"
           name="标签"
           icon={<TagIcon />}
-          values={detail.labels}
-          colors={options.labelColors}
+          values={detail.labels.map((name): TokenItem => ({
+            kind: 'label',
+            name,
+            color: options.labelColors.get(name) ?? null,
+          }))}
           emptyText="无标签"
           placeholder="搜索或输入标签"
           editable={detail.capabilities.labels}
@@ -170,8 +176,7 @@ export function PropertyStrip(
           kind="assignee"
           name="分配人"
           icon={<PersonIcon />}
-          values={detail.assignees}
-          colors={null}
+          values={detail.assignees.map((user): TokenItem => ({ kind: 'assignee', user }))}
           emptyText="未分配"
           placeholder="搜索或输入用户名"
           editable={detail.capabilities.assignees}
@@ -195,14 +200,31 @@ export function PropertyStrip(
   )
 }
 
+/** 属性条里的一个小块：标签或带头像的分配人。 */
+type TokenItem =
+  | {
+      readonly kind: 'label'
+      /** 标签名，也是写进补丁的值。 */
+      readonly name: string
+      readonly color: string | null
+    }
+  | {
+      readonly kind: 'assignee'
+      /** 分配人；登录名是写进补丁的值。 */
+      readonly user: AvatarUser
+    }
+
+/** 小块写进补丁的值：标签名或登录名。 */
+function tokenKey(item: TokenItem): string {
+  return item.kind === 'label' ? item.name : item.user.login
+}
+
 /** 一组小块（标签或分配人）：前导图标、已有值、加号；加号展开带补全的编辑器。 */
 function TokenGroup(props: {
   readonly kind: 'label' | 'assignee'
   readonly name: string
   readonly icon: React.ReactElement
-  readonly values: readonly string[]
-  /** 标签颜色表；分配人组为 null，小块显示头像。 */
-  readonly colors: ReadonlyMap<string, string> | null
+  readonly values: readonly TokenItem[]
   readonly emptyText: string
   readonly placeholder: string
   readonly editable: boolean
@@ -214,6 +236,7 @@ function TokenGroup(props: {
 }): React.ReactElement {
   const { kind, values, busy } = props
   const [editing, setEditing] = React.useState(false)
+  const keys = values.map(tokenKey)
 
   return (
     <div
@@ -229,17 +252,16 @@ function TokenGroup(props: {
       {values.length === 0 && !editing ? (
         <span style={DETAIL_TOKEN_EMPTY_STYLE}>{props.emptyText}</span>
       ) : null}
-      {values.map((value) => (
+      {values.map((item) => (
         <Token
-          key={value}
+          key={tokenKey(item)}
           kind={kind}
           name={props.name}
-          value={value}
-          color={props.colors === null ? undefined : (props.colors.get(value) ?? null)}
+          item={item}
           editable={props.editable}
           busy={busy}
           onRemove={() => {
-            props.onChange(values.filter((item) => item !== value))
+            props.onChange(keys.filter((key) => key !== tokenKey(item)))
           }}
         />
       ))}
@@ -249,10 +271,10 @@ function TokenGroup(props: {
           name={props.name}
           placeholder={props.placeholder}
           busy={busy}
-          selected={values}
+          selected={keys}
           source={props.source}
           onAdd={(value) => {
-            if (!values.includes(value)) props.onChange([...values, value])
+            if (!keys.includes(value)) props.onChange([...keys, value])
           }}
           onAssignSelf={props.onAssignSelf}
           onClose={() => {
@@ -282,30 +304,35 @@ function TokenGroup(props: {
 
 /**
  * 一个标签或分配人小块；可写时带圆形移除按钮。
- * 标签按仓库颜色着色（`color` 为 null 表示没有颜色）；分配人（`color` 为 undefined）带头像。
+ * 标签按仓库颜色着色；分配人带头像，文本优先用服务给的展示名。
  */
 function Token(props: {
   readonly kind: 'label' | 'assignee'
   readonly name: string
-  readonly value: string
-  readonly color: string | null | undefined
+  readonly item: TokenItem
   readonly editable: boolean
   readonly busy: boolean
   readonly onRemove: () => void
 }): React.ReactElement {
-  const label = `移除${props.name} ${props.value}`
-  const isAssignee = props.color === undefined
+  const { item } = props
+  const isAssignee = item.kind === 'assignee'
+  const text = isAssignee ? authorName(item.user) : item.name
+  const label = `移除${props.name} ${text}`
   const style: React.CSSProperties = {
     ...DETAIL_TOKEN_STYLE,
-    ...(isAssignee ? { paddingLeft: 2 } : labelColorStyle(props.color ?? null)),
+    ...(isAssignee ? { paddingLeft: 2 } : labelColorStyle(item.color)),
     ...(props.editable ? {} : { paddingRight: 9 }),
   }
 
   return (
-    <span data-testid={`${props.kind}-chip`} style={style}>
-      {isAssignee ? <Avatar name={props.value} size={16} /> : null}
+    <span
+      data-testid={`${props.kind}-chip`}
+      style={style}
+      {...(isAssignee ? { title: authorTitle(item.user) } : {})}
+    >
+      {isAssignee ? <UserAvatar user={item.user} role="分配人" size={16} /> : null}
       <span data-token-name="" style={isAssignee ? { marginLeft: 3 } : undefined}>
-        {props.value}
+        {text}
       </span>
       {props.editable ? (
         <button

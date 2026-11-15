@@ -17,6 +17,7 @@ import {
   GITLAB_LINKS,
   GITLAB_NOTES,
   GITLAB_REMOTES_OUTPUT,
+  gitlabAuthor,
   gitlabIssue,
   issuesJson,
 } from './fixtures.ts'
@@ -496,15 +497,15 @@ describe('GitLab 工单详情与变更', () => {
       ref: '#15',
       number: 15,
       title: '右侧栏任务面板 MVP',
-      author: 'dave',
+      author: gitlabAuthor('dave'),
       body: '## 目标\n\n在面板里看工单。',
       labels: ['enhancement', 'ready-for-agent'],
-      assignees: ['alice'],
+      assignees: [gitlabAuthor('alice')],
       url: 'https://gitlab.com/cnzgray/platform/dsh-workflow/-/issues/15',
     })
     expect(detail?.comments.map((comment) => [comment.author, comment.body])).toEqual([
-      ['bob', '补充验收标准'],
-      ['carol', '上一次失败的原因'],
+      [gitlabAuthor('bob'), '补充验收标准'],
+      [gitlabAuthor('carol'), '上一次失败的原因'],
     ])
     expect(calls.filter((call) => call[0] === 'glab').map((call) => call[2])).toEqual([
       'projects/cnzgray%2Fplatform%2Fdsh-workflow/issues/15',
@@ -533,7 +534,10 @@ describe('GitLab 工单详情与变更', () => {
 
     const detail = await tracker.fetchDetail?.('/workspace', { ref: '#15', number: 15 })
 
-    expect(detail?.comments.map((comment) => comment.author)).toEqual(['bob', 'carol'])
+    expect(detail?.comments.map((comment) => comment.author)).toEqual([
+      gitlabAuthor('bob'),
+      gitlabAuthor('carol'),
+    ])
   })
 
   it('标签用 --label / --unlabel 增量落地', async () => {
@@ -706,13 +710,13 @@ const GITLAB_DETAIL_EXPECTED: TicketDetail = {
   number: 15,
   title: '右侧栏任务面板 MVP',
   state: 'open',
-  author: 'dave',
+  author: gitlabAuthor('dave'),
   body: '## 目标\n\n在面板里看工单。',
   labels: ['enhancement', 'ready-for-agent'],
-  assignees: ['alice'],
+  assignees: [gitlabAuthor('alice')],
   comments: [
-    { author: 'bob', body: '补充验收标准', createdAt: '2026-11-13T09:00:00Z' },
-    { author: 'carol', body: '上一次失败的原因', createdAt: '2026-11-13T10:00:00Z' },
+    { author: gitlabAuthor('bob'), body: '补充验收标准', createdAt: '2026-11-13T09:00:00Z' },
+    { author: gitlabAuthor('carol'), body: '上一次失败的原因', createdAt: '2026-11-13T10:00:00Z' },
   ],
   url: 'https://gitlab.com/cnzgray/platform/dsh-workflow/-/issues/15',
   createdAt: '2026-11-12T14:11:22Z',

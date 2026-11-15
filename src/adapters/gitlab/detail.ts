@@ -6,6 +6,7 @@
  * - 变更：标签用 `--label` / `--unlabel` 增量；分配人按整体替换语义给出完整名单，
  *   清空时用 `!` 前缀逐个移除；状态用关闭 / 重开命令。
  */
+import { readAuthor, readAuthors } from '../../core/author.ts'
 import { isRecord } from '../../core/json.ts'
 import {
   invalidDetail,
@@ -14,13 +15,13 @@ import {
   readNameList,
   readOptionalString,
   readRequiredString,
-  readUserNames,
   requireTicketNumber,
   resolveTargetSet,
   sortCommentsByTime,
 } from '../../core/ticket-detail.ts'
 import type {
   CommandRunner,
+  TicketAuthor,
   TicketComment,
   TicketDetail,
   TicketPatch,
@@ -28,6 +29,7 @@ import type {
   TicketState,
 } from '../../core/ticket.ts'
 import { CommandError, TrackerError } from '../../core/tracker-error.ts'
+import { GITLAB_AUTHOR_FIELDS } from './parse.ts'
 import { callGlab, callGlabApi, projectEndpoint, readProjectPath } from './shared.ts'
 
 const NOT_FOUND = /404 Not Found|404 page not found|Not Found/i
@@ -43,10 +45,10 @@ export interface GitlabDetailDeps {
 interface GitlabIssue {
   readonly title: string
   readonly state: TicketState
-  readonly author: string | null
+  readonly author: TicketAuthor | null
   readonly body: string
   readonly labels: readonly string[]
-  readonly assignees: readonly string[]
+  readonly assignees: readonly TicketAuthor[]
   readonly url: string | null
   readonly createdAt: string
   readonly updatedAt: string
@@ -136,10 +138,11 @@ async function updateAssignees(
   deps: GitlabDetailDeps,
   workspaceRoot: string,
   iid: number,
-  current: readonly string[],
+  currentUsers: readonly TicketAuthor[],
   patch: TicketPatch,
   self: string | null,
 ): Promise<void> {
+  const current = currentUsers.map((user) => user.login)
   const target = resolveTargetSet(current, patch.assignees, self)
 
   // 有目标名单就用整体替换语义；目标为空时逐个加 `!` 前缀移除，这是 glab 文档里的取消分配方式。
@@ -219,10 +222,10 @@ function parseIssue(output: string): GitlabIssue {
   return {
     title: readRequiredString(payload.title, '标题'),
     state: readState(payload.state),
-    author: isRecord(payload.author) ? readOptionalString(payload.author.username) : null,
+    author: readAuthor(payload.author, GITLAB_AUTHOR_FIELDS),
     body: typeof payload.description === 'string' ? payload.description : '',
     labels: readNameList(payload.labels),
-    assignees: readUserNames(payload.assignees, 'username'),
+    assignees: readAuthors(payload.assignees, GITLAB_AUTHOR_FIELDS),
     url: readOptionalString(payload.web_url),
     createdAt: readRequiredString(payload.created_at, '创建时间'),
     updatedAt: readRequiredString(payload.updated_at, '更新时间'),
@@ -245,7 +248,7 @@ function parseNotesPage(output: string): {
     const body = typeof note.body === 'string' ? note.body : ''
     if (body.length === 0) continue
     comments.push({
-      author: isRecord(note.author) ? readOptionalString(note.author.username) : null,
+      author: readAuthor(note.author, GITLAB_AUTHOR_FIELDS),
       body,
       createdAt: readOptionalString(note.created_at),
     })

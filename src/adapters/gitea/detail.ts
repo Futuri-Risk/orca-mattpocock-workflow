@@ -5,6 +5,7 @@
  * - 变更：标签用 `--add-labels` / `--remove-labels`；分配人用整体替换语义的
  *   `--set-assignees`（空串表示清空）；状态用关闭 / 重开命令。
  */
+import { readAuthor, readAuthors } from '../../core/author.ts'
 import { isRecord } from '../../core/json.ts'
 import {
   invalidDetail,
@@ -13,13 +14,13 @@ import {
   readNameList,
   readOptionalString,
   readRequiredString,
-  readUserNames,
   requireTicketNumber,
   resolveTargetSet,
   sortCommentsByTime,
 } from '../../core/ticket-detail.ts'
 import type {
   CommandRunner,
+  TicketAuthor,
   TicketComment,
   TicketDetail,
   TicketPatch,
@@ -27,7 +28,7 @@ import type {
   TicketState,
 } from '../../core/ticket.ts'
 import { TrackerError } from '../../core/tracker-error.ts'
-import type { ApiResponse } from './parse.ts'
+import { GITEA_AUTHOR_FIELDS, type ApiResponse } from './parse.ts'
 import {
   callGiteaApi,
   callTea,
@@ -47,10 +48,10 @@ export interface GiteaDetailDeps {
 interface GiteaIssue {
   readonly title: string
   readonly state: TicketState
-  readonly author: string | null
+  readonly author: TicketAuthor | null
   readonly body: string
   readonly labels: readonly string[]
-  readonly assignees: readonly string[]
+  readonly assignees: readonly TicketAuthor[]
   readonly url: string | null
   readonly createdAt: string
   readonly updatedAt: string
@@ -123,7 +124,8 @@ export async function applyGiteaChanges(
 
   if (patch.assignees !== undefined || patch.assignSelf === true) {
     const self = patch.assignSelf === true ? await readCurrentLogin(deps.run, workspaceRoot) : null
-    const target = resolveTargetSet(current.assignees, patch.assignees, self)
+    const currentLogins = current.assignees.map((user) => user.login)
+    const target = resolveTargetSet(currentLogins, patch.assignees, self)
     await callTea(deps.run, workspaceRoot, [
       'issues',
       'edit',
@@ -154,7 +156,7 @@ async function readIssue(
     `/repos/${repository.owner}/${repository.name}/issues/${String(number)}`,
   )
   ensureDetailSuccess(response, '读取 Gitea 工单详情')
-  return parseIssue(response.body)
+  return parseIssue(response.body, repository.avatarBaseUrl)
 }
 
 async function readComments(
@@ -169,7 +171,7 @@ async function readComments(
     const endpoint = `/repos/${repository.owner}/${repository.name}/issues/${String(number)}/comments?page=${String(page)}&limit=${String(deps.pageSize)}`
     const response = await callGiteaApi(deps.run, workspaceRoot, endpoint)
     ensureDetailSuccess(response, '读取 Gitea 工单评论')
-    const parsed = parseCommentsPage(response.body)
+    const parsed = parseCommentsPage(response.body, repository.avatarBaseUrl)
     comments.push(...parsed)
     if (parsed.length < deps.pageSize) break
   }
@@ -197,24 +199,27 @@ function ensureDetailSuccess(response: ApiResponse, action: string): void {
   ensureSuccess(response, action)
 }
 
-function parseIssue(body: string): GiteaIssue {
+function parseIssue(body: string, avatarBaseUrl: string): GiteaIssue {
   const payload = parseJson(body)
   if (!isRecord(payload)) throw invalidDetail('工单详情不是对象')
 
   return {
     title: readRequiredString(payload.title, '标题'),
     state: readState(payload.state),
-    author: isRecord(payload.user) ? readOptionalString(payload.user.login) : null,
+    author: readAuthor(payload.user, GITEA_AUTHOR_FIELDS, avatarBaseUrl),
     body: typeof payload.body === 'string' ? payload.body : '',
     labels: readNameList(payload.labels),
-    assignees: readUserNames(payload.assignees, 'login'),
+    assignees: readAuthors(payload.assignees, GITEA_AUTHOR_FIELDS, avatarBaseUrl),
     url: readOptionalString(payload.html_url),
     createdAt: readRequiredString(payload.created_at, '创建时间'),
     updatedAt: readRequiredString(payload.updated_at, '更新时间'),
   }
 }
 
-function parseCommentsPage(body: string): readonly TicketComment[] {
+function parseCommentsPage(
+  body: string,
+  avatarBaseUrl: string,
+): readonly TicketComment[] {
   const payload = parseJson(body)
   if (!Array.isArray(payload)) throw invalidDetail('评论列表不是数组')
 
@@ -224,7 +229,7 @@ function parseCommentsPage(body: string): readonly TicketComment[] {
     const text = typeof entry.body === 'string' ? entry.body : ''
     if (text.length === 0) continue
     comments.push({
-      author: isRecord(entry.user) ? readOptionalString(entry.user.login) : null,
+      author: readAuthor(entry.user, GITEA_AUTHOR_FIELDS, avatarBaseUrl),
       body: text,
       createdAt: readOptionalString(entry.created_at),
     })

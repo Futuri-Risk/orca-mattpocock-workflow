@@ -15,6 +15,7 @@ import {
   GITEA_REPO_PERMISSION_OUTPUT,
   apiCall,
   failedApiCall,
+  giteaAuthor,
   giteaIssue,
   giteaIssueDetail,
   includeHeaders,
@@ -449,15 +450,15 @@ describe('Gitea 工单详情与变更', () => {
       ref: '#15',
       number: 15,
       title: '右侧栏任务面板 MVP',
-      author: 'dave',
+      author: giteaAuthor('dave'),
       body: '## 目标\n\n在面板里看工单。',
       labels: ['enhancement', 'ready-for-agent'],
-      assignees: ['alice'],
+      assignees: [giteaAuthor('alice')],
       url: `https://gitea.example.com/${GITEA_REPO}/issues/15`,
     })
     expect(detail?.comments.map((comment) => [comment.author, comment.body])).toEqual([
-      ['bob', '补充验收标准'],
-      ['carol', '上一次失败的原因'],
+      [giteaAuthor('bob'), '补充验收标准'],
+      [giteaAuthor('carol'), '上一次失败的原因'],
     ])
     expect(calls.filter((call) => call[0] === 'tea').map((call) => call[3])).toEqual([
       `/repos/${GITEA_REPO}/issues/15`,
@@ -483,7 +484,10 @@ describe('Gitea 工单详情与变更', () => {
 
     const detail = await tracker.fetchDetail?.('/workspace', { ref: '#15', number: 15 })
 
-    expect(detail?.comments.map((comment) => comment.author)).toEqual(['bob', 'carol'])
+    expect(detail?.comments.map((comment) => comment.author)).toEqual([
+      giteaAuthor('bob'),
+      giteaAuthor('carol'),
+    ])
   })
 
   it('标签用 --add-labels / --remove-labels 增量落地', async () => {
@@ -644,13 +648,13 @@ const GITEA_DETAIL_EXPECTED: TicketDetail = {
   number: 15,
   title: '右侧栏任务面板 MVP',
   state: 'open',
-  author: 'dave',
+  author: giteaAuthor('dave'),
   body: '## 目标\n\n在面板里看工单。',
   labels: ['enhancement', 'ready-for-agent'],
-  assignees: ['alice'],
+  assignees: [giteaAuthor('alice')],
   comments: [
-    { author: 'bob', body: '补充验收标准', createdAt: '2026-11-13T09:00:00Z' },
-    { author: 'carol', body: '上一次失败的原因', createdAt: '2026-11-13T10:00:00Z' },
+    { author: giteaAuthor('bob'), body: '补充验收标准', createdAt: '2026-11-13T09:00:00Z' },
+    { author: giteaAuthor('carol'), body: '上一次失败的原因', createdAt: '2026-11-13T10:00:00Z' },
   ],
   url: `https://gitea.example.com/${GITEA_REPO}/issues/15`,
   createdAt: '2026-11-12T14:11:22Z',

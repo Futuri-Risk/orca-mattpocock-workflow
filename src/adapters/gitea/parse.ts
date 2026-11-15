@@ -9,8 +9,8 @@ import { isRecord } from '../../core/json.ts'
 import type { Ticket, TicketState } from '../../core/ticket.ts'
 import { TrackerError } from '../../core/tracker-error.ts'
 
-/** Gitea issue 的 user 字段名。 */
-const AUTHOR_FIELDS: AuthorFields = {
+/** Gitea issue 的 user 字段名。详情与评论共用同一份。 */
+export const GITEA_AUTHOR_FIELDS: AuthorFields = {
   login: 'login',
   displayName: 'full_name',
   avatarUrl: 'avatar_url',
@@ -130,7 +130,7 @@ function parseIssue(value: unknown, index: number, avatarBaseUrl?: string): Pars
       title,
       state,
       labels: readLabels(value.labels),
-      author: readAuthor(value.user, AUTHOR_FIELDS, avatarBaseUrl),
+      author: readAuthor(value.user, GITEA_AUTHOR_FIELDS, avatarBaseUrl),
       createdAt: readString(value.created_at, `第 ${String(number)} 张票的创建时间`),
       updatedAt: readString(value.updated_at, `第 ${String(number)} 张票的更新时间`),
       openBlockers: 0,

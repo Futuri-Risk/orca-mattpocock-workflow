@@ -2,10 +2,27 @@
  * 解析 `gh api graphql` 的工单输出。输入是录制或真实的 JSON 文本，
  * 不在这里发起任何请求。
  */
-import { readAuthor, type AuthorFields } from '../../core/author.ts'
+import { readAuthor, readAuthors, type AuthorFields } from '../../core/author.ts'
 import { isRecord } from '../../core/json.ts'
-import type { Ticket, TicketState } from '../../core/ticket.ts'
+import {
+  invalidDetail,
+  readOptionalString,
+  readRequiredString,
+  sortCommentsByTime,
+} from '../../core/ticket-detail.ts'
+import type {
+  Ticket,
+  TicketAuthor,
+  TicketComment,
+  TicketState,
+} from '../../core/ticket.ts'
 import { TrackerError } from '../../core/tracker-error.ts'
+
+/**
+ * GraphQL 里的用户字段。列表、详情、分配人与评论作者共用这一份选择集，
+ * 少写一处就会让某个位置退回首字母色块。
+ */
+export const GITHUB_USER_FIELDS = 'login avatarUrl ... on User { name }'
 
 /** GitHub GraphQL 用户对象里的字段名。 */
 const AUTHOR_FIELDS: AuthorFields = {
@@ -226,4 +243,136 @@ function parseJson(output: string, message: string): unknown {
 
 function invalid(message: string): TrackerError {
   return new TrackerError('fetch-failed', `工单数据格式不正确：${message}`)
+}
+
+/**
+ * 详情与变更共用的工单字段。详情多一页评论，变更只需要这些当前值。
+ */
+export interface ParsedIssueCore {
+  readonly number: number
+  readonly title: string
+  readonly body: string
+  readonly state: TicketState
+  readonly labels: readonly string[]
+  readonly author: TicketAuthor | null
+  readonly assignees: readonly TicketAuthor[]
+  readonly url: string | null
+  readonly createdAt: string
+  readonly updatedAt: string
+}
+
+/** 一页详情：工单字段加这一页的评论与分页信息。 */
+export interface ParsedDetailPage extends ParsedIssueCore {
+  readonly comments: readonly TicketComment[]
+  readonly hasNextPage: boolean
+  /** 下一页游标；没有下一页时为 null。 */
+  readonly endCursor: string | null
+}
+
+/**
+ * 解析只取当前值的详情响应，用于变更前读取现有标签、分配人与状态。
+ * @param output - `gh api graphql` 的标准输出。
+ * @returns 工单当前值。
+ * @throws {TrackerError} 工单不存在、输出不是 JSON 或字段不合法。
+ */
+export function parseIssueCore(output: string): ParsedIssueCore {
+  return readIssueCore(readIssuePayload(parseJson(output, 'gh 返回的不是有效 JSON')))
+}
+
+/**
+ * 解析一页详情：工单字段、这一页的评论与是否还有下一页。
+ * @param output - `gh api graphql` 的标准输出。
+ * @returns 一页详情。
+ * @throws {TrackerError} 工单不存在、输出不是 JSON 或字段不合法。
+ */
+export function parseIssueDetailPage(output: string): ParsedDetailPage {
+  const issue = readIssuePayload(parseJson(output, 'gh 返回的不是有效 JSON'))
+  const pageInfo = readCommentPageInfo(issue.comments)
+
+  return {
+    ...readIssueCore(issue),
+    comments: readCommentNodes(issue.comments),
+    hasNextPage: pageInfo.hasNextPage,
+    endCursor: pageInfo.endCursor,
+  }
+}
+
+/** 取出 `data.repository.issue`；仓库不可见与工单不存在是两种不同的结果。 */
+function readIssuePayload(payload: unknown): Record<string, unknown> {
+  if (!isRecord(payload)) throw invalidDetail('gh 输出的顶层不是对象')
+  const data = payload.data
+  if (!isRecord(data)) throw invalidDetail('gh 输出缺少 data')
+  const repository = data.repository
+  if (!isRecord(repository)) {
+    throw new TrackerError('fetch-failed', 'GitHub 上找不到这个仓库，或当前账号没有访问权限。')
+  }
+
+  const issue = repository.issue
+  if (issue === null || issue === undefined) {
+    throw new TrackerError('ticket-not-found', '找不到这张工单，它可能已被删除。')
+  }
+  if (!isRecord(issue)) throw invalidDetail('issue 不是对象')
+  return issue
+}
+
+function readIssueCore(issue: Record<string, unknown>): ParsedIssueCore {
+  const number = readPositiveInteger(issue.number)
+
+  return {
+    number,
+    title: readRequiredString(issue.title, '标题'),
+    body: typeof issue.body === 'string' ? issue.body : '',
+    state: readState(issue.state, number),
+    labels: readLabels(issue.labels),
+    author: readAuthor(issue.author, AUTHOR_FIELDS),
+    assignees: readUserNodes(issue.assignees),
+    url: readOptionalString(issue.url),
+    createdAt: readRequiredString(issue.createdAt, '创建时间'),
+    updatedAt: readRequiredString(issue.updatedAt, '更新时间'),
+  }
+}
+
+/** 分配人连接（`{ nodes: [...] }`）里的用户。 */
+function readUserNodes(value: unknown): readonly TicketAuthor[] {
+  if (!isRecord(value)) return []
+  return readAuthors(value.nodes, AUTHOR_FIELDS)
+}
+
+function readCommentNodes(value: unknown): readonly TicketComment[] {
+  if (!isRecord(value) || !Array.isArray(value.nodes)) return []
+
+  const comments: TicketComment[] = []
+  for (const node of value.nodes) {
+    if (!isRecord(node)) continue
+    const body = typeof node.body === 'string' ? node.body : ''
+    if (body.length === 0) continue
+    comments.push({
+      author: readAuthor(node.author, AUTHOR_FIELDS),
+      body,
+      createdAt: readOptionalString(node.createdAt),
+    })
+  }
+  return sortCommentsByTime(comments)
+}
+
+function readCommentPageInfo(value: unknown): {
+  readonly hasNextPage: boolean
+  readonly endCursor: string | null
+} {
+  if (!isRecord(value)) throw invalidDetail('缺少评论连接')
+  const pageInfo = value.pageInfo
+  if (!isRecord(pageInfo)) throw invalidDetail('评论缺少 pageInfo')
+
+  const hasNextPage = pageInfo.hasNextPage
+  if (typeof hasNextPage !== 'boolean') {
+    throw invalidDetail('评论的 pageInfo.hasNextPage 不是布尔值')
+  }
+  return { hasNextPage, endCursor: readOptionalString(pageInfo.endCursor) }
+}
+
+function readPositiveInteger(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
+    throw invalidDetail('编号不是正整数')
+  }
+  return value
 }

@@ -13,6 +13,7 @@ import { createLocalIssuesProbe } from '../adapters/markdown/env.ts'
 import { createNodeWorkspaceFiles } from '../adapters/markdown/files.ts'
 import { TRACKER_LABELS } from '../protocol/labels.ts'
 import { ERROR_CODES, RPC_METHODS, type RpcResult } from '../protocol/tracker.ts'
+import { createAvatarService } from './avatar-service.ts'
 import { createBackendResolver } from './backend-resolver.ts'
 import { createEnvCheckService } from './env-check-service.ts'
 import { createLog, type LogSink } from './log.ts'
@@ -59,6 +60,8 @@ export default function activate(orca: OrcaWorkerApi): void {
   const snapshot = createSnapshotService({ resolve, now, labels: TRACKER_LABELS, log, store })
   const ticket = createTicketService({ resolve, now, log, store })
   const worktree = createTicketWorktreeService({ resolve, run, now, log })
+  // 面板 frame 没有网络：头像由 worker 下载后转成 data URL。
+  const avatar = createAvatarService()
   const envCheck = createEnvCheckService({
     resolve: resolveFresh,
     github: createGithubEnvProbe({ run }),
@@ -75,7 +78,7 @@ export default function activate(orca: OrcaWorkerApi): void {
 
   const workspace = createWorkspaceResolver(orca.host, orca.storage)
 
-  registerRpcHandlers(orca, { snapshot, ticket, worktree, envCheck, workspace, log })
+  registerRpcHandlers(orca, { snapshot, ticket, worktree, envCheck, workspace, avatar, log })
 
   orca.commands.register(REFRESH_COMMAND_ID, async () => {
     // 主动刷新时重新认领一次：工作区可能刚被重命名、新建或关闭。

@@ -10,9 +10,14 @@
 工单详情相关：
 
 - `ticket.ts` 里的 `TicketDetail` / `TicketComment` / `TicketPatch` 是适配器与宿主共用的模型；
+  详情里的创建人、评论作者与分配人都是结构化的 `TicketAuthor`（登录名 / 展示名 / 头像地址），
+  写侧的分配人补丁仍是登录名数组；
+- `author.ts` 是远端用户的唯一解析入口：`readAuthor` / `readAuthors` 按各后端字段名取值，
+  登录名为空时整条用户按 null 处理（不从列表里消失），头像只放行 http(s) 绝对地址，
+  实例内相对路径按后端给出的基准补全；列表与详情共用同一份规则；
 - `ticket-detail.ts` 只做纯计算与字段校验：目标集合与当前集合的差异（`diffSets` / `resolveTargetSet` /
   `planSetChange` / `isEmptyDiff`），以及三个远端后端共用的详情字段读取（`readRequiredString`、
-  `readNameList`、`readUserNames`、`sortCommentsByTime`、`requireTicketNumber`、`invalidDetail`）；
+  `readNameList`、`sortCommentsByTime`、`requireTicketNumber`、`invalidDetail`）；
   「分配给我」由适配器解析用户名后作为 `self` 并入目标集合；
 - 补全候选的归一化也在这里：`normalizeLabelColor` 把颜色统一成小写 `#rrggbb`，
   `dedupeBy` 按名字去重并保留首次出现的顺序；

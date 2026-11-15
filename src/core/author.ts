@@ -40,6 +40,28 @@ export function readAuthor(
 }
 
 /**
+ * 从后端返回的用户数组里读出远端用户，跳过识别不出来的元素。
+ * 分配人、评论作者与创建人共用同一套字段名与降级规则。
+ * @param value - 后端返回的用户数组。
+ * @param fields - 该后端使用的字段名。
+ * @param avatarBaseUrl - 头像地址是实例内相对路径时用来补全的基准地址。
+ * @returns 远端用户，保持输入顺序。
+ */
+export function readAuthors(
+  value: unknown,
+  fields: AuthorFields,
+  avatarBaseUrl?: string,
+): readonly TicketAuthor[] {
+  if (!Array.isArray(value)) return []
+  const authors: TicketAuthor[] = []
+  for (const entry of value) {
+    const author = readAuthor(entry, fields, avatarBaseUrl)
+    if (author !== null) authors.push(author)
+  }
+  return authors
+}
+
+/**
  * 把头像地址规范成可加载的绝对地址：只保留 `http` / `https`。
  * 相对路径按基准地址补全；补不出来（没有基准地址、不是合法 URL、非 http 协议）时为 null，
  * 由界面回退成首字母色块。

@@ -8,8 +8,8 @@ import type { NativeBlockers } from '../../core/blocked-by.ts'
 import type { Ticket, TicketState } from '../../core/ticket.ts'
 import { TrackerError } from '../../core/tracker-error.ts'
 
-/** GitLab issue 的 author 字段名。 */
-const AUTHOR_FIELDS: AuthorFields = {
+/** GitLab issue 的 author 字段名。详情与评论共用同一份。 */
+export const GITLAB_AUTHOR_FIELDS: AuthorFields = {
   login: 'username',
   displayName: 'name',
   avatarUrl: 'avatar_url',
@@ -159,7 +159,7 @@ function parseIssue(value: unknown, index: number): ParsedIssue {
       title,
       state,
       labels: readLabels(value.labels),
-      author: readAuthor(value.author, AUTHOR_FIELDS),
+      author: readAuthor(value.author, GITLAB_AUTHOR_FIELDS),
       createdAt: readString(value.created_at, `第 ${String(iid)} 张票的创建时间`),
       updatedAt: readString(value.updated_at, `第 ${String(iid)} 张票的更新时间`),
       openBlockers: 0,

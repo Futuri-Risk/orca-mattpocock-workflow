@@ -223,8 +223,11 @@ function readAuthor(value: unknown): TicketAuthor | null | undefined {
   if (login === undefined) return undefined
   const displayName = value.displayName
   if (displayName !== null && typeof displayName !== 'string') return undefined
+  // 老快照里没有 avatarUrl 字段：按没有头像处理，整张票仍然可用。
   const avatarUrl = value.avatarUrl
-  if (avatarUrl !== null && typeof avatarUrl !== 'string') return undefined
+  if (avatarUrl !== null && avatarUrl !== undefined && typeof avatarUrl !== 'string') {
+    return undefined
+  }
   return {
     login,
     displayName: displayName ?? null,

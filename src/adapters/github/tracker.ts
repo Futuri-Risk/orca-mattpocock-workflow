@@ -9,6 +9,7 @@ import { TrackerError } from '../../core/tracker-error.ts'
 import { deleteGithubTicket, readGithubDeletePermission } from './delete.ts'
 import { applyGithubChanges, readGithubDetail } from './detail.ts'
 import {
+  GITHUB_USER_FIELDS,
   parseIssueChangesGraphql,
   parseIssueGraphql,
   type ParsedChanges,
@@ -39,7 +40,7 @@ const ISSUE_NODES = `nodes {
         updatedAt
         closedAt
         labels(first: 50) { nodes { name } }
-        author { login avatarUrl ... on User { name } }
+        author { ${GITHUB_USER_FIELDS} }
         issueDependenciesSummary { blockedBy }
       }`
 

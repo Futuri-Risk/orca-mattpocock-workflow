@@ -17,7 +17,7 @@ import {
   COMBO_SWATCH_STYLE,
 } from './ticket-timeline-styles.ts'
 import { DETAIL_INLINE_INPUT_STYLE, DETAIL_SMALL_BUTTON_STYLE } from './ticket-detail-styles.ts'
-import { Avatar } from './ticket-visuals.tsx'
+import { UserAvatar } from './user-avatar.tsx'
 
 /** 一个补全候选。 */
 export interface Suggestion {
@@ -232,7 +232,11 @@ function SuggestionList(props: {
           }
         >
           {item.color === null ? (
-            <Avatar name={item.value} size={18} />
+            <UserAvatar
+              user={{ login: item.value, displayName: item.detail, avatarUrl: null }}
+              role="可分配用户"
+              size={18}
+            />
           ) : (
             <span style={{ ...COMBO_SWATCH_STYLE, background: item.color }} />
           )}

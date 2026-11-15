@@ -136,55 +136,100 @@ export const GH_TRUNCATED_CHANGES_OUTPUT = JSON.stringify({
   },
 })
 
-/** 构造 `gh issue view --json` 的详情对象。 */
-export function ghIssueDetail(overrides: {
+/** 录制里出现的 GitHub 用户：名字与头像 id 固定，期望值可以按登录名推导。 */
+const GITHUB_USERS: Readonly<Record<string, { readonly name: string | null; readonly id: number }>> =
+  {
+    dave: { name: 'Dave', id: 4004 },
+    alice: { name: 'Alice', id: 4001 },
+    bob: { name: null, id: 4002 },
+    carol: { name: null, id: 4003 },
+  }
+
+function userAvatarUrl(login: string): string {
+  const id = GITHUB_USERS[login]?.id ?? 4000
+  return `https://avatars.githubusercontent.com/u/${String(id)}?v=4`
+}
+
+/** GraphQL 用户对象；`name` 为空时显示名按 null 处理。 */
+export function ghUserNode(login: string): Record<string, unknown> {
+  return { login, name: GITHUB_USERS[login]?.name ?? null, avatarUrl: userAvatarUrl(login) }
+}
+
+/** 期望的创建人 / 评论作者 / 分配人。 */
+export function ghAuthor(login: string): {
+  readonly login: string
+  readonly displayName: string | null
+  readonly avatarUrl: string
+} {
+  return { login, displayName: GITHUB_USERS[login]?.name ?? null, avatarUrl: userAvatarUrl(login) }
+}
+
+/** 构造 GraphQL 详情查询里的 issue 对象。 */
+export function ghIssueDetailNode(overrides: {
   readonly number: number
   readonly title: string
   readonly body?: string
   readonly state?: 'OPEN' | 'CLOSED'
-  readonly author?: string
+  readonly author?: string | null
   readonly labels?: readonly string[]
   readonly assignees?: readonly string[]
   readonly comments?: readonly {
-    readonly author: string
+    readonly author: string | null
     readonly body: string
     readonly createdAt: string
   }[]
   readonly url?: string
   readonly createdAt?: string
   readonly updatedAt?: string
+  /** 评论还有下一页时为 true；配合 `endCursor` 验证翻页。 */
+  readonly hasNextPage?: boolean
+  readonly endCursor?: string | null
 }): Record<string, unknown> {
   return {
     number: overrides.number,
     title: overrides.title,
     body: overrides.body ?? '',
     state: overrides.state ?? 'OPEN',
-    author: { login: overrides.author ?? 'dave' },
-    labels: (overrides.labels ?? []).map((name) => ({ name, color: 'ededed' })),
-    assignees: (overrides.assignees ?? []).map((login) => ({ login, name: login })),
-    comments: (overrides.comments ?? []).map((comment) => ({
-      author: { login: comment.author },
-      body: comment.body,
-      createdAt: comment.createdAt,
-    })),
+    author: overrides.author === null ? null : ghUserNode(overrides.author ?? 'dave'),
+    labels: { nodes: (overrides.labels ?? []).map((name) => ({ name })) },
+    assignees: { nodes: (overrides.assignees ?? []).map((login) => ghUserNode(login)) },
+    comments: {
+      pageInfo: {
+        hasNextPage: overrides.hasNextPage ?? false,
+        endCursor: overrides.endCursor ?? null,
+      },
+      nodes: (overrides.comments ?? []).map((comment) => ({
+        author: comment.author === null ? null : ghUserNode(comment.author),
+        body: comment.body,
+        createdAt: comment.createdAt,
+      })),
+    },
     url: overrides.url ?? '',
     createdAt: overrides.createdAt ?? '2026-11-12T14:11:22Z',
     updatedAt: overrides.updatedAt ?? '2026-11-13T10:00:00Z',
   }
 }
 
-export const GH_ISSUE_DETAIL = ghIssueDetail({
-  number: 15,
-  title: '右侧栏任务面板 MVP',
-  body: '## 目标\n\n在面板里看工单。',
-  labels: ['enhancement', 'ready-for-agent'],
-  assignees: ['alice'],
-  comments: [
-    { author: 'bob', body: '补充验收标准', createdAt: '2026-11-13T09:00:00Z' },
-    { author: 'carol', body: '上一次失败的原因', createdAt: '2026-11-13T10:00:00Z' },
-  ],
-  url: 'https://github.com/cnzgray/dsh-mattpocock-workflow/issues/15',
-})
+/** 构造一次 `gh api graphql` 详情查询的完整响应。 */
+export function ghDetailOutput(issue: Record<string, unknown>): string {
+  return JSON.stringify({ data: { repository: { issue } } })
+}
+
+/** 详情查询的录制输出：作者、分配人与评论作者都带头像。 */
+export const GH_ISSUE_DETAIL = ghDetailOutput(
+  ghIssueDetailNode({
+    number: 15,
+    title: '右侧栏任务面板 MVP',
+    body: '## 目标\n\n在面板里看工单。',
+    labels: ['enhancement', 'ready-for-agent'],
+    assignees: ['alice'],
+    comments: [
+      { author: 'bob', body: '补充验收标准', createdAt: '2026-11-13T09:00:00Z' },
+      { author: 'carol', body: '上一次失败的原因', createdAt: '2026-11-13T10:00:00Z' },
+    ],
+    url: 'https://github.com/cnzgray/dsh-mattpocock-workflow/issues/15',
+  }),
+)
 
 /** `gh label list --json name,color,description` 的录制输出。 */
 export const GH_LABELS_OUTPUT = JSON.stringify([

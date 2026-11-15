@@ -15,8 +15,11 @@ import {
   type TicketSkillAction,
 } from '../protocol/labels.ts'
 import {
+  AVATAR_READ_METHOD,
   ERROR_CODES,
   RPC_METHODS,
+  type AvatarReadParams,
+  type AvatarReadResult,
   type ErrorCode,
   type RpcErrorBody,
   type RpcResult,
@@ -25,6 +28,8 @@ import {
   type SnapshotCacheParams,
   type SnapshotRefreshParams,
   TICKET_DELETE_CONFIRMATION,
+  type TicketAuthor,
+  type TicketComment,
   type TicketDeleteResult,
   type TicketDetail,
   type TicketOptions,
@@ -93,6 +98,11 @@ export interface PanelClient {
    * 候选不依赖推送是否被去重，面板重载也不会丢掉选择区。
    */
   currentWorkspace(): Promise<RpcResult<WorkspaceClaim>>
+  /**
+   * 把远端头像读成 data URL。面板 frame 的 CSP 不放行远端图片，
+   * 由 worker 下载后转成 `data:image/…`，界面才加载得出来。
+   */
+  readAvatar(url: string): Promise<RpcResult<AvatarReadResult>>
 }
 
 /** worker 当前认领的工作区；认领不到时带上候选。 */
@@ -190,6 +200,10 @@ export function createPanelClient(request: RequestLike = defaultRequest): PanelC
       ),
     currentWorkspace: () =>
       call(request, WORKSPACE_CURRENT_METHOD, {}, isWorkspaceClaimResult),
+    readAvatar: (url) => {
+      const params: AvatarReadParams = { url }
+      return call(request, AVATAR_READ_METHOD, params, isAvatarReadResult)
+    },
   }
 }
 
@@ -397,6 +411,17 @@ function isTicketDetailResult(value: unknown): value is RpcResult<TicketDetail> 
   return isRpcResult(value, isTicketDetail)
 }
 
+/** 头像响应只接受 worker 生成的图片 data URL，别的 data: 类型不进 `img`。 */
+function isAvatarReadResult(value: unknown): value is RpcResult<AvatarReadResult> {
+  return isRpcResult(
+    value,
+    (payload): payload is AvatarReadResult =>
+      isObject(payload) &&
+      typeof payload.dataUrl === 'string' &&
+      payload.dataUrl.startsWith('data:image/'),
+  )
+}
+
 function isTicketDetail(value: unknown): value is TicketDetail {
   if (typeof value !== 'object' || value === null) return false
   if (!('ref' in value) || typeof value.ref !== 'string') return false
@@ -405,13 +430,25 @@ function isTicketDetail(value: unknown): value is TicketDetail {
   }
   if (!('title' in value) || typeof value.title !== 'string') return false
   if (!('state' in value) || !(value.state === 'open' || value.state === 'closed')) return false
-  if (!('author' in value) || !(value.author === null || typeof value.author === 'string')) {
+  if (!('author' in value) || !(value.author === null || isTicketAuthor(value.author))) {
     return false
   }
   if (!('body' in value) || typeof value.body !== 'string') return false
   if (!('labels' in value) || !Array.isArray(value.labels)) return false
-  if (!('assignees' in value) || !Array.isArray(value.assignees)) return false
-  if (!('comments' in value) || !Array.isArray(value.comments)) return false
+  if (
+    !('assignees' in value) ||
+    !Array.isArray(value.assignees) ||
+    !value.assignees.every(isTicketAuthor)
+  ) {
+    return false
+  }
+  if (
+    !('comments' in value) ||
+    !Array.isArray(value.comments) ||
+    !value.comments.every(isTicketComment)
+  ) {
+    return false
+  }
   if (!('url' in value) || !(value.url === null || typeof value.url === 'string')) return false
   if (!('createdAt' in value) || typeof value.createdAt !== 'string') return false
   if (!('updatedAt' in value) || typeof value.updatedAt !== 'string') return false
@@ -419,6 +456,27 @@ function isTicketDetail(value: unknown): value is TicketDetail {
   if (!('capabilities' in value) || typeof value.capabilities !== 'object') return false
   if (value.capabilities === null) return false
   return hasCapabilityFlags(value.capabilities)
+}
+
+/** 远端用户：登录名必填，展示名与头像地址可以为 null。 */
+function isTicketAuthor(value: unknown): value is TicketAuthor {
+  if (!isObject(value)) return false
+  if (typeof value.login !== 'string' || value.login.length === 0) return false
+  if (!('displayName' in value)) return false
+  if (value.displayName !== null && typeof value.displayName !== 'string') return false
+  if (!('avatarUrl' in value)) return false
+  return value.avatarUrl === null || typeof value.avatarUrl === 'string'
+}
+
+/** 一条评论：作者可以是 null（本地 Markdown），时间也可以是 null。 */
+function isTicketComment(value: unknown): value is TicketComment {
+  if (!isObject(value)) return false
+  if (!('author' in value) || !(value.author === null || isTicketAuthor(value.author))) {
+    return false
+  }
+  if (!('body' in value) || typeof value.body !== 'string') return false
+  if (!('createdAt' in value)) return false
+  return value.createdAt === null || typeof value.createdAt === 'string'
 }
 
 /** 详情的能力位：五个开关都要是布尔值。 */

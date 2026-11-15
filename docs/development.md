@@ -76,8 +76,9 @@ orca plugin logs local.mattpocock-workflow                  # worker 最近打�
 orca plugin list --json                                      # 所有插件的状态，dev 目录标 isDev
 ```
 
-面板在 iframe 里跑，没有网络权限：日志里出现
-`blocked img-src https://avatars.githubusercontent.com` 属于正常，远程头像显示不出来而已。
+面板在 iframe 里跑，没有网络权限（`img-src data:`）：远端头像地址不能直接交给 `<img>`，
+日志里出现 `blocked img-src https://avatars.githubusercontent.com` 说明有代码绕过了 worker 代理。
+头像统一走 `avatar.read`：worker 下载图片并转成 data URL，面板再渲染。
 
 ## 调 worker
 
@@ -97,6 +98,8 @@ orca plugin dev request . workspace.current --data '{}' --json
 
 刚在 `src/` 里新增或改名处理器后，要先 `pnpm build` 再 `orca plugin dev reload`：
 worker 只有重启才会重新注册 handler，否则报 `unknown_method: no panel handler named …`。
+如果 `reload` 后仍是这条错误，说明宿主复用了旧 worker：
+`orca plugin dev unload . && orca plugin dev load .` 会强制换一个。
 
 ## 造事件
 

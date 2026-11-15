@@ -6,7 +6,13 @@
  */
 import { isRecord } from '../core/json.ts'
 import { LOG_EVENTS } from '../protocol/log-events.ts'
-import { ERROR_CODES, RPC_METHODS, type RpcResult } from '../protocol/tracker.ts'
+import {
+  AVATAR_READ_METHOD,
+  ERROR_CODES,
+  RPC_METHODS,
+  type RpcResult,
+} from '../protocol/tracker.ts'
+import type { AvatarService } from './avatar-service.ts'
 import type { EnvCheckService } from './env-check-service.ts'
 import type { LogSink } from './log.ts'
 import type { OrcaWorkerApi } from './orca-types.ts'
@@ -60,6 +66,7 @@ export interface RpcBridgeDeps {
   readonly worktree: TicketWorktreeService
   readonly envCheck: EnvCheckService
   readonly workspace: WorkspaceResolver
+  readonly avatar: AvatarService
   readonly log: LogSink
 }
 
@@ -108,6 +115,11 @@ export function registerRpcHandlers(orca: OrcaWorkerApi, deps: RpcBridgeDeps): v
       }
     }
   })
+
+  // 头像代理：面板 frame 没有网络，远端图片必须由 worker 下载后以 data URL 返回。
+  orca.panels.handle(AVATAR_READ_METHOD, (input, context) =>
+    deps.avatar.read(input, context.signal),
+  )
 
   orca.panels.handle(WORKSPACE_CURRENT_REQUEST, async () => {
     // 面板每次启动或聚焦上下文变化都问一次：重新按当前线索认领，

@@ -6,12 +6,14 @@ import { describeTrackerContract } from '../contract.test-suite.ts'
 import {
   GH_ASSIGNEES_OUTPUT,
   GH_CHANGES_OUTPUT,
-  GH_ISSUE_DETAIL,
   GH_ISSUES_OUTPUT,
   GH_LABELS_OUTPUT,
   GH_TRUNCATED_CHANGES_OUTPUT,
   GH_VIEWER_PERMISSION_OUTPUT,
   GIT_REMOTES_OUTPUT,
+  ghAuthor,
+  ghDetailOutput,
+  ghIssueDetailNode,
 } from './fixtures.ts'
 import { createGithubTracker } from './tracker.ts'
 
@@ -263,14 +265,27 @@ interface MutableGithubIssue {
 
 const REPO = 'cnzgray/dsh-mattpocock-workflow'
 
+/** 详情查询的录制输出：作者、分配人与评论作者都带头像。 */
 function detailOutput(issue: MutableGithubIssue): string {
-  return JSON.stringify({
-    ...GH_ISSUE_DETAIL,
-    state: issue.state,
-    labels: issue.labels.map((name) => ({ name })),
-    assignees: issue.assignees.map((login) => ({ login })),
-  })
+  return ghDetailOutput(
+    ghIssueDetailNode({
+      number: 15,
+      title: '右侧栏任务面板 MVP',
+      body: '## 目标\n\n在面板里看工单。',
+      state: issue.state,
+      labels: issue.labels,
+      assignees: issue.assignees,
+      comments: [
+        { author: 'bob', body: '补充验收标准', createdAt: '2026-11-13T09:00:00Z' },
+        { author: 'carol', body: '上一次失败的原因', createdAt: '2026-11-13T10:00:00Z' },
+      ],
+      url: `https://github.com/${REPO}/issues/15`,
+    }),
+  )
 }
+
+/** 详情里已经没有这张票：GraphQL 把 `issue` 返回为 null。 */
+const GH_MISSING_ISSUE = JSON.stringify({ data: { repository: { issue: null } } })
 
 /** 一个会真正落地 `gh issue edit` / `close` / `reopen` 的假后端。 */
 function mutableGithubRunner(issue: MutableGithubIssue): {
@@ -282,6 +297,12 @@ function mutableGithubRunner(issue: MutableGithubIssue): {
     calls.push([command, ...args])
     if (command === 'git') return Promise.resolve({ stdout: GIT_REMOTES_OUTPUT, stderr: '' })
 
+    if (args[0] === 'api' && args[1] === 'graphql') {
+      return Promise.resolve({
+        stdout: issue.deleted === true ? GH_MISSING_ISSUE : detailOutput(issue),
+        stderr: '',
+      })
+    }
     if (args[0] === 'repo' && args[1] === 'view') {
       return Promise.resolve({
         stdout:
@@ -302,20 +323,8 @@ function mutableGithubRunner(issue: MutableGithubIssue): {
         new CommandError('failed', 'unexpected', `unexpected gh ${args.join(' ')}`, 1),
       )
     }
-    if (issue.deleted === true) {
-      return Promise.reject(
-        new CommandError(
-          'failed',
-          'gh 退出码 1',
-          'Could not resolve to an Issue or PullRequest with the number of 15.',
-          1,
-        ),
-      )
-    }
 
     switch (args[1] ?? '') {
-      case 'view':
-        return Promise.resolve({ stdout: detailOutput(issue), stderr: '' })
       case 'edit':
         applyGithubEdit(issue, args)
         return Promise.resolve({ stdout: '', stderr: '' })
@@ -361,7 +370,7 @@ function mutableTracker(issue: MutableGithubIssue): { tracker: Tracker; calls: s
 }
 
 describe('GitHub 工单详情与变更', () => {
-  it('用一条 gh issue view 读取详情与评论', async () => {
+  it('用一条 GraphQL 查询读取详情，作者、分配人与评论作者都带头像', async () => {
     const { tracker, calls } = mutableTracker({
       labels: ['enhancement', 'ready-for-agent'],
       assignees: ['alice'],
@@ -375,18 +384,66 @@ describe('GitHub 工单详情与变更', () => {
       number: 15,
       title: '右侧栏任务面板 MVP',
       state: 'open',
-      author: 'dave',
+      author: ghAuthor('dave'),
       labels: ['enhancement', 'ready-for-agent'],
-      assignees: ['alice'],
+      assignees: [ghAuthor('alice')],
       url: `https://github.com/${REPO}/issues/15`,
     })
     expect(detail?.comments.map((comment) => [comment.author, comment.body])).toEqual([
-      ['bob', '补充验收标准'],
-      ['carol', '上一次失败的原因'],
+      [ghAuthor('bob'), '补充验收标准'],
+      [ghAuthor('carol'), '上一次失败的原因'],
     ])
-    expect(calls[1]?.slice(0, 4)).toEqual(['gh', 'issue', 'view', '15'])
-    expect(calls[1]).toContain('--repo')
-    expect(calls[1]).toContain(REPO)
+    // 一次 CLI 调用换一次 CLI 调用：不再用 `gh issue view`。
+    expect(calls[1]?.slice(0, 3)).toEqual(['gh', 'api', 'graphql'])
+    const query = calls[1]?.find((arg) => arg.startsWith('query=')) ?? ''
+    expect(query).toContain('comments(first: $comments, after: $cursor)')
+    expect(query).toContain('avatarUrl')
+    expect(calls[1]).toContain('number=15')
+    expect(calls.some((call) => call.includes('view'))).toBe(false)
+  })
+
+  it('评论按 pageInfo.hasNextPage 翻页，直到最后一页', async () => {
+    const pages = [
+      ghDetailOutput(
+        ghIssueDetailNode({
+          number: 15,
+          title: '右侧栏任务面板 MVP',
+          comments: [{ author: 'bob', body: '第一页', createdAt: '2026-11-13T09:00:00Z' }],
+          hasNextPage: true,
+          endCursor: 'cursor-1',
+        }),
+      ),
+      ghDetailOutput(
+        ghIssueDetailNode({
+          number: 15,
+          title: '右侧栏任务面板 MVP',
+          comments: [{ author: 'carol', body: '第二页', createdAt: '2026-11-13T10:00:00Z' }],
+          hasNextPage: false,
+        }),
+      ),
+    ]
+    const calls: string[][] = []
+    const runner: CommandRunner = (command, args) => {
+      calls.push([command, ...args])
+      if (command === 'git') return Promise.resolve({ stdout: GIT_REMOTES_OUTPUT, stderr: '' })
+      const wantsCursor = args.some((arg) => arg.startsWith('cursor='))
+      return Promise.resolve({ stdout: pages[wantsCursor ? 1 : 0] ?? '{}', stderr: '' })
+    }
+    const tracker = createGithubTracker({ run: runner, now: () => NOW })
+
+    const detail = await tracker.fetchDetail?.('/workspace', { ref: '#15', number: 15 })
+
+    expect(detail?.comments.map((comment) => comment.body)).toEqual(['第一页', '第二页'])
+    expect(calls.filter((call) => call[0] === 'gh')).toHaveLength(2)
+    expect(calls.at(-1)).toContain('cursor=cursor-1')
+  })
+
+  it('每页评论上限与列表一致，都是 100', async () => {
+    const { tracker, calls } = mutableTracker({ labels: [], assignees: [], state: 'OPEN' })
+
+    await tracker.fetchDetail?.('/workspace', { ref: '#15', number: 15 })
+
+    expect(calls[1]).toContain('comments=100')
   })
 
   it('标签按增删差异落地，目标集合相同时不发编辑命令', async () => {
@@ -585,13 +642,13 @@ const GH_DETAIL_EXPECTED: TicketDetail = {
   number: 15,
   title: '右侧栏任务面板 MVP',
   state: 'open',
-  author: 'dave',
+  author: ghAuthor('dave'),
   body: '## 目标\n\n在面板里看工单。',
   labels: ['enhancement', 'ready-for-agent'],
-  assignees: ['alice'],
+  assignees: [ghAuthor('alice')],
   comments: [
-    { author: 'bob', body: '补充验收标准', createdAt: '2026-11-13T09:00:00Z' },
-    { author: 'carol', body: '上一次失败的原因', createdAt: '2026-11-13T10:00:00Z' },
+    { author: ghAuthor('bob'), body: '补充验收标准', createdAt: '2026-11-13T09:00:00Z' },
+    { author: ghAuthor('carol'), body: '上一次失败的原因', createdAt: '2026-11-13T10:00:00Z' },
   ],
   url: `https://github.com/${REPO}/issues/15`,
   createdAt: '2026-11-12T14:11:22Z',

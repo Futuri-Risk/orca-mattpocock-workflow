@@ -143,21 +143,6 @@ export function readNameList(value: unknown): readonly string[] {
 }
 
 /**
- * 用户集合：GitHub / Gitea 用 `login`，GitLab 用 `username`。
- * @param value - 任意字段值。
- * @param key - 用户名字段名。
- * @returns 用户名，保持输入顺序。
- */
-export function readUserNames(value: unknown, key: 'login' | 'username'): readonly string[] {
-  if (!Array.isArray(value)) return []
-  return value.flatMap((entry) => {
-    if (!isRecord(entry)) return []
-    const name = readOptionalString(entry[key])
-    return name === null ? [] : [name]
-  })
-}
-
-/**
  * 详情读取必须有数字编号；本地 Markdown 不走这条路径。
  * @param reference - 工单引用。
  * @returns 数字编号。

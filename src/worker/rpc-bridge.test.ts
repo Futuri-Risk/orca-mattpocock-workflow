@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { RPC_METHODS, type RpcResult } from '../protocol/tracker.ts'
+import type { AvatarService } from './avatar-service.ts'
 import type { EnvCheckService } from './env-check-service.ts'
 import type { LogSink } from './log.ts'
 import type { OrcaPanelRequestHandler, OrcaWorkerApi } from './orca-types.ts'
@@ -54,6 +55,7 @@ function recordingServices(): {
   readonly ticket: TicketService
   readonly worktree: TicketWorktreeService
   readonly envCheck: EnvCheckService
+  readonly avatar: AvatarService
   readonly seen: { method: string; params: unknown }[]
 } {
   const seen: { method: string; params: unknown }[] = []
@@ -70,6 +72,7 @@ function recordingServices(): {
     ticket: { handle: (method, params) => record(method, params) },
     worktree: { handle: (method, params) => record(method, params) },
     envCheck: { handle: (method, params) => record(method, params) },
+    avatar: { read: (params) => record('avatar.read', params) },
   }
 }
 
@@ -115,6 +118,7 @@ describe('面板 RPC 桥', () => {
       ticket: services.ticket,
       worktree: services.worktree,
       envCheck: services.envCheck,
+      avatar: services.avatar,
       workspace: createWorkspaceResolver(orca.host),
       log,
     })
@@ -131,6 +135,7 @@ describe('面板 RPC 桥', () => {
       ticket: services.ticket,
       worktree: services.worktree,
       envCheck: services.envCheck,
+      avatar: services.avatar,
       workspace: createWorkspaceResolver(orca.host),
       log,
     })
@@ -162,6 +167,7 @@ describe('面板 RPC 桥', () => {
       ticket: services.ticket,
       worktree: services.worktree,
       envCheck: services.envCheck,
+      avatar: services.avatar,
       workspace: createWorkspaceResolver(host),
       log,
     })
@@ -187,6 +193,7 @@ describe('面板 RPC 桥', () => {
       ticket: services.ticket,
       worktree: services.worktree,
       envCheck: services.envCheck,
+      avatar: services.avatar,
       workspace: createWorkspaceResolver(orca.host),
       log,
     })
@@ -213,6 +220,7 @@ describe('面板 RPC 桥', () => {
       ticket: services.ticket,
       worktree: services.worktree,
       envCheck: services.envCheck,
+      avatar: services.avatar,
       workspace,
       log,
     })
@@ -248,6 +256,7 @@ describe('面板 RPC 桥', () => {
       ticket: services.ticket,
       worktree: services.worktree,
       envCheck: services.envCheck,
+      avatar: services.avatar,
       workspace: createWorkspaceResolver(ambiguousHost()),
       log: recordingLog,
     })
@@ -281,6 +290,7 @@ describe('面板 RPC 桥', () => {
       ticket: services.ticket,
       worktree: services.worktree,
       envCheck: services.envCheck,
+      avatar: services.avatar,
       workspace: createWorkspaceResolver(ambiguousHost()),
       log,
     })

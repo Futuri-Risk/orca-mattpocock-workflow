@@ -81,6 +81,9 @@ orca plugin dev watch .   # 持续打印日志与重载；--shot ./shots --shot-
 ```
 
 改了 `src/` 要先 `pnpm build` 再 `orca plugin dev reload`，worker 跑的是 `dist/` 里的产物。
+如果新增或改名了 RPC 处理器，`reload` 后仍报
+`unknown_method: no panel handler named …`，说明还是旧 worker：用
+`orca plugin dev unload . && orca plugin dev load .` 强制换一个 worker。
 完整的开发流程——审批指纹、调试 worker 请求、造事件、看日志与截图——见
 [docs/development.md](docs/development.md)。
 

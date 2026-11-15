@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { normalizeAvatarUrl, readAuthor } from './author.ts'
+import { normalizeAvatarUrl, readAuthor, readAuthors } from './author.ts'
 
 const FIELDS = { login: 'login', displayName: 'name', avatarUrl: 'avatarUrl' } as const
 
@@ -43,6 +43,29 @@ describe('创建人解析', () => {
     )
 
     expect(author?.avatarUrl).toBe('https://gitea.example.com/avatars/1')
+  })
+
+  it('用户数组按同一套规则解析，跳过识别不出来的元素', () => {
+    const authors = readAuthors(
+      [
+        { login: 'alice', name: 'Alice', avatarUrl: '/avatars/alice' },
+        null,
+        { name: '没有登录名' },
+        { login: 'bob', avatarUrl: 'javascript:alert(1)' },
+      ],
+      FIELDS,
+      'https://gitea.example.com',
+    )
+
+    expect(authors).toEqual([
+      { login: 'alice', displayName: 'Alice', avatarUrl: 'https://gitea.example.com/avatars/alice' },
+      { login: 'bob', displayName: null, avatarUrl: null },
+    ])
+  })
+
+  it('不是数组的用户集合按空列表处理', () => {
+    expect(readAuthors(null, FIELDS)).toEqual([])
+    expect(readAuthors({ login: 'alice' }, FIELDS)).toEqual([])
   })
 
   it('非 http(s) 地址按无头像处理', () => {

@@ -8,6 +8,48 @@ export const GITLAB_REMOTES_OUTPUT = [
   'origin\tgit@gitlab.com:cnzgray/platform/dsh-workflow.git (push)',
 ].join('\n')
 
+/** 录制里的 GitLab 用户：头像地址按固定 id 推导，期望值可以按用户名推导。 */
+const GITLAB_USER_IDS: Readonly<Record<string, number>> = {
+  dave: 4,
+  alice: 1,
+  bob: 2,
+  carol: 3,
+}
+
+/** 构造一个 GitLab 用户对象；`name` 缺省时用首字母大写的用户名。 */
+export function gitlabUser(overrides: {
+  readonly username: string
+  readonly name?: string | null
+}): Record<string, unknown> {
+  return {
+    username: overrides.username,
+    name: overrides.name === undefined ? titleCase(overrides.username) : overrides.name,
+    avatar_url: gitlabAvatarUrl(overrides.username),
+  }
+}
+
+/** 期望的创建人 / 评论作者 / 分配人。 */
+export function gitlabAuthor(username: string): {
+  readonly login: string
+  readonly displayName: string | null
+  readonly avatarUrl: string
+} {
+  return {
+    login: username,
+    displayName: titleCase(username),
+    avatarUrl: gitlabAvatarUrl(username),
+  }
+}
+
+function gitlabAvatarUrl(username: string): string {
+  const id = GITLAB_USER_IDS[username] ?? 9
+  return `https://gitlab.com/uploads/-/system/user/avatar/${String(id)}/avatar.png`
+}
+
+function titleCase(value: string): string {
+  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`
+}
+
 /** 构造一张 GitLab issue 的 JSON 对象。 */
 export function gitlabIssue(overrides: {
   readonly iid: number
@@ -133,8 +175,8 @@ export function gitlabIssueDetail(overrides: {
     title: overrides.title,
     state: overrides.state ?? 'opened',
     labels: overrides.labels ?? [],
-    assignees: (overrides.assignees ?? []).map((username) => ({ username, name: username })),
-    author: { username: overrides.author ?? 'dave', name: overrides.author ?? 'dave' },
+    assignees: (overrides.assignees ?? []).map((username) => gitlabUser({ username })),
+    author: gitlabUser({ username: overrides.author ?? 'dave' }),
     description: overrides.description ?? '',
     web_url:
       overrides.webUrl ??
@@ -155,7 +197,7 @@ export function gitlabNote(overrides: {
     id: 1,
     system: overrides.system ?? false,
     body: overrides.body,
-    author: { username: overrides.username, name: overrides.username },
+    author: gitlabUser({ username: overrides.username }),
     created_at: overrides.createdAt,
   }
 }

@@ -16,7 +16,9 @@ RPC 方法（面板用 `orca.plugin.request(方法名, 参数)` 调用，worker 
 - `ticket.options`：读取仓库的标签与可分配用户，参数是 `{ workspaceRoot }`，返回 `TicketOptions`；
 - `ticket.delete`：永久删除一张工单，参数在详情参数上再加 `confirm: 'delete'`，成功返回 `{ deleted: true }`；
 - `ticket.worktree`：为一张远端工单创建 Orca 托管的 worktree，参数是 `{ workspaceRoot, ref, number }`，
-  返回 worktree 标识、绝对路径、分支名、显示名、挂上的工单链接与 `created`（同分支已有工作区时为 false）。
+  返回 worktree 标识、绝对路径、分支名、显示名、挂上的工单链接与 `created`（同分支已有工作区时为 false）；
+- `avatar.read`：把后端给出的 http(s) 头像地址读成 `data:image/…`。面板 frame 的 CSP 只放行
+  `data:` 图片，远程地址会被宿主拦掉；worker 代理下载，响应只接受 `image/*`、上限 1 MiB。
 
 `workspaceRoot` 由 worker 自己解析：面板不填路径，worker 认领不到工作区时通过
 `workspace.candidates` 事件把候选推一次（附带所属聚焦上下文键，面板据此判断选择是否还有效）；
@@ -28,6 +30,9 @@ RPC 方法（面板用 `orca.plugin.request(方法名, 参数)` 调用，worker 
 worktree 另有两个错误码：`orca-missing`（找不到 Orca 命令行，属于环境问题）与
 `worktree-create-failed`（创建失败，消息里带命令行的诊断）。
 删除时没有权限用 `fetch-failed`，消息里写明需要哪种角色。界面按错误码给出统一文案。
+
+详情里的创建人、评论作者与分配人都是 `TicketAuthor`（登录名 / 展示名 / 头像地址），
+与列表快照的创建人同一形状；本地 Markdown 的创建人与评论作者为 null、分配人为空数组。
 
 ## 快照载荷
 

@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
 import { TrackerError } from '../../core/tracker-error.ts'
-import { GH_CHANGES_OUTPUT, GH_ISSUES_OUTPUT, GH_TRUNCATED_CHANGES_OUTPUT } from './fixtures.ts'
-import { parseIssueChangesGraphql, parseIssueGraphql } from './graphql.ts'
+import {
+  GH_CHANGES_OUTPUT,
+  GH_ISSUE_DETAIL,
+  GH_ISSUES_OUTPUT,
+  GH_TRUNCATED_CHANGES_OUTPUT,
+  ghAuthor,
+} from './fixtures.ts'
+import {
+  parseIssueChangesGraphql,
+  parseIssueCore,
+  parseIssueDetailPage,
+  parseIssueGraphql,
+} from './graphql.ts'
 
 describe('GraphQL 工单解析', () => {
   it('解析总数与每张票的字段', () => {
@@ -146,6 +157,35 @@ describe('GraphQL 工单解析', () => {
     })
 
     expect(() => parseIssueGraphql(output)).toThrow(/blockedBy/)
+  })
+})
+
+describe('GraphQL 详情解析', () => {
+  it('解析作者、分配人与评论作者的头像', () => {
+    const page = parseIssueDetailPage(GH_ISSUE_DETAIL)
+
+    expect(page.author).toEqual(ghAuthor('dave'))
+    expect(page.assignees).toEqual([ghAuthor('alice')])
+    expect(page.comments.map((comment) => comment.author)).toEqual([
+      ghAuthor('bob'),
+      ghAuthor('carol'),
+    ])
+    expect(page.hasNextPage).toBe(false)
+  })
+
+  it('工单不存在时返回 ticket-not-found', () => {
+    const output = JSON.stringify({ data: { repository: { issue: null } } })
+
+    expect(() => parseIssueDetailPage(output)).toThrow(
+      expect.objectContaining({ code: 'ticket-not-found' }) as Error,
+    )
+  })
+
+  it('只取当前值时忽略评论字段', () => {
+    const core = parseIssueCore(GH_ISSUE_DETAIL)
+
+    expect(core.assignees).toEqual([ghAuthor('alice')])
+    expect(core).not.toHaveProperty('comments')
   })
 })
 

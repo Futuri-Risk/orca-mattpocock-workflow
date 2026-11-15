@@ -22,6 +22,7 @@ import type {
   TicketSnapshot,
   TicketWorktreeResult,
 } from '../protocol/tracker.ts'
+import { authorName, authorTitle } from './author-text.ts'
 import { errorText } from './error-text.ts'
 import { ChevronLeftIcon } from './icons.tsx'
 import type { PromptCopy, PromptCopyState } from './injection.ts'
@@ -302,7 +303,9 @@ function TitleBlock(props: { readonly detail: TicketDetail }): React.ReactElemen
         {/* 每段整体不断行，分隔点跟在上一段末尾，换行时新行不会以“·”开头。 */}
         <span style={NOWRAP_STYLE}>
           {detail.author === null ? null : (
-            <span style={TITLE_META_NAME_STYLE}>{detail.author} </span>
+            <span style={TITLE_META_NAME_STYLE} title={authorTitle(detail.author)}>
+              {authorName(detail.author)}{' '}
+            </span>
           )}
           创建于 {formatTime(detail.createdAt)} ·
         </span>

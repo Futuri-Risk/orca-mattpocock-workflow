@@ -63,6 +63,38 @@ export function failedApiCall(status: number, message: string): RecordedApiCall 
   }
 }
 
+/** 录制里的 Gitea 用户显示名；没有的按 null。 */
+const GITEA_USER_NAMES: Readonly<Record<string, string | null>> = { dave: 'Dave' }
+
+/** 构造一个 Gitea 用户对象；头像地址是实例内相对路径。 */
+export function giteaUser(overrides: {
+  readonly login: string
+  readonly fullName?: string | null
+}): Record<string, unknown> {
+  return {
+    id: 1,
+    login: overrides.login,
+    full_name:
+      overrides.fullName === undefined
+        ? (GITEA_USER_NAMES[overrides.login] ?? null)
+        : overrides.fullName,
+    avatar_url: `/avatars/${overrides.login}`,
+  }
+}
+
+/** 期望的创建人 / 评论作者 / 分配人：相对头像地址按实例基准补成绝对地址。 */
+export function giteaAuthor(login: string): {
+  readonly login: string
+  readonly displayName: string | null
+  readonly avatarUrl: string
+} {
+  return {
+    login,
+    displayName: GITEA_USER_NAMES[login] ?? null,
+    avatarUrl: `https://gitea.example.com/avatars/${login}`,
+  }
+}
+
 /** 构造一张 Gitea issue 的 JSON 对象。 */
 export function giteaIssue(overrides: {
   readonly number: number
@@ -199,8 +231,8 @@ export function giteaIssueDetail(overrides: {
     title: overrides.title,
     state: overrides.state ?? 'open',
     labels: (overrides.labels ?? []).map((name, index) => ({ id: index + 1, name })),
-    assignees: (overrides.assignees ?? []).map((login, index) => ({ id: index + 1, login })),
-    user: { id: 1, login: overrides.author ?? 'dave' },
+    assignees: (overrides.assignees ?? []).map((login) => giteaUser({ login })),
+    user: giteaUser({ login: overrides.author ?? 'dave' }),
     body: overrides.body ?? '',
     html_url:
       overrides.htmlUrl ??
@@ -218,7 +250,7 @@ export function giteaComment(overrides: {
 }): Record<string, unknown> {
   return {
     id: 1,
-    user: { login: overrides.login },
+    user: giteaUser({ login: overrides.login }),
     body: overrides.body,
     created_at: overrides.createdAt,
   }

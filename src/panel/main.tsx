@@ -15,6 +15,7 @@
 import * as React from 'react'
 import { createRoot } from 'react-dom/client'
 
+import { createAvatarSourceLoader } from './avatar-source.ts'
 import {
   panelCapabilityDiagnostics,
   probePanelCapabilities,
@@ -29,6 +30,7 @@ import {
   type WorkspaceCandidate,
 } from './transport.ts'
 import { TaskPanel } from './task-panel.tsx'
+import { AvatarSourceProvider } from './user-avatar.tsx'
 import { WorkspacePicker } from './workspace-picker.tsx'
 
 /** 宿主事件的最新状态。 */
@@ -184,6 +186,11 @@ function App(props: { readonly client: PanelClient }): React.ReactElement {
     () => (probe === null ? [] : panelCapabilityDiagnostics(probe, workerReachable)),
     [probe, workerReachable],
   )
+  // 同一张头像在列表、正文、评论与分配人处共享一次请求。
+  const loadAvatar = React.useMemo(
+    () => createAvatarSourceLoader(props.client),
+    [props.client],
+  )
 
   const candidates = host.candidates
 
@@ -200,14 +207,16 @@ function App(props: { readonly client: PanelClient }): React.ReactElement {
           }}
         />
       )}
-      <TaskPanel
-        key={`${host.workspaceRoot}:${String(host.epoch)}`}
-        client={props.client}
-        workspaceRoot={host.workspaceRoot}
-        copy={promptCopy}
-        refreshToken={host.refreshToken}
-        clientCapabilities={() => capabilities}
-      />
+      <AvatarSourceProvider loader={loadAvatar}>
+        <TaskPanel
+          key={`${host.workspaceRoot}:${String(host.epoch)}`}
+          client={props.client}
+          workspaceRoot={host.workspaceRoot}
+          copy={promptCopy}
+          refreshToken={host.refreshToken}
+          clientCapabilities={() => capabilities}
+        />
+      </AvatarSourceProvider>
     </div>
   )
 }

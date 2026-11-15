@@ -83,7 +83,8 @@ export type TicketReference = Pick<Ticket, 'ref' | 'number'>
 
 /** 一条工单评论。本地 Markdown 的评论没有作者与时间，两项为 null。 */
 export interface TicketComment {
-  readonly author: string | null
+  /** 评论作者；本地 Markdown 没有远端用户，为 null。 */
+  readonly author: TicketAuthor | null
   readonly body: string
   readonly createdAt: string | null
 }
@@ -95,13 +96,13 @@ export interface TicketDetail {
   readonly number: number | null
   readonly title: string
   readonly state: TicketState
-  /** 创建者的远端用户名；本地 Markdown 没有作者，为 null。 */
-  readonly author: string | null
+  /** 创建者；本地 Markdown 没有远端用户，为 null。 */
+  readonly author: TicketAuthor | null
   /** 正文原文，保留原始 Markdown，不做二次渲染。 */
   readonly body: string
   readonly labels: readonly string[]
-  /** 分配人的远端用户名：GitHub login / GitLab、Gitea username。 */
-  readonly assignees: readonly string[]
+  /** 分配人；本地 Markdown 没有远端用户，为空数组。 */
+  readonly assignees: readonly TicketAuthor[]
   readonly comments: readonly TicketComment[]
   /** 后端返回的原生链接；本地 Markdown 没有链接地址，为 null。 */
   readonly url: string | null

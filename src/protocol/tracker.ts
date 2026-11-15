@@ -33,6 +33,25 @@ export const RPC_METHODS = {
   ticketWorktree: 'ticket.worktree',
 } as const
 
+/**
+ * 读取远端头像的方法名。
+ *
+ * 面板 frame 的 CSP 只放行 `data:` 图片，远端地址会被宿主拦掉；由 worker 代理下载并转成
+ * data URL 返回。它不属于工单 RPC，所以不放进 {@link RPC_METHODS}。
+ */
+export const AVATAR_READ_METHOD = 'avatar.read'
+
+/** `avatar.read` 的入参：后端给出的 http(s) 头像地址。 */
+export interface AvatarReadParams {
+  readonly url: string
+}
+
+/** `avatar.read` 的结果：面板 `img` 能直接加载的 data URL。 */
+export interface AvatarReadResult {
+  /** 形如 `data:image/png;base64,…`；只由 worker 生成，面板按 `data:image/` 前缀校验。 */
+  readonly dataUrl: string
+}
+
 /** 工单的开闭状态。 */
 export type TicketState = 'open' | 'closed'
 
@@ -296,7 +315,8 @@ export const SNAPSHOT_CLEAR_CONFIRMATION = 'clear-cache'
 
 /** 一条工单评论。本地 Markdown 的评论没有作者与时间，两项为 null。 */
 export interface TicketComment {
-  readonly author: string | null
+  /** 评论作者；本地 Markdown 没有远端用户，为 null。 */
+  readonly author: TicketAuthor | null
   readonly body: string
   readonly createdAt: string | null
 }
@@ -329,13 +349,13 @@ export interface TicketDetail {
   readonly number: number | null
   readonly title: string
   readonly state: TicketState
-  /** 创建者的远端用户名；本地 Markdown 没有作者，为 null。 */
-  readonly author: string | null
+  /** 创建者；本地 Markdown 没有远端用户，为 null。 */
+  readonly author: TicketAuthor | null
   /** 正文原文，保留原始 Markdown；界面渲染时不改写原文。 */
   readonly body: string
   readonly labels: readonly string[]
-  /** 分配人的远端用户名。 */
-  readonly assignees: readonly string[]
+  /** 分配人；本地 Markdown 没有远端用户，为空数组。 */
+  readonly assignees: readonly TicketAuthor[]
   readonly comments: readonly TicketComment[]
   /** 后端返回的原生链接地址；本地 Markdown 为 null。 */
   readonly url: string | null

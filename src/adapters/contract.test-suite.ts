@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 import type {
   BlockerResolution,
+  TicketAuthor,
   TicketDetail,
   TicketOptions,
   TicketPatch,
@@ -32,7 +33,7 @@ export interface TicketDetailFixture {
     readonly patch: TicketPatch
     readonly expected: {
       readonly labels?: readonly string[]
-      readonly assignees?: readonly string[]
+      readonly assignees?: readonly TicketAuthor[]
       readonly state: TicketState
     }
   }
@@ -289,6 +290,25 @@ function describeDetailReads(workspaceRoot: string, detail: TicketDetailFixture)
     })
   })
 
+  it('创建人、评论作者与分配人都是结构化远端用户', async () => {
+    const tracker = detail.createTracker()
+
+    const observed = await tracker.fetchDetail?.(workspaceRoot, detail.request)
+
+    // 本地 Markdown 没有远端用户：创建人与评论作者为 null，分配人为空数组。
+    if (observed?.author !== null && observed?.author !== undefined) {
+      expectUser(observed.author)
+    }
+    for (const comment of observed?.comments ?? []) {
+      if (comment.author !== null) expectUser(comment.author)
+    }
+    for (const assignee of observed?.assignees ?? []) {
+      expectUser(assignee)
+    }
+    // “结构化”不是靠 null 混过去：分配人至少是数组，创建人要么是用户要么是本地票。
+    expect(Array.isArray(observed?.assignees)).toBe(true)
+  })
+
   it('评论按时间升序排列', async () => {
     const tracker = detail.createTracker()
 
@@ -297,6 +317,15 @@ function describeDetailReads(workspaceRoot: string, detail: TicketDetailFixture)
 
     expect([...times].sort()).toEqual(times)
   })
+}
+
+/** 一个远端用户：登录名必填，头像只能是 http(s) 绝对地址或 null。 */
+function expectUser(user: {
+  readonly login: string
+  readonly avatarUrl: string | null
+}): void {
+  expect(user.login.length).toBeGreaterThan(0)
+  expect(user.avatarUrl === null || /^https?:\/\//.test(user.avatarUrl)).toBe(true)
 }
 
 function describeOptionsContract(fixture: TrackerContractFixture): void {
