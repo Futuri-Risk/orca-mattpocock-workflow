@@ -24,6 +24,9 @@ Orca 右侧栏里的 MattWorkflow 面板（`ui: "html"`，独立 frame 里跑的
   最多 50 个工作区条目）。
 - `capabilities.ts`：面板侧能力诊断（面板桥、剪贴板、worker 可达），与环境检查里
   worker 侧的能力合并显示。
+- `i18n.ts`：界面语言。解析 `language` 设置（`auto` / `zh-CN` / `en`）与宿主 BCP-47 语言，
+  提供插值、React context 与 `<html lang>` 同步；消息目录在 `src/protocol/i18n.ts`。
+  面板组件只通过 `useMessages()` 取文案，非 React 模块用 `activeTranslate()`。
 - `task-panel.tsx`：面板外壳，在列表、概览、环境检查与流程帮助之间切换。
 - `theme.css`：把宿主注入的 `--orca-*` 令牌映射成面板自己的 `--mwf-*` 变量；深浅色跟随宿主。
 - `markdown-body.tsx`：自带的极简 Markdown 渲染器。工单正文是不可信输入，因此不解析原始

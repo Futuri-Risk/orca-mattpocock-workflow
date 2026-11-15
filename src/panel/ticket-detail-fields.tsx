@@ -10,10 +10,12 @@
  */
 import * as React from 'react'
 
-import { BACKEND_LABELS } from '../protocol/backend.ts'
+import type { MessageId } from '../protocol/i18n.ts'
 import type { TicketDetail, TicketPatch } from '../protocol/tracker.ts'
 import { authorName, authorTitle } from './author-text.ts'
 import type { AvatarUser } from './avatar-display.ts'
+import { backendLabel } from './backend-label.ts'
+import { useMessages } from './i18n.ts'
 import { CheckIcon, CloseIcon, LinkIcon, PersonIcon, PlusIcon, TagIcon } from './icons.tsx'
 import { COLORS } from './task-panel-styles.ts'
 import { TokenEditor, type SuggestionSource } from './ticket-combobox.tsx'
@@ -58,6 +60,7 @@ export interface CopyState {
 export function HeaderActions(
   props: FieldProps & { readonly copy: CopyState; readonly onCopy: () => void },
 ): React.ReactElement {
+  const t = useMessages()
   const { detail, busy } = props
   const next = detail.state === 'open' ? 'closed' : 'open'
   const copied = props.copy.status === 'copied'
@@ -76,7 +79,7 @@ export function HeaderActions(
           }}
           style={next === 'closed' ? HEADER_CLOSE_STYLE : HEADER_TEXT_BUTTON_STYLE}
         >
-          {next === 'closed' ? '关闭工单' : '重新打开'}
+          {next === 'closed' ? t('detail.close') : t('detail.reopen')}
         </button>
       ) : null}
       {detail.url === null ? null : (
@@ -84,8 +87,12 @@ export function HeaderActions(
           type="button"
           data-testid="detail-copy"
           data-hover="soft"
-          aria-label="复制链接"
-          title={copied ? '已复制' : `复制链接 ${detail.url}`}
+          aria-label={t('detail.copyLink')}
+          title={
+            copied
+              ? t('common.copied')
+              : t('detail.copyLinkWithUrl', { url: detail.url })
+          }
           onClick={props.onCopy}
           style={
             copied
@@ -98,7 +105,7 @@ export function HeaderActions(
       )}
       {copied ? (
         <span role="status" data-testid="copy-notice" style={VISUALLY_HIDDEN_STYLE}>
-          已复制链接地址。
+          {t('detail.copiedLinkNotice')}
         </span>
       ) : null}
     </>
@@ -110,6 +117,7 @@ export function CopyFailure(props: {
   readonly copy: CopyState
   readonly url: string | null
 }): React.ReactElement | null {
+  const t = useMessages()
   const { copy, url } = props
   if (copy.status !== 'failed' || url === null) return null
   return (
@@ -121,7 +129,7 @@ export function CopyFailure(props: {
       {copy.message}
       <input
         data-testid="detail-link"
-        aria-label="工单链接"
+        aria-label={t('detail.linkLabel')}
         readOnly
         value={url}
         onFocus={(event) => {
@@ -147,23 +155,25 @@ export interface OptionsState {
 export function PropertyStrip(
   props: FieldProps & { readonly options: OptionsState },
 ): React.ReactElement {
+  const t = useMessages()
   const { detail, busy, options } = props
-  const unsupported = unsupportedActions(detail)
+  const unsupported = unsupportedActions(detail).map((id) => t(id))
 
   return (
     <div style={DETAIL_STACK_STYLE}>
       <div style={DETAIL_STRIP_STYLE}>
         <TokenGroup
           kind="label"
-          name="标签"
+          name={t('detail.labels')}
+          addLabel={t('detail.addLabels')}
           icon={<TagIcon />}
           values={detail.labels.map((name): TokenItem => ({
             kind: 'label',
             name,
             color: options.labelColors.get(name) ?? null,
           }))}
-          emptyText="无标签"
-          placeholder="搜索或输入标签"
+          emptyText={t('detail.noLabels')}
+          placeholder={t('detail.searchLabels')}
           editable={detail.capabilities.labels}
           busy={busy}
           source={options.labels}
@@ -174,11 +184,12 @@ export function PropertyStrip(
         />
         <TokenGroup
           kind="assignee"
-          name="分配人"
+          name={t('detail.assignees')}
+          addLabel={t('detail.addAssignees')}
           icon={<PersonIcon />}
           values={detail.assignees.map((user): TokenItem => ({ kind: 'assignee', user }))}
-          emptyText="未分配"
-          placeholder="搜索或输入用户名"
+          emptyText={t('detail.unassigned')}
+          placeholder={t('detail.searchAssignees')}
           editable={detail.capabilities.assignees}
           busy={busy}
           source={options.assignees}
@@ -193,7 +204,10 @@ export function PropertyStrip(
       </div>
       {unsupported.length === 0 ? null : (
         <div data-testid="detail-unsupported-note" style={DETAIL_HINT_STYLE}>
-          {`当前后端（${BACKEND_LABELS[detail.backend]}）不支持${unsupported.join('、')}。`}
+          {t('detail.unsupported', {
+            backend: backendLabel(detail.backend, t),
+            actions: unsupported.join(t('common.listSeparator')),
+          })}
         </div>
       )}
     </div>
@@ -223,6 +237,7 @@ function tokenKey(item: TokenItem): string {
 function TokenGroup(props: {
   readonly kind: 'label' | 'assignee'
   readonly name: string
+  readonly addLabel: string
   readonly icon: React.ReactElement
   readonly values: readonly TokenItem[]
   readonly emptyText: string
@@ -286,8 +301,8 @@ function TokenGroup(props: {
           type="button"
           data-testid={`${kind}-edit`}
           data-hover="soft"
-          aria-label={`添加${props.name}`}
-          title={`添加${props.name}`}
+          aria-label={props.addLabel}
+          title={props.addLabel}
           disabled={busy}
           onClick={() => {
             props.onOpen()
@@ -314,10 +329,13 @@ function Token(props: {
   readonly busy: boolean
   readonly onRemove: () => void
 }): React.ReactElement {
+  const t = useMessages()
   const { item } = props
   const isAssignee = item.kind === 'assignee'
   const text = isAssignee ? authorName(item.user) : item.name
-  const label = `移除${props.name} ${text}`
+  const label = isAssignee
+    ? t('detail.removeAssignee', { value: text })
+    : t('detail.removeLabel', { value: text })
   const style: React.CSSProperties = {
     ...DETAIL_TOKEN_STYLE,
     ...(isAssignee ? { paddingLeft: 2 } : labelColorStyle(item.color)),
@@ -328,9 +346,9 @@ function Token(props: {
     <span
       data-testid={`${props.kind}-chip`}
       style={style}
-      {...(isAssignee ? { title: authorTitle(item.user) } : {})}
+      {...(isAssignee ? { title: authorTitle(item.user, t) } : {})}
     >
-      {isAssignee ? <UserAvatar user={item.user} role="分配人" size={16} /> : null}
+      {isAssignee ? <UserAvatar user={item.user} role="assignee" size={16} /> : null}
       <span data-token-name="" style={isAssignee ? { marginLeft: 3 } : undefined}>
         {text}
       </span>
@@ -352,12 +370,12 @@ function Token(props: {
   )
 }
 
-function unsupportedActions(detail: TicketDetail): string[] {
+function unsupportedActions(detail: TicketDetail): MessageId[] {
   // 与宿主 `capability-unsupported` 的文案保持同一句式：哪个后端、缺哪项能力。
-  const actions: string[] = []
-  if (!detail.capabilities.labels) actions.push('修改标签')
-  if (!detail.capabilities.assignees) actions.push('修改分配人')
-  if (!detail.capabilities.state) actions.push('关闭或重开')
-  if (detail.url === null) actions.push('提供链接地址')
+  const actions: MessageId[] = []
+  if (!detail.capabilities.labels) actions.push('detail.unsupported.labels')
+  if (!detail.capabilities.assignees) actions.push('detail.unsupported.assignees')
+  if (!detail.capabilities.state) actions.push('detail.unsupported.state')
+  if (detail.url === null) actions.push('detail.unsupported.link')
   return actions
 }

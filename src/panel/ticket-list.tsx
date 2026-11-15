@@ -5,9 +5,16 @@
 import * as React from 'react'
 
 import type { BackendKind } from '../protocol/backend.ts'
+import type { MessageId } from '../protocol/i18n.ts'
 import { TRIAGE_LABELS } from '../protocol/labels.ts'
-import type { ErrorCode, TicketAuthor, TicketSnapshot } from '../protocol/tracker.ts'
+import type {
+  ErrorCode,
+  TicketAuthor,
+  TicketSnapshot,
+  TicketStatus,
+} from '../protocol/tracker.ts'
 import { authorName, authorTitle } from './author-text.ts'
+import { useMessages } from './i18n.ts'
 import { formatRelativeTime } from './relative-time.ts'
 import { SkillActionBadge } from './skill-action-badge.tsx'
 import type { PanelClient } from './transport.ts'
@@ -23,7 +30,6 @@ import {
   NUMBER_BADGE_STYLE,
   STATUS_BADGES,
   STATUS_DOT_STYLE,
-  STATUS_LABELS,
 } from './task-panel-styles.ts'
 import {
   AUTHOR_NAME_STYLE,
@@ -114,9 +120,10 @@ function TicketRow(props: {
   readonly onSkillAction: (ticket: TicketSnapshot) => void
 }): React.ReactElement {
   const { ticket } = props
+  const t = useMessages()
   const display = refDisplay(ticket)
   const worktree = useWorktreeCreate(props.client, props.workspaceRoot, ticket)
-  const availability = worktreeAvailability(ticket, props.backend, props.workspaceRoot)
+  const availability = worktreeAvailability(ticket, props.backend, props.workspaceRoot, t)
 
   return (
     <div role="listitem">
@@ -186,6 +193,7 @@ function MetaRow(props: {
   readonly ticket: TicketSnapshot
   readonly now: number
 }): React.ReactElement {
+  const t = useMessages()
   const { ticket } = props
   const extra = ticket.labels.filter((label) => label !== ticket.category)
   const { shown, hidden } = pickRowLabels(extra, MAX_EXTRA_LABELS)
@@ -194,7 +202,7 @@ function MetaRow(props: {
     <span style={CARD_META_STYLE}>
       <span style={STATUS_BADGES[ticket.status]}>
         <span style={STATUS_DOT_STYLE} />
-        {STATUS_LABELS[ticket.status]}
+        {t(STATUS_LABEL_KEYS[ticket.status])}
       </span>
       {ticket.category === null ? null : (
         <span style={CATEGORY_BADGES[ticket.category]}>{ticket.category}</span>
@@ -228,21 +236,25 @@ function AuthorMeta(props: {
   readonly updatedAt: string
   readonly now: number
 }): React.ReactElement {
+  const t = useMessages()
   const { author } = props
   const name = authorName(author)
-  const full = authorTitle(author)
-  const age = formatRelativeTime(props.createdAt, props.now)
+  const full = authorTitle(author, t)
+  const age = formatRelativeTime(props.createdAt, props.now, t)
 
   return (
     <>
-      <UserAvatar user={author} role="创建人" size={16} testId="ticket-avatar" />
+      <UserAvatar user={author} role="creator" size={16} testId="ticket-avatar" />
       <span data-testid="ticket-author" title={full} style={AUTHOR_NAME_STYLE}>
         {name}
       </span>
       {age.length === 0 ? null : (
         <span
           data-testid="ticket-age"
-          title={`创建：${props.createdAt}；更新：${props.updatedAt}`}
+          title={t('tickets.ageTitle', {
+            created: props.createdAt,
+            updated: props.updatedAt,
+          })}
           style={ROW_AGE_STYLE}
         >
           {age}
@@ -250,6 +262,13 @@ function AuthorMeta(props: {
       )}
     </>
   )
+}
+
+const STATUS_LABEL_KEYS: Readonly<Record<TicketStatus, MessageId>> = {
+  ready: 'status.ready',
+  blocked: 'status.blocked',
+  closed: 'status.closed',
+  open: 'status.open',
 }
 
 /**

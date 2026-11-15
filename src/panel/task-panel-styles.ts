@@ -447,13 +447,6 @@ const BADGE_STYLE: CSSProperties = {
   whiteSpace: 'nowrap',
 }
 
-export const STATUS_LABELS: Record<TicketStatus, string> = {
-  ready: '可接',
-  blocked: '阻塞',
-  closed: '已关闭',
-  open: '开放',
-}
-
 export const STATUS_BADGES: Record<TicketStatus, CSSProperties> = {
   ready: { ...STATUS_INLINE_STYLE, color: COLORS.success, fontWeight: 500 },
   blocked: { ...STATUS_INLINE_STYLE, color: COLORS.warn },
@@ -634,18 +627,12 @@ export const ERROR_STYLE: CSSProperties = {
   fontSize: 12,
 }
 
-export const FILTERS: readonly { readonly value: TicketFilter; readonly label: string }[] = [
-  { value: 'all', label: '全部' },
-  { value: 'open', label: 'Open' },
-  { value: 'closed', label: '已关闭' },
-  { value: 'blocked', label: '阻塞' },
-  { value: 'ready', label: '可接' },
-]
+export const FILTERS: readonly TicketFilter[] = ['all', 'open', 'closed', 'blocked', 'ready']
 
-export const SORT_OPTIONS: readonly { readonly value: TicketSortKey; readonly label: string }[] = [
-  { value: 'status', label: '状态' },
-  { value: 'updated', label: '更新' },
-  { value: 'created', label: '创建' },
-  { value: 'number', label: '编号' },
-  { value: 'title', label: '标题' },
+export const SORT_OPTIONS: readonly TicketSortKey[] = [
+  'status',
+  'updated',
+  'created',
+  'number',
+  'title',
 ]

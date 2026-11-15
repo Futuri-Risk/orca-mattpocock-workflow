@@ -17,6 +17,7 @@ import {
   type AvatarUser,
 } from './avatar-display.ts'
 import type { AvatarSourceLoader } from './avatar-source.ts'
+import { useMessages } from './i18n.ts'
 import { AVATAR_FALLBACK_STYLE, AVATAR_STYLE } from './ticket-row-styles.ts'
 
 /** 没有外层加载器时的兜底：直接显示首字母色块。 */
@@ -61,11 +62,12 @@ export interface UserAvatarProps {
  * @returns 远端图片或首字母色块。
  */
 export function UserAvatar(props: UserAvatarProps): React.ReactElement {
+  const t = useMessages()
   const [failedSrc, setFailedSrc] = React.useState<string | null>(null)
   const loader = React.useContext(AvatarSourceContext)
   const { user, size } = props
-  const label = avatarLabel(props.role, user)
-  const hint = avatarHint(user)
+  const label = avatarLabel(props.role, user, t)
+  const hint = avatarHint(user, t)
   const src = usableAvatarUrl(user?.avatarUrl ?? null)
   const [resolved, setResolved] = React.useState<ResolvedAvatar | null>(null)
 

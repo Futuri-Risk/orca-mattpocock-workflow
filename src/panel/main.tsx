@@ -22,6 +22,7 @@ import {
   type PanelCapabilityProbe,
 } from './capabilities.ts'
 import { readFrame } from './host.ts'
+import { LocaleProvider } from './i18n.ts'
 import { promptCopy } from './injection.ts'
 import {
   createPanelClient,
@@ -235,11 +236,15 @@ function injectTheme(): void {
 
 const container = document.getElementById('root')
 if (container === null) {
-  throw new Error('面板缺少 #root 挂载点')
+  throw new Error('panel root #root is missing')
 }
 
 const client = createPanelClient()
 subscribeHostEvents(client)
 injectTheme()
 void syncWorkspaceClaim(client)
-createRoot(container).render(<App client={client} />)
+createRoot(container).render(
+  <LocaleProvider>
+    <App client={client} />
+  </LocaleProvider>,
+)

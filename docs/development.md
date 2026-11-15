@@ -80,6 +80,15 @@ orca plugin list --json                                      # 所有插件的�
 日志里出现 `blocked img-src https://avatars.githubusercontent.com` 说明有代码绕过了 worker 代理。
 头像统一走 `avatar.read`：worker 下载图片并转成 data URL，面板再渲染。
 
+## 语言
+
+面板右上角的下拉写插件设置 `language`（`auto` / `zh-CN` / `en`），改完即时生效。
+`auto` 跟随 Orca 的界面语言（`orca.locale`），`zh*` 落中文、`en*` 落英文，其余落中文。
+同一个设置也在 Orca 的 Settings → Plugins 里可改；面板订阅设置变更，不用重载。
+
+文案只维护 `src/protocol/i18n.ts` 的两份目录；`src/panel/*` 里出现中文字面量会被
+`src/panel/i18n-guard.test.ts` 拦住。技能正文固定用 `zh-CN` 目录，`skills/` 下的内容不随界面语言变化。
+
 ## 调 worker
 
 面板请求走 `orca.plugin.request(name, input)`，落到 worker 里 `orca.panels.handle(name, …)`

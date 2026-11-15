@@ -8,6 +8,7 @@
 import * as React from 'react'
 
 import { canCopyText, copyText } from './clipboard.ts'
+import { useMessages } from './i18n.ts'
 
 /** 一次复制的结果。 */
 export type PromptCopyOutcome =
@@ -16,10 +17,11 @@ export type PromptCopyOutcome =
   /** 剪贴板不可用或被拒绝，需要手动复制。 */
   | 'manual'
 
-/** 复制结果与给用户看的说明。 */
+/** 复制结果与失败原因码。 */
 export interface CopyResult {
   readonly outcome: PromptCopyOutcome
-  readonly message: string
+  /** 失败原因码；成功时为 null。 */
+  readonly reason: 'unavailable' | null
 }
 
 /** 面板的提示词复制端口。 */
@@ -56,9 +58,6 @@ export interface PromptCopyControls {
   readonly dismiss: () => void
 }
 
-/** 手动复制时的统一提示。 */
-const MANUAL_HINT = '下面的文本框已全选，按 ⌘C 复制。'
-
 /**
  * 创建复制端口。
  * @returns 走剪贴板的复制端口；两种写入路径都不可用时回报手动复制。
@@ -71,13 +70,9 @@ export function createPromptCopy(): PromptCopy {
     },
     copy: async (text) => {
       const result = await copyText(text)
-      if (result.status === 'copied') {
-        return { outcome: 'copied', message: '提示词已复制到剪贴板，粘贴到会话里即可使用。' }
-      }
-      return {
-        outcome: 'manual',
-        message: `${result.message ?? '复制失败。'}${MANUAL_HINT}`,
-      }
+      return result.status === 'copied'
+        ? { outcome: 'copied', reason: null }
+        : { outcome: 'manual', reason: result.reason }
     },
   }
 }
@@ -91,6 +86,7 @@ export const promptCopy: PromptCopy = createPromptCopy()
  * @returns 当前状态与复制、显示手动复制区、清空三个入口。
  */
 export function usePromptCopy(port: PromptCopy): PromptCopyControls {
+  const t = useMessages()
   const [state, setState] = React.useState<PromptCopyState>({
     notice: null,
     noticeTone: null,
@@ -101,18 +97,26 @@ export function usePromptCopy(port: PromptCopy): PromptCopyControls {
     (text: string): Promise<CopyResult> =>
       port.copy(text).then((result) => {
         setState({
-          notice: result.message,
+          notice:
+            result.outcome === 'copied'
+              ? t('copy.copied')
+              : t('copy.manualNotice', {
+                  reason: t('copy.clipboardUnavailable'),
+                }),
           noticeTone: result.outcome === 'copied' ? 'info' : 'error',
           manual: result.outcome === 'manual' ? text : null,
         })
         return result
       }),
-    [port],
+    [port, t],
   )
 
-  const showManual = React.useCallback((text: string): void => {
-    setState({ notice: MANUAL_HINT, noticeTone: 'info', manual: text })
-  }, [])
+  const showManual = React.useCallback(
+    (text: string): void => {
+      setState({ notice: t('copy.manualHint'), noticeTone: 'info', manual: text })
+    },
+    [t],
+  )
 
   const dismiss = React.useCallback((): void => {
     setState({ notice: null, noticeTone: null, manual: null })

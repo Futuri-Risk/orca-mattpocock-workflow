@@ -78,7 +78,7 @@ describe('copyText', () => {
     stubClipboard(writeText)
     const { execCommand } = stubSelectionCopy(true)
 
-    await expect(copyText('/implement #2')).resolves.toEqual({ status: 'copied' })
+    await expect(copyText('/implement #2')).resolves.toEqual({ status: 'copied', reason: null })
     expect(writeText).toHaveBeenCalledWith('/implement #2')
     expect(execCommand).not.toHaveBeenCalled()
   })
@@ -89,7 +89,7 @@ describe('copyText', () => {
     })
     const { field, execCommand } = stubSelectionCopy(true)
 
-    await expect(copyText('/implement #2')).resolves.toEqual({ status: 'copied' })
+    await expect(copyText('/implement #2')).resolves.toEqual({ status: 'copied', reason: null })
     expect(field.value).toBe('/implement #2')
     expect(field.select).toHaveBeenCalled()
     expect(execCommand).toHaveBeenCalledWith('copy')
@@ -109,7 +109,7 @@ describe('copyText', () => {
     }
     stubSelectionCopy(true, selection)
 
-    await expect(copyText('/implement #2')).resolves.toEqual({ status: 'copied' })
+    await expect(copyText('/implement #2')).resolves.toEqual({ status: 'copied', reason: null })
     expect(selection.removeAllRanges).toHaveBeenCalled()
     expect(selection.addRange).toHaveBeenCalledWith(range)
   })
@@ -122,14 +122,14 @@ describe('copyText', () => {
 
     const outcome = await copyText('/implement #2')
     expect(outcome.status).toBe('failed')
-    expect(outcome.message).toContain('复制失败')
+    expect(outcome.reason).toBe('unavailable')
   })
 
   it('uses execCommand when the clipboard API is absent', async () => {
     vi.stubGlobal('navigator', {})
     const { field } = stubSelectionCopy(true)
 
-    await expect(copyText('/implement #2')).resolves.toEqual({ status: 'copied' })
+    await expect(copyText('/implement #2')).resolves.toEqual({ status: 'copied', reason: null })
     expect(field.value).toBe('/implement #2')
   })
 })
@@ -154,7 +154,7 @@ describe('createPromptCopy', () => {
 
     const result = await createPromptCopy().copy('/implement #2')
     expect(result.outcome).toBe('manual')
-    expect(result.message).toContain('下面的文本框已全选')
+    expect(result.reason).toBe('unavailable')
   })
 })
 

@@ -17,6 +17,7 @@ import {
   COMBO_SWATCH_STYLE,
 } from './ticket-timeline-styles.ts'
 import { DETAIL_INLINE_INPUT_STYLE, DETAIL_SMALL_BUTTON_STYLE } from './ticket-detail-styles.ts'
+import { useMessages, type Translate } from './i18n.ts'
 import { UserAvatar } from './user-avatar.tsx'
 
 /** 一个补全候选。 */
@@ -49,6 +50,7 @@ export function TokenEditor(props: {
   readonly onAssignSelf: (() => void) | undefined
   readonly onClose: () => void
 }): React.ReactElement {
+  const t = useMessages()
   const { kind, busy } = props
   const listId = React.useId()
   const [draft, setDraft] = React.useState('')
@@ -76,7 +78,7 @@ export function TokenEditor(props: {
       <input
         data-testid={`${kind}-input`}
         role="combobox"
-        aria-label={`要添加的${props.name}`}
+        aria-label={t('detail.combobox.aria', { name: props.name })}
         aria-expanded
         aria-controls={listId}
         aria-autocomplete="list"
@@ -158,6 +160,7 @@ function EditorButtons(props: {
   readonly onAssignSelf: (() => void) | undefined
   readonly onClose: () => void
 }): React.ReactElement {
+  const t = useMessages()
   const assignSelf = props.onAssignSelf
   return (
     <>
@@ -170,7 +173,7 @@ function EditorButtons(props: {
         onClick={props.onAdd}
         style={DETAIL_SMALL_BUTTON_STYLE}
       >
-        添加
+        {t('common.add')}
       </button>
       {assignSelf === undefined ? null : (
         <button
@@ -185,7 +188,7 @@ function EditorButtons(props: {
           }}
           style={DETAIL_SMALL_BUTTON_STYLE}
         >
-          分配给我
+          {t('detail.assignSelf')}
         </button>
       )}
     </>
@@ -202,13 +205,14 @@ function SuggestionList(props: {
   readonly onHover: (index: number) => void
   readonly onPick: (value: string) => void
 }): React.ReactElement {
-  const note = listNote(props.source, props.matches.length, props.query)
+  const t = useMessages()
+  const note = listNote(props.source, props.matches.length, props.query, t)
   return (
     <ul
       id={props.listId}
       role="listbox"
       data-testid={`${props.kind}-suggestions`}
-      aria-label="候选"
+      aria-label={t('detail.combobox.suggestions')}
       style={COMBO_LIST_STYLE}
     >
       {props.matches.map((item, index) => (
@@ -234,7 +238,7 @@ function SuggestionList(props: {
           {item.color === null ? (
             <UserAvatar
               user={{ login: item.value, displayName: item.detail, avatarUrl: null }}
-              role="可分配用户"
+              role="candidate"
               size={18}
             />
           ) : (
@@ -257,11 +261,20 @@ function SuggestionList(props: {
   )
 }
 
-function listNote(source: SuggestionSource, count: number, query: string): string | null {
-  if (source.status === 'loading') return '正在读取候选…'
-  if (source.status === 'unavailable') return `${source.reason}可以直接输入后回车添加。`
+function listNote(
+  source: SuggestionSource,
+  count: number,
+  query: string,
+  t: Translate,
+): string | null {
+  if (source.status === 'loading') return t('detail.combobox.loading')
+  if (source.status === 'unavailable') {
+    return t('detail.combobox.unavailable', { reason: source.reason })
+  }
   if (count > 0) return null
-  return query.length === 0 ? '没有更多候选。' : `没有匹配的候选，回车添加“${query}”。`
+  return query.length === 0
+    ? t('detail.combobox.noMore')
+    : t('detail.combobox.noMatch', { query })
 }
 
 /**

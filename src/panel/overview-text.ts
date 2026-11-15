@@ -2,6 +2,7 @@
  * 概览视图的展示逻辑：档位文案、指标格式、构成分布与关注原因。
  * 纯函数，不重复判定规则——档位与指标都已由宿主附在快照上。
  */
+import type { MessageId } from '../protocol/i18n.ts'
 import type {
   AttentionItem,
   MetricGap,
@@ -13,38 +14,81 @@ import type {
   PressureTier,
   TicketSnapshot,
 } from '../protocol/tracker.ts'
+import type { Translate } from './i18n.ts'
 
-/** 档位文案。 */
-export const PRESSURE_TIER_LABELS: Readonly<Record<PressureTier, string>> = {
-  light: '轻松',
-  normal: '正常',
-  tight: '吃紧',
+/**
+ * 档位文案。
+ * @param tier - 总档位。
+ * @param t - 当前语言的翻译函数。
+ * @returns 档位名。
+ */
+export function pressureTierLabel(tier: PressureTier, t: Translate): string {
+  return t(PressureTierKeys[tier])
 }
 
-/** 维度名称。 */
-export const PRESSURE_DIMENSION_LABELS: Readonly<Record<PressureDimension, string>> = {
-  scale: '规模',
-  blocking: '阻塞',
-  freshness: '时效',
+const PressureTierKeys = {
+  light: 'pressure.tier.light',
+  normal: 'pressure.tier.normal',
+  tight: 'pressure.tier.tight',
+} as const
+
+/**
+ * 维度名称。
+ * @param dimension - 压力维度。
+ * @param t - 当前语言的翻译函数。
+ * @returns 维度名。
+ */
+export function pressureDimensionLabel(dimension: PressureDimension, t: Translate): string {
+  return t(PressureDimensionKeys[dimension])
 }
 
-/** 维度看什么。与 core 的判定规则一一对应，只写口径不写阈值数字。 */
-export const PRESSURE_DIMENSION_BASIS: Readonly<Record<PressureDimension, string>> = {
-  scale: '开放积压与近 30 天净流入',
-  blocking: '阻塞票占开放票的比例',
-  freshness: '陈旧率与停滞票',
+const PressureDimensionKeys = {
+  scale: 'pressure.dimension.scale',
+  blocking: 'pressure.dimension.blocking',
+  freshness: 'pressure.dimension.freshness',
+} as const
+
+/**
+ * 维度看什么。与 core 的判定规则一一对应，只写口径不写阈值数字。
+ * @param dimension - 压力维度。
+ * @param t - 当前语言的翻译函数。
+ * @returns 口径说明。
+ */
+export function pressureDimensionBasis(dimension: PressureDimension, t: Translate): string {
+  return t(PressureDimensionBasisKeys[dimension])
 }
 
-/** 指标缺失时的解释。 */
-export const METRIC_GAP_TEXT: Readonly<Record<MetricGap, string>> = {
-  'no-timestamps': '后端不提供工单时间，时效与流量指标不可用。',
-  'no-closed-time': '后端不提供关闭时间，关闭速度与净流入不可用。',
-  'no-dependency-edges': '后端不提供阻塞依赖边，最长阻塞链不可用。',
+const PressureDimensionBasisKeys = {
+  scale: 'pressure.basis.scale',
+  blocking: 'pressure.basis.blocking',
+  freshness: 'pressure.basis.freshness',
+} as const
+
+/**
+ * 指标缺失时的解释。
+ * @param gap - 缺口类型。
+ * @param t - 当前语言的翻译函数。
+ * @returns 解释文案。
+ */
+export function metricGapText(gap: MetricGap, t: Translate): string {
+  return t(MetricGapKeys[gap])
 }
+
+const MetricGapKeys = {
+  'no-timestamps': 'pressure.gap.no-timestamps',
+  'no-closed-time': 'pressure.gap.no-closed-time',
+  'no-dependency-edges': 'pressure.gap.no-dependency-edges',
+} as const
 
 /** 构成条每段的稳定键；颜色与计数都按它对齐。 */
 export type DistributionKey =
-  'ready' | 'blocked' | 'open' | 'closed' | 'bug' | 'enhancement' | 'untriaged'
+  | 'ready'
+  | 'blocked'
+  | 'open'
+  | 'closed'
+  | 'bug'
+  | 'enhancement'
+  | 'untriaged'
 
 /** 构成条的一段。 */
 export interface DistributionSegment {
@@ -56,9 +100,13 @@ export interface DistributionSegment {
 /**
  * 状态分布：可接、阻塞、其他开放、已关闭。
  * @param tickets - 快照里的工单。
+ * @param t - 当前语言的翻译函数。
  * @returns 四类计数，顺序固定。
  */
-export function statusSegments(tickets: readonly TicketSnapshot[]): readonly DistributionSegment[] {
+export function statusSegments(
+  tickets: readonly TicketSnapshot[],
+  t: Translate,
+): readonly DistributionSegment[] {
   let ready = 0
   let blocked = 0
   let open = 0
@@ -70,20 +118,22 @@ export function statusSegments(tickets: readonly TicketSnapshot[]): readonly Dis
     else open += 1
   }
   return [
-    { key: 'ready', label: '可接', count: ready },
-    { key: 'blocked', label: '阻塞', count: blocked },
-    { key: 'open', label: '其他开放', count: open },
-    { key: 'closed', label: '已关闭', count: closed },
+    { key: 'ready', label: t('distribution.ready'), count: ready },
+    { key: 'blocked', label: t('distribution.blocked'), count: blocked },
+    { key: 'open', label: t('distribution.open'), count: open },
+    { key: 'closed', label: t('distribution.closed'), count: closed },
   ]
 }
 
 /**
  * 分类分布：bug、enhancement、未定级。
  * @param tickets - 快照里的工单。
+ * @param t - 当前语言的翻译函数。
  * @returns 三类计数，顺序固定。
  */
 export function categorySegments(
   tickets: readonly TicketSnapshot[],
+  t: Translate,
 ): readonly DistributionSegment[] {
   let bug = 0
   let enhancement = 0
@@ -94,9 +144,9 @@ export function categorySegments(
     else untriaged += 1
   }
   return [
-    { key: 'bug', label: 'bug', count: bug },
-    { key: 'enhancement', label: 'enhancement', count: enhancement },
-    { key: 'untriaged', label: '未定级', count: untriaged },
+    { key: 'bug', label: t('distribution.bug'), count: bug },
+    { key: 'enhancement', label: t('distribution.enhancement'), count: enhancement },
+    { key: 'untriaged', label: t('distribution.untriaged'), count: untriaged },
   ]
 }
 
@@ -114,10 +164,15 @@ export function segmentRatio(segment: DistributionSegment, total: number): numbe
  * 把一个指标格式化成卡片里的文字。
  * @param value - 指标取值。
  * @param format - 有值时的格式化方式。
+ * @param t - 当前语言的翻译函数。
  * @returns 数值文案或“不可用”。
  */
-export function metricText(value: MetricValue, format: (value: number) => string): string {
-  return value.value === null ? '不可用' : format(value.value)
+export function metricText(
+  value: MetricValue,
+  format: (value: number) => string,
+  t: Translate,
+): string {
+  return value.value === null ? t('overview.metricUnavailable') : format(value.value)
 }
 
 /**
@@ -132,12 +187,15 @@ export function formatPercent(ratio: number): string {
 /**
  * 一个压力维度的触发说明：只列与最终档位同档的指标；轻松档列出全部指标。
  * @param report - 维度判档结果。
- * @returns 一句中文说明。
+ * @param t - 当前语言的翻译函数。
+ * @returns 一句说明。
  */
-export function pressureFacts(report: PressureDimensionReport): string {
+export function pressureFacts(report: PressureDimensionReport, t: Translate): string {
   const signals = factSignals(report)
-  if (signals.length === 0) return '暂无可判定的指标。'
-  return signals.map((signal) => pressureSignalText(signal.metric, signal.value)).join('，')
+  if (signals.length === 0) return t('pressure.facts.none')
+  return signals
+    .map((signal) => pressureSignalText(signal.metric, signal.value, t))
+    .join(t('common.comma'))
 }
 
 /**
@@ -152,57 +210,62 @@ export function factSignals(report: PressureDimensionReport): readonly PressureS
 }
 
 /** 压力维度缺数据时的说明。 */
-export function pressureGaps(report: PressureDimensionReport): readonly string[] {
-  return report.gaps.map((gap) => METRIC_GAP_TEXT[gap])
+export function pressureGaps(
+  report: PressureDimensionReport,
+  t: Translate,
+): readonly string[] {
+  return report.gaps.map((gap) => metricGapText(gap, t))
 }
 
 /**
  * 关注清单条目的原因文案。
  * @param item - 关注清单条目。
+ * @param t - 当前语言的翻译函数。
  * @returns 一句原因。
  */
-export function attentionText(item: AttentionItem): string {
+export function attentionText(item: AttentionItem, t: Translate): string {
   switch (item.reason) {
     case 'untriaged-bug':
-      return '缺陷还没定性'
+      return t('attention.untriagedBug')
     case 'stale':
-      return `陈旧 ${String(item.evidence ?? 0)} 天未更新`
+      return t('attention.stale', { n: item.evidence ?? 0 })
     case 'most-blocking':
-      return `被 ${String(item.evidence ?? 0)} 张未关闭票挡住`
+      return t('attention.mostBlocking', { n: item.evidence ?? 0 })
     case 'oldest-stalled':
-      return `停滞 ${String(item.evidence ?? 0)} 天没人管`
+      return t('attention.oldestStalled', { n: item.evidence ?? 0 })
   }
 }
 
-function pressureSignalText(metric: PressureMetric, value: number): string {
+function pressureSignalText(metric: PressureMetric, value: number, t: Translate): string {
   switch (metric) {
     case 'backlog':
-      return `开放积压 ${String(value)} 张`
+      return t('pressure.signal.backlog', { n: value })
     case 'netFlow':
-      return `近 30 天净流入 ${value > 0 ? '+' : ''}${String(value)} 张`
+      return t('pressure.signal.netFlow', { sign: value > 0 ? '+' : '', n: value })
     case 'blockedRatio':
-      return `阻塞占比 ${formatPercent(value)}`
+      return t('pressure.signal.blockedRatio', { percent: formatPercent(value) })
     case 'staleRatio':
-      return `陈旧率 ${formatPercent(value)}`
+      return t('pressure.signal.staleRatio', { percent: formatPercent(value) })
     case 'stalled':
-      return `停滞票 ${String(value)} 张`
+      return t('pressure.signal.stalled', { n: value })
   }
 }
 
 /** 缺口在数字旁边的短说明。 */
-const GAP_NOTES: Readonly<Record<MetricGap, string>> = {
-  'no-timestamps': '缺时间数据',
-  'no-closed-time': '缺关闭时间',
-  'no-dependency-edges': '缺依赖边',
+const GAP_NOTES: Readonly<Record<MetricGap, MessageId>> = {
+  'no-timestamps': 'pressure.gapNote.no-timestamps',
+  'no-closed-time': 'pressure.gapNote.no-closed-time',
+  'no-dependency-edges': 'pressure.gapNote.no-dependency-edges',
 }
 
 /**
  * 指标缺口的短说明。
  * @param value - 指标取值。
+ * @param t - 当前语言的翻译函数。
  * @returns 有缺口时的短说明，否则 undefined。
  */
-export function gapNote(value: MetricValue): string | undefined {
-  return value.gap === null ? undefined : GAP_NOTES[value.gap]
+export function gapNote(value: MetricValue, t: Translate): string | undefined {
+  return value.gap === null ? undefined : t(GAP_NOTES[value.gap])
 }
 
 /**
@@ -218,14 +281,18 @@ export function joinNotes(...notes: readonly (string | undefined)[]): string | u
 /**
  * 样本被截断时的范围说明，例如“样本 4/10”。
  * @param snapshot - 快照的已加载数、总数与截断标记。
+ * @param t - 当前语言的翻译函数。
  * @returns 截断时的说明，否则 undefined。
  */
-export function sampleNote(snapshot: {
-  readonly loaded: number
-  readonly total: number
-  readonly metrics: { readonly coverage: { readonly truncated: boolean } }
-}): string | undefined {
+export function sampleNote(
+  snapshot: {
+    readonly loaded: number
+    readonly total: number
+    readonly metrics: { readonly coverage: { readonly truncated: boolean } }
+  },
+  t: Translate,
+): string | undefined {
   return snapshot.metrics.coverage.truncated
-    ? `样本 ${String(snapshot.loaded)}/${String(snapshot.total)}`
+    ? t('overview.sampleNote', { loaded: snapshot.loaded, total: snapshot.total })
     : undefined
 }

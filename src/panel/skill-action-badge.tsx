@@ -10,6 +10,7 @@ import * as React from 'react'
 import type { CSSProperties } from 'react'
 
 import type { TicketSnapshot } from '../protocol/tracker.ts'
+import { useMessages } from './i18n.ts'
 import { CheckIcon, CopyIcon } from './icons.tsx'
 import { actionBadgeLabel, actionHint } from './skill-action-text.ts'
 import { ACTION_BADGE_STYLES, ACTION_TONES, SKILL_BADGE_BUTTON_STYLE } from './task-panel-styles.ts'
@@ -31,9 +32,10 @@ export interface SkillActionBadgeProps {
  * @returns 技能动作按钮，或不可开工的原因徽标。
  */
 export function SkillActionBadge(props: SkillActionBadgeProps): React.ReactElement {
+  const t = useMessages()
   const { ticket } = props
-  const label = actionBadgeLabel(ticket)
-  const hint = actionHint(ticket)
+  const label = actionBadgeLabel(ticket, t)
+  const hint = actionHint(ticket, t)
 
   if (ticket.skillAction === 'none') {
     return (
@@ -41,7 +43,7 @@ export function SkillActionBadge(props: SkillActionBadgeProps): React.ReactEleme
         data-testid="action-reason"
         data-ref={ticket.ref}
         title={hint}
-        aria-label={`${label}：${hint}`}
+        aria-label={t('skill.badge.aria', { label, hint })}
         style={{ ...ACTION_BADGE_STYLES[ticket.skillActionReason], ...props.style }}
       >
         {label}
@@ -49,7 +51,7 @@ export function SkillActionBadge(props: SkillActionBadgeProps): React.ReactEleme
     )
   }
 
-  const buttonHint = props.copied ? `${hint}；提示词已复制` : hint
+  const buttonHint = props.copied ? t('skill.badge.copiedHint', { hint }) : hint
 
   return (
     <button
@@ -59,7 +61,7 @@ export function SkillActionBadge(props: SkillActionBadgeProps): React.ReactEleme
       {...(props.copied ? { 'data-copied': 'true' } : {})}
       data-hover="action"
       title={buttonHint}
-      aria-label={`${label}：${buttonHint}`}
+      aria-label={t('skill.badge.aria', { label, hint: buttonHint })}
       onClick={(event) => {
         // 工单行整体可点：这个按钮只复制提示词，不打开详情。
         event.stopPropagation()

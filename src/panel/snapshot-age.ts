@@ -3,6 +3,8 @@
  */
 import * as React from 'react'
 
+import type { Translate } from './i18n.ts'
+
 const AGE_TICK_MS = 30_000
 
 /**
@@ -26,20 +28,21 @@ export function useNow(clock: () => number): number {
 }
 
 /**
- * 把快照时间格式化成中文的相对时间。
+ * 把快照时间格式化成当前语言的相对时间。
  * @param fetchedAt - 快照生成时间（毫秒）。
  * @param now - 当前时间（毫秒）。
+ * @param t - 当前语言的翻译函数。
  * @returns “刚刚”“3 分钟前”等文案。
  */
-export function formatAge(fetchedAt: number, now: number): string {
+export function formatAge(fetchedAt: number, now: number, t: Translate): string {
   const seconds = Math.max(0, Math.floor((now - fetchedAt) / 1000))
-  if (seconds < 60) return '刚刚'
+  if (seconds < 60) return t('time.justNow')
 
   const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${String(minutes)} 分钟前`
+  if (minutes < 60) return t('time.minutesAgo', { n: minutes })
 
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${String(hours)} 小时前`
+  if (hours < 24) return t('time.hoursAgo', { n: hours })
 
-  return `${String(Math.floor(hours / 24))} 天前`
+  return t('time.daysAgo', { n: Math.floor(hours / 24) })
 }

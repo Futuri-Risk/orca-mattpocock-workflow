@@ -6,6 +6,7 @@
  */
 import * as React from 'react'
 
+import { useMessages } from './i18n.ts'
 import { COLORS } from './task-panel-styles.ts'
 import type { WorkspaceCandidate } from './transport.ts'
 
@@ -83,16 +84,18 @@ const PICKER_PATH_STYLE: React.CSSProperties = {
  * @returns 候选选择区。
  */
 export function WorkspacePicker(props: WorkspacePickerProps): React.ReactElement {
+  const t = useMessages()
+
   return (
     <div data-testid="workspace-picker" style={PICKER_STYLE}>
-      <span style={PICKER_TITLE_STYLE}>认不到当前工作区，点「使用」选一个仓库目录：</span>
+      <span style={PICKER_TITLE_STYLE}>{t('workspace.pickerTitle')}</span>
       {props.candidates.map((candidate) => (
         <button
           key={candidate.id}
           type="button"
           data-testid="workspace-candidate"
           data-hover="soft"
-          aria-label={`使用 ${candidateLabel(candidate)}`}
+          aria-label={t('workspace.useAria', { label: candidateLabel(candidate) })}
           onClick={() => {
             props.onPick(candidate.path)
           }}
@@ -101,7 +104,7 @@ export function WorkspacePicker(props: WorkspacePickerProps): React.ReactElement
           <span style={PICKER_ROW_STYLE}>
             <span style={PICKER_LABEL_STYLE}>{candidateLabel(candidate)}</span>
             <span data-testid="workspace-candidate-use" style={PICKER_USE_STYLE}>
-              使用
+              {t('workspace.use')}
             </span>
           </span>
           <span style={PICKER_PATH_STYLE}>{candidate.path}</span>

@@ -15,6 +15,7 @@
 import { SKILL_ACTION_SKILLS } from '../protocol/env-check.ts'
 import { FLOW_COMMANDS, INTAKE_COMMANDS, type IntakeCommandDefinition } from '../protocol/flow.ts'
 import type { TicketSkillAction } from '../protocol/labels.ts'
+import type { Translate } from './i18n.ts'
 
 /** 生成某张票的提示词所需的最小信息。 */
 export interface TicketPromptTarget {
@@ -40,20 +41,24 @@ export function ticketPrompt(ticket: TicketPromptTarget): string | null {
 
 /**
  * 「+ 新建需求」的开场提示词：进入需求入池。
+ * @param t - 当前语言的翻译函数。
  * @returns 以 mattwf-feature 手势开头、后面是槽位的提示词。
  */
-export function newFeaturePrompt(): string {
-  return intakePrompt(INTAKE_COMMANDS.feature)
+export function newFeaturePrompt(t: Translate): string {
+  return intakePrompt(INTAKE_COMMANDS.feature, t)
 }
 
 /**
  * 「+ bug」填入的开场提示词：进入缺陷入池。
+ * @param t - 当前语言的翻译函数。
  * @returns 以 mattwf-bug 手势开头、后面是槽位的提示词。
  */
-export function newBugPrompt(): string {
-  return intakePrompt(INTAKE_COMMANDS.bug)
+export function newBugPrompt(t: Translate): string {
+  return intakePrompt(INTAKE_COMMANDS.bug, t)
 }
 
-function intakePrompt(intake: IntakeCommandDefinition): string {
-  return [`/${FLOW_COMMANDS[intake.command].name}`, '', ...intake.slots].join('\n')
+function intakePrompt(intake: IntakeCommandDefinition, t: Translate): string {
+  return [`/${FLOW_COMMANDS[intake.command].name}`, '', ...intake.slots.map((slot) => t(slot))].join(
+    '\n',
+  )
 }

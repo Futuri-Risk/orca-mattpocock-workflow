@@ -38,6 +38,14 @@
       {
         "on": "workspace.changed"
       }
+    ],
+    "settings": [
+      {
+        "key": "language",
+        "title": "Language",
+        "type": "string",
+        "default": "auto"
+      }
     ]
   },
   "capabilities": [

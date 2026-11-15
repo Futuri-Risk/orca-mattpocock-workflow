@@ -10,13 +10,16 @@ import * as React from 'react'
 
 import type { BackendKind } from '../protocol/backend.ts'
 import type { CapabilityDiagnostic } from '../protocol/env-check.ts'
+import type { LanguageSetting } from '../protocol/i18n.ts'
 import { ERROR_BACKENDS, type ErrorCode, type TicketSnapshot } from '../protocol/tracker.ts'
+import { useLocale, useMessages } from './i18n.ts'
 import type { PromptCopy } from './injection.ts'
 import { EnvCheckView } from './env-check-view.tsx'
 import { HelpView } from './help-view.tsx'
 import { OverviewView } from './overview-view.tsx'
 import type { PanelClient } from './transport.ts'
 import {
+  COLORS,
   ICON_BUTTON_STYLE,
   PANEL_SHEET,
   PANEL_STYLE,
@@ -272,7 +275,7 @@ function TicketsPane(props: {
   )
 }
 
-/** 视图切换条：「列表」「概览」「环境检查」与右侧的流程帮助入口。 */
+/** 视图切换条：「列表」「概览」「环境检查」与右侧的语言、流程帮助入口。 */
 function ViewTabs(props: {
   readonly view: View
   readonly onOpenTickets: () => void
@@ -280,31 +283,84 @@ function ViewTabs(props: {
   readonly onOpenEnvCheck: () => void
   readonly onOpenHelp: () => void
 }): React.ReactElement {
+  const t = useMessages()
+
   return (
     <div style={VIEW_BAR_STYLE}>
-      <div role="group" aria-label="视图" style={VIEW_TABS_STYLE}>
+      <div role="group" aria-label={t('common.viewGroup')} style={VIEW_TABS_STYLE}>
         <ViewChip
           testId="view-tickets"
-          label="列表"
+          label={t('view.tickets')}
           active={props.view === 'tickets'}
           onClick={props.onOpenTickets}
         />
         <ViewChip
           testId="view-overview"
-          label="概览"
+          label={t('view.overview')}
           active={props.view === 'overview'}
           onClick={props.onOpenOverview}
         />
         <ViewChip
           testId="view-env"
-          label="环境检查"
+          label={t('view.env')}
           active={props.view === 'env'}
           onClick={props.onOpenEnvCheck}
         />
       </div>
-      <TipsButton onClick={props.onOpenHelp} />
+      <div style={VIEW_ACTIONS_STYLE}>
+        <LanguageSelect />
+        <TipsButton label={t('view.help')} onClick={props.onOpenHelp} />
+      </div>
     </div>
   )
+}
+
+/** 右侧入口组：语言下拉贴着流程帮助图标，窄面板里不抢页签的宽度。 */
+const VIEW_ACTIONS_STYLE: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 4,
+  flex: 'none',
+}
+
+/** 语言切换器：写同一个 `language` 设置，改完即时重渲染。 */
+function LanguageSelect(): React.ReactElement {
+  const t = useMessages()
+  const { setting, setSetting, locale } = useLocale()
+  const languageName = locale === 'zh-CN' ? t('language.zhCN') : t('language.en')
+
+  return (
+    <select
+      data-testid="language-select"
+      aria-label={t('language.label')}
+      title={t('language.effective', { language: languageName })}
+      value={setting}
+      onChange={(event) => {
+        setSetting(event.target.value as LanguageSetting)
+      }}
+      style={LANGUAGE_SELECT_STYLE}
+    >
+      <option value="auto">{t('language.autoEffective', { language: languageName })}</option>
+      <option value="zh-CN">{t('language.zhCN')}</option>
+      <option value="en">{t('language.en')}</option>
+    </select>
+  )
+}
+
+const LANGUAGE_SELECT_STYLE: React.CSSProperties = {
+  appearance: 'none',
+  border: 'none',
+  borderRadius: 6,
+  padding: '1px 18px 1px 7px',
+  color: COLORS.secondary,
+  backgroundColor: 'transparent',
+  backgroundImage: `linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%)`,
+  backgroundPosition: 'right 9px center, right 5px center',
+  backgroundSize: '4px 4px, 4px 4px',
+  backgroundRepeat: 'no-repeat',
+  cursor: 'pointer',
+  font: 'inherit',
+  fontSize: 12,
 }
 
 function ViewChip(props: {
@@ -327,13 +383,16 @@ function ViewChip(props: {
   )
 }
 
-function TipsButton(props: { readonly onClick: () => void }): React.ReactElement {
+function TipsButton(props: {
+  readonly label: string
+  readonly onClick: () => void
+}): React.ReactElement {
   return (
     <button
       type="button"
       data-testid="tips"
-      aria-label="流程帮助"
-      title="流程帮助"
+      aria-label={props.label}
+      title={props.label}
       onClick={props.onClick}
       style={ICON_BUTTON_STYLE}
     >

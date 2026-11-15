@@ -10,6 +10,7 @@ import * as React from 'react'
 import type { TicketAuthor, TicketComment, TicketDetail } from '../protocol/tracker.ts'
 import { authorName, authorTitle } from './author-text.ts'
 import type { AvatarRole } from './avatar-display.ts'
+import { useMessages } from './i18n.ts'
 import { MarkdownBody } from './markdown-body.tsx'
 import {
   TIMELINE_AUTHOR_BADGE_STYLE,
@@ -27,6 +28,7 @@ import { UserAvatar } from './user-avatar.tsx'
 
 /** 正文卡片加全部评论。 */
 export function Timeline(props: { readonly detail: TicketDetail }): React.ReactElement {
+  const t = useMessages()
   const { detail } = props
   const count = detail.comments.length
 
@@ -36,26 +38,29 @@ export function Timeline(props: { readonly detail: TicketDetail }): React.ReactE
         testId="detail-body-section"
         authorTestId="detail-author"
         author={detail.author}
-        avatarRole="创建人"
-        verb="创建于"
+        avatarRole="creator"
+        verb={t('detail.verb.created')}
         time={detail.createdAt}
         isTicketAuthor={false}
-        ariaLabel="正文"
+        ariaLabel={t('detail.body')}
       >
         {detail.body.trim().length === 0 ? (
           <div data-testid="detail-no-body" style={TIMELINE_EMPTY_STYLE}>
-            这张工单没有正文。
+            {t('detail.noBody')}
           </div>
         ) : (
           <MarkdownBody testId="detail-body" source={detail.body} />
         )}
       </TimelineCard>
-      <section data-testid="detail-comments" aria-label={`评论（${String(count)}）`}>
+      <section
+        data-testid="detail-comments"
+        aria-label={t('detail.comments', { n: count })}
+      >
         {count === 0 ? (
           <>
             <div style={TIMELINE_CONNECTOR_STYLE} />
             <div data-testid="detail-no-comments" style={TIMELINE_EMPTY_STYLE}>
-              还没有评论。
+              {t('detail.noComments')}
             </div>
           </>
         ) : (
@@ -76,6 +81,7 @@ function CommentCard(props: {
   readonly comment: TicketComment
   readonly ticketAuthor: TicketAuthor | null
 }): React.ReactElement {
+  const t = useMessages()
   const { comment } = props
   // 服务改了显示名时登录名不变：作者徽标只按登录名判定。
   const isTicketAuthor =
@@ -90,11 +96,13 @@ function CommentCard(props: {
         testId="detail-comment"
         authorTestId="comment-author"
         author={comment.author}
-        avatarRole="评论作者"
-        verb="评论于"
+        avatarRole="commenter"
+        verb={t('detail.verb.commented')}
         time={comment.createdAt}
         isTicketAuthor={isTicketAuthor}
-        ariaLabel={`${comment.author === null ? '未署名' : authorName(comment.author)}的评论`}
+        ariaLabel={t('detail.commentBy', {
+          author: comment.author === null ? t('detail.unnamed') : authorName(comment.author),
+        })}
       >
         <MarkdownBody source={comment.body} />
       </TimelineCard>
@@ -114,6 +122,7 @@ function TimelineCard(props: {
   readonly ariaLabel: string
   readonly children: React.ReactNode
 }): React.ReactElement {
+  const t = useMessages()
   const header = props.isTicketAuthor
     ? { ...TIMELINE_CARD_HEADER_STYLE, ...TIMELINE_CARD_AUTHOR_HEADER_STYLE }
     : TIMELINE_CARD_HEADER_STYLE
@@ -125,15 +134,15 @@ function TimelineCard(props: {
         <span data-testid={props.authorTestId} style={TIMELINE_TIME_STYLE}>
           <span
             style={TIMELINE_NAME_STYLE}
-            {...(props.author === null ? {} : { title: authorTitle(props.author) })}
+            {...(props.author === null ? {} : { title: authorTitle(props.author, t) })}
           >
-            {props.author === null ? '未署名' : authorName(props.author)}
+            {props.author === null ? t('detail.unnamed') : authorName(props.author)}
           </span>
           {props.time === null ? '' : ` ${props.verb} ${formatTime(props.time)}`}
         </span>
         {props.isTicketAuthor ? (
           <span data-testid="author-badge" style={TIMELINE_AUTHOR_BADGE_STYLE}>
-            作者
+            {t('detail.authorBadge')}
           </span>
         ) : null}
       </header>

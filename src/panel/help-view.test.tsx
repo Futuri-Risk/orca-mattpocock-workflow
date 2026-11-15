@@ -3,7 +3,16 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { FLOW_COMMANDS, FLOW_DIAGRAMS, type FlowCommandId } from '../protocol/flow.ts'
+import { MESSAGES } from '../protocol/i18n.ts'
 import { HelpView } from './help-view.tsx'
+
+/** 默认 context 是中文，测试按中文目录断言。 */
+const ZH = MESSAGES['zh-CN']
+
+/** 把目录文案嵌进正则，避免中文标点被当成元字符。 */
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+}
 
 function render(initialDiagramId?: string): string {
   const props =
@@ -30,7 +39,7 @@ describe('流程帮助', () => {
     if (first === undefined) throw new Error('流程定义里没有图')
 
     expect(count(markup, 'data-testid="flow-tab-')).toBe(FLOW_DIAGRAMS.length)
-    expect(markup).toContain(`aria-label="${first.title}"`)
+    expect(markup).toContain(`aria-label="${ZH[first.titleKey]}"`)
     expect(markup).toContain(`data-testid="flow-tab-${first.id}" aria-selected="true"`)
   })
 
@@ -50,9 +59,13 @@ describe('流程帮助', () => {
   it('「实现之后」先评审再写 PR，两个命令都停，终态不停', () => {
     const markup = render('after-implement')
 
+    const afterImplement = ZH['flow.diagram.after-implement.title']
+    const intakeTriage = ZH['flow.diagram.intake-triage.title']
+    const merged = ZH['flow.node.after-implement.merged']
+
     expect(count(markup, 'role="img"')).toBe(1)
-    expect(markup).toContain('aria-label="实现之后"')
-    expect(markup).not.toContain('aria-label="入池与 triage"')
+    expect(markup).toContain(`aria-label="${afterImplement}"`)
+    expect(markup).not.toContain(`aria-label="${intakeTriage}"`)
     expect(markup.indexOf('data-command="code-review"')).toBeLessThan(
       markup.indexOf('data-command="pr"'),
     )
@@ -66,9 +79,12 @@ describe('流程帮助', () => {
     expect(count(markup, 'data-testid="flow-stop"')).toBe(2)
 
     const terminal = markup.match(
-      /<g[^>]*data-stops="false"[^>]*>(?:(?!<\/g>)[\s\S])*已合并、票已关闭(?:(?!<\/g>)[\s\S])*<\/g>/u,
+      new RegExp(
+        `<g[^>]*data-stops="false"[^>]*>(?:(?!</g>)[\\s\\S])*${escapeRegExp(merged)}(?:(?!</g>)[\\s\\S])*</g>`,
+        'u',
+      ),
     )
-    if (terminal === null) throw new Error('没有渲染「已合并、票已关闭」终态')
+    if (terminal === null) throw new Error(`没有渲染「${merged}」终态`)
     expect(terminal[0]).not.toContain('data-testid="flow-stop"')
   })
 

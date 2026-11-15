@@ -3,6 +3,7 @@
  * 避免同一行出现两套名字或两套悬停说明。
  */
 import type { TicketAuthor } from '../protocol/tracker.ts'
+import type { Translate } from './i18n.ts'
 
 /** 展示名字只需要用户名与展示名；候选用户没有头像字段。 */
 export type NamedUser = Pick<TicketAuthor, 'login' | 'displayName'>
@@ -19,8 +20,11 @@ export function authorName(user: NamedUser): string {
 /**
  * 悬停时的完整信息：展示名加登录名；没有展示名时只给登录名。
  * @param user - 远端用户。
+ * @param t - 当前语言的翻译函数。
  * @returns 悬停文案。
  */
-export function authorTitle(user: NamedUser): string {
-  return user.displayName === null ? `@${user.login}` : `${user.displayName}（@${user.login}）`
+export function authorTitle(user: NamedUser, t: Translate): string {
+  return user.displayName === null
+    ? `@${user.login}`
+    : t('author.title', { name: user.displayName, login: user.login })
 }

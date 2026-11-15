@@ -7,7 +7,10 @@ import {
   avatarLabel,
   usableAvatarUrl,
 } from './avatar-display.ts'
+import { createTranslator } from './i18n.ts'
 import { AVATAR_COLORS } from './ticket-row-styles.ts'
+
+const t = createTranslator('zh-CN')
 
 describe('头像展示规则', () => {
   it('只加载 http(s) 的绝对地址', () => {
@@ -34,8 +37,8 @@ describe('头像展示规则', () => {
 
     expect(AVATAR_COLORS).toContain(neutral)
     expect(avatarInitial(null)).toBe('?')
-    expect(avatarLabel('评论作者', null)).toBe('评论作者：未署名')
-    expect(avatarHint(null)).toBe('未署名')
+    expect(avatarLabel('commenter', null, t)).toBe('评论作者：未署名')
+    expect(avatarHint(null, t)).toBe('未署名')
   })
 
   it('无障碍文本带角色与展示名，悬浮说明带展示名与登录名', () => {
@@ -45,16 +48,16 @@ describe('头像展示规则', () => {
       avatarUrl: 'https://avatars.githubusercontent.com/u/1?v=4',
     }
 
-    expect(avatarLabel('创建人', user)).toBe('创建人：Cnzgray')
-    expect(avatarHint(user)).toBe('Cnzgray（@cnzgray）')
+    expect(avatarLabel('creator', user, t)).toBe('创建人：Cnzgray')
+    expect(avatarHint(user, t)).toBe('Cnzgray（@cnzgray）')
     expect(avatarInitial(user)).toBe('C')
   })
 
   it('没有展示名时退回登录名', () => {
     const user = { login: 'cnzgray', displayName: null, avatarUrl: null }
 
-    expect(avatarLabel('分配人', user)).toBe('分配人：cnzgray')
-    expect(avatarHint(user)).toBe('@cnzgray')
+    expect(avatarLabel('assignee', user, t)).toBe('分配人：cnzgray')
+    expect(avatarHint(user, t)).toBe('@cnzgray')
     expect(avatarInitial(user)).toBe('C')
   })
 

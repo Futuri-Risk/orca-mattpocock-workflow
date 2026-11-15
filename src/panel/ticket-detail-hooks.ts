@@ -15,6 +15,7 @@ import type {
 } from '../protocol/tracker.ts'
 import { copyText } from './clipboard.ts'
 import { errorText } from './error-text.ts'
+import { useMessages, type Translate } from './i18n.ts'
 import type { PanelClient } from './transport.ts'
 import type { Suggestion, SuggestionSource } from './ticket-combobox.tsx'
 import type { CopyState, OptionsState } from './ticket-detail-fields.tsx'
@@ -168,6 +169,7 @@ export function useTicketOptions(
   workspaceRoot: string,
   eager: boolean,
 ): OptionsState {
+  const t = useMessages()
   const [load, setLoad] = React.useState<OptionsLoad>({ status: 'idle' })
   const started = React.useRef(false)
   const mounted = React.useRef(true)
@@ -197,14 +199,17 @@ export function useTicketOptions(
     if (eager) request()
   }, [eager, request])
 
-  return React.useMemo(() => optionsState(load, request), [load, request])
+  return React.useMemo(() => optionsState(load, request, t), [load, request, t])
 }
 
-function optionsState(load: OptionsLoad, request: () => void): OptionsState {
+function optionsState(load: OptionsLoad, request: () => void, t: Translate): OptionsState {
   if (load.status !== 'ready') {
     const source: SuggestionSource =
       load.status === 'failed'
-        ? { status: 'unavailable', reason: `读取候选失败：${errorText(load.error)}` }
+        ? {
+            status: 'unavailable',
+            reason: t('detail.optionsFailed', { detail: errorText(load.error, t) }),
+          }
         : { status: 'loading' }
     return { labels: source, assignees: source, labelColors: new Map(), request }
   }
@@ -308,6 +313,7 @@ export function useCopyLink(url: string | null): {
   readonly copy: CopyState
   readonly onCopy: () => void
 } {
+  const t = useMessages()
   const [copy, setCopy] = React.useState<CopyState>({ status: 'idle' })
 
   React.useEffect(() => {
@@ -324,7 +330,13 @@ export function useCopyLink(url: string | null): {
     copy,
     onCopy: () => {
       if (url === null) return
-      void copyText(url).then(setCopy)
+      void copyText(url).then((outcome) => {
+        setCopy(
+          outcome.status === 'copied'
+            ? { status: 'copied' }
+            : { status: 'failed', message: t('copy.clipboardUnavailable') },
+        )
+      })
     },
   }
 }
