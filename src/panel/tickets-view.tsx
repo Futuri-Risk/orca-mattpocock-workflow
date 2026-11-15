@@ -113,7 +113,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
   const clock = props.now ?? Date.now
   const { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore } =
     useSnapshotRequest(props.client, props.workspaceRoot, props.refreshToken ?? 0)
-  const { preference, setFilter, toggleSort } = useViewPreference(props.workspaceRoot)
+  const { preference, setFilter, toggleSort } = useViewPreference(props.workspaceRoot, snapshot)
   const nowValue = useNow(clock)
   const actions = useTicketActions(props.workspaceRoot, props.copy)
 

@@ -1,13 +1,15 @@
 /**
- * 视图偏好：按工作区记住筛选、排序键与方向。
+ * 视图偏好：按仓库记住筛选、排序键与方向。
  *
- * 原来存在浏览器的 localStorage 里，现在存在 Orca 的插件私有存储里：
- * 一个键放一份 JSON 字符串，里面是「工作区根目录 → 偏好」的映射，
- * 最多保留 50 个工作区条目。存储不可用或数据损坏时静默退回默认视图，
- * 不影响面板其余功能。
+ * 存在 Orca 的插件私有存储里：一个键放一份 JSON 字符串，里面是「偏好键 → 偏好」的映射，
+ * 最多保留 50 个条目。存储不可用或数据损坏时静默退回默认视图，不影响面板其余功能。
+ *
+ * 偏好键与工单缓存的归并规则一致：托管后端按仓库身份（同一仓库的多个 worktree 共用一份），
+ * 本地 Markdown 按工作区隔离。升级前按工作区根目录存的条目在读取时作为回退。
  */
 import * as React from 'react'
 
+import type { WorkspaceSnapshot } from '../protocol/tracker.ts'
 import { readFrame } from './host.ts'
 import {
   defaultSortDirection,
@@ -81,20 +83,43 @@ const DIRECTIONS: Record<SortDirection, true> = { asc: true, desc: true }
 // 写入串行化：读改写之间不能被另一个写入插进来，否则会丢条目。
 let writeChain: Promise<void> = Promise.resolve()
 
+/** 算偏好键需要的快照字段。 */
+export type ViewPreferenceSource = Pick<WorkspaceSnapshot, 'backend' | 'repository' | 'repositoryHost'>
+
 /**
- * 读取某个工作区的视图偏好。
+ * 视图偏好的键：托管后端按仓库身份，本地 Markdown 按工作区。
+ *
+ * 仓库身份与宿主的 `repositoryKey` 同一格式：同一仓库的每个 worktree 算出同一个键。
+ * @param snapshot - 当前快照；还没拿到时为 null。
+ * @param workspaceRoot - 当前工作区根目录。
+ * @returns 偏好键；快照或工作区未知时是 undefined，此时不读不写。
+ */
+export function viewPreferenceKey(
+  snapshot: ViewPreferenceSource | null,
+  workspaceRoot: string | undefined,
+): string | undefined {
+  if (snapshot === null || workspaceRoot === undefined) return undefined
+  if (snapshot.backend === 'markdown') return workspaceRoot
+  const host = snapshot.repositoryHost === null ? '' : `@${snapshot.repositoryHost}`
+  return `${snapshot.backend}${host}/${snapshot.repository}`
+}
+
+/**
+ * 读取某个偏好键的视图偏好。
  * @param store - 插件私有存储；不可用时传 undefined。
- * @param workspaceRoot - 工作区根路径；没有工作区时不读。
+ * @param key - 偏好键（见 {@link viewPreferenceKey}）；未知时不读。
+ * @param legacyKey - 升级前按工作区根目录存的键；新键下没有条目时回退到它。
  * @returns 存档合法时返回存档，否则返回默认视图或逐字段回退后的结果。
  */
 export async function readViewPreference(
   store: PreferenceStore | undefined,
-  workspaceRoot: string | undefined,
+  key: string | undefined,
+  legacyKey?: string,
 ): Promise<ViewPreference> {
-  if (store === undefined || workspaceRoot === undefined) return DEFAULT_VIEW
+  if (store === undefined || key === undefined) return DEFAULT_VIEW
 
   const entries = await loadEntries(store)
-  const stored = entries[workspaceRoot]
+  const stored = entries[key] ?? (legacyKey === undefined ? undefined : entries[legacyKey])
   if (stored === undefined) return DEFAULT_VIEW
 
   return {
@@ -105,24 +130,24 @@ export async function readViewPreference(
 }
 
 /**
- * 写入某个工作区的视图偏好，并按保存时间淘汰超量的条目。
+ * 写入某个偏好键的视图偏好，并按保存时间淘汰超量的条目。
  * @param store - 插件私有存储；不可用时传 undefined。
- * @param workspaceRoot - 工作区根路径；没有工作区时不写。
+ * @param key - 偏好键（见 {@link viewPreferenceKey}）；未知时不写。
  * @param preference - 要保存的偏好。
  * @param now - 保存时间来源。
  */
 export function writeViewPreference(
   store: PreferenceStore | undefined,
-  workspaceRoot: string | undefined,
+  key: string | undefined,
   preference: ViewPreference,
   now: () => number = Date.now,
 ): Promise<void> {
-  if (store === undefined || workspaceRoot === undefined) return Promise.resolve()
+  if (store === undefined || key === undefined) return Promise.resolve()
 
   const task = writeChain.then(async () => {
     const entries = await loadEntries(store)
     const next: Record<string, StoredEntry> = { ...entries }
-    next[workspaceRoot] = {
+    next[key] = {
       filter: preference.filter,
       sortKey: preference.sortKey,
       direction: preference.direction,
@@ -216,12 +241,18 @@ export interface ViewPreferenceControls {
 }
 
 /**
- * 读取并按工作区维护视图偏好。存储不可用时全部退回默认视图。
+ * 读取并按仓库维护视图偏好。存储不可用时全部退回默认视图。
  * @param workspaceRoot - 当前工作区根路径。
+ * @param snapshot - 当前快照；偏好键由它的仓库身份决定，还没拿到时用默认视图。
  * @returns 当前偏好与筛选、排序入口。
  */
-export function useViewPreference(workspaceRoot: string | undefined): ViewPreferenceControls {
+export function useViewPreference(
+  workspaceRoot: string | undefined,
+  snapshot: ViewPreferenceSource | null,
+): ViewPreferenceControls {
   const store = React.useMemo(resolvePreferenceStore, [])
+  // 键是字符串：刷新换了快照对象但仓库没变时，不重新读存档。
+  const key = viewPreferenceKey(snapshot, workspaceRoot)
   const [preference, setPreference] = React.useState<ViewPreference>(DEFAULT_VIEW)
   // 载入是异步的：用户在存档回来之前改了偏好，就不该被存档覆盖。
   const generation = React.useRef(0)
@@ -229,27 +260,27 @@ export function useViewPreference(workspaceRoot: string | undefined): ViewPrefer
   React.useEffect(() => {
     const current = generation.current + 1
     generation.current = current
-    if (workspaceRoot === undefined) {
+    if (key === undefined || workspaceRoot === undefined) {
       setPreference(DEFAULT_VIEW)
       return undefined
     }
     let active = true
-    void readViewPreference(store, workspaceRoot).then((stored) => {
+    void readViewPreference(store, key, workspaceRoot).then((stored) => {
       if (!active || generation.current !== current) return
       setPreference(stored)
     })
     return () => {
       active = false
     }
-  }, [store, workspaceRoot])
+  }, [store, key, workspaceRoot])
 
   const apply = React.useCallback(
     (next: ViewPreference): void => {
       generation.current += 1
       setPreference(next)
-      void writeViewPreference(store, workspaceRoot, next)
+      void writeViewPreference(store, key, next)
     },
-    [store, workspaceRoot],
+    [store, key],
   )
 
   return {
