@@ -22,7 +22,8 @@
 - 补全候选的归一化也在这里：`normalizeLabelColor` 把颜色统一成小写 `#rrggbb`，
   `dedupeBy` 按名字去重并保留首次出现的顺序；
 - `markdown.ts` 里的 `parseMarkdownDetail` 把本地工单文件切成标题、正文与评论段落；
-- `worktree.ts` 推导 worktree 的分支名、工作区名与注释（工作区名与分支名同值），拼装 Orca 命令行参数，并解析它的 JSON 输出；
+- `worktree.ts` 推导 worktree 的分支名、工作区名与注释（工作区名与分支名同值），按 Orca 的 URL 路由表判定工单链接能否挂载
+  （自建 Gitea / GitHub 的 `/issues/<n>` 不挂，链接补进注释），拼装 Orca 命令行参数，并解析它的 JSON 输出；
 - `repository-scope.ts` 解析 `git worktree list --porcelain`，给出仓库作用域（主 worktree 根目录）
   与缓存键：托管后端按仓库归并，本地 Markdown 按工作区隔离；
 - `orca-cli.ts` 决定 Orca 命令行的候选顺序并校验 `--version` 输出，Linux 上同名读屏软件会被排除。

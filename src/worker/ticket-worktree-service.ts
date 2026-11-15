@@ -125,6 +125,7 @@ async function createWorktree(
     }
 
     const plan = planWorktree({
+      kind,
       number: detail.number,
       title: detail.title,
       category: categorize(detail.labels, TRACKER_LABELS),
@@ -237,6 +238,9 @@ function worktreeResultOf(
   }
 }
 
+/** Orca 拒绝链接时的原始诊断；命中后换成可操作的中文说明。 */
+const UNSUPPORTED_REFERENCE = /Unsupported reference URL/i
+
 /**
  * 命令行的可操作诊断。带 `--json` 的 Orca 把错误信封写在标准输出上；
  * 优先从那里读出错误码与消息，其次才是标准错误的一行。
@@ -302,6 +306,13 @@ function mapError(error: unknown): { readonly code: ErrorCode; readonly message:
     }
     const detail = commandDiagnostic(error)
     const prefix = error.kind === 'timeout' ? '创建 worktree 超时' : '创建 worktree 失败'
+    if (error.kind !== 'timeout' && UNSUPPORTED_REFERENCE.test(detail)) {
+      return {
+        code: ERROR_CODES.worktreeCreateFailed,
+        message:
+          '创建 worktree 失败：该工单链接不受 Orca 支持，worktree 未创建。请换用 Orca 能识别的工单链接，或稍后重试。',
+      }
+    }
     return {
       code: ERROR_CODES.worktreeCreateFailed,
       message: detail.length === 0 ? `${prefix}。` : `${prefix}：${detail}`,

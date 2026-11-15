@@ -274,6 +274,85 @@ describe('工单 worktree 服务', () => {
     expect(createCall?.args).not.toContain('--gitlab-issue')
   })
 
+  it('自建 Gitea 的 issue 不传给 --reference，链接补进注释', async () => {
+    const reference = 'https://git.xpow.site/xpow/device-scope/issues/23'
+    const fake = runner({})
+    const create = service(resolver('gitea', { url: reference, number: 23, title: '设备作用域' }), fake)
+
+    const result = await create.handle(RPC_METHODS.ticketWorktree, {
+      workspaceRoot: WORKSPACE,
+      ref: '#23',
+      number: 23,
+    })
+
+    expect(result).toMatchObject({ ok: true, result: { reference } })
+    const createCall = fake.calls.find((call) => call.args.includes('create'))
+    expect(createCall?.args).not.toContain('--reference')
+    expect(createCall?.args[createCall.args.indexOf('--comment') + 1]).toBe(
+      `#23 设备作用域\n${reference}`,
+    )
+  })
+
+  it.each([
+    ['GitHub.com issue', 'github', 'https://github.com/acme/repo/issues/6'],
+    ['自建 GitHub pull', 'github', 'https://github.example.com/acme/repo/pull/6'],
+    ['Codeberg issue', 'gitea', 'https://codeberg.org/acme/repo/issues/6'],
+    ['自建 Gitea pull', 'gitea', 'https://gitea.example.com/acme/repo/pulls/6'],
+    ['GitLab 自建 MR', 'gitlab', 'https://gitlab.example.com/group/project/-/merge_requests/6'],
+  ] as const)('Orca 能路由的链接继续传给 --reference：%s', async (_label, kind, reference) => {
+    const fake = runner({})
+    const create = service(resolver(kind, { url: reference }), fake)
+
+    const result = await create.handle(RPC_METHODS.ticketWorktree, {
+      workspaceRoot: WORKSPACE,
+      ref: '#6',
+      number: 6,
+    })
+
+    expect(result).toMatchObject({ ok: true, result: { reference } })
+    const createCall = fake.calls.find((call) => call.args.includes('create'))
+    expect(createCall?.args[createCall.args.indexOf('--reference') + 1]).toBe(reference)
+    expect(createCall?.args[createCall.args.indexOf('--comment') + 1]).toBe('#6 Ticket one')
+  })
+
+  it('Orca 仍拒绝链接时给出中文说明', async () => {
+    const fake = runner({
+      create: () =>
+        new CommandError(
+          'failed',
+          'orca 退出码 1',
+          '',
+          1,
+          JSON.stringify({
+            id: 'op',
+            ok: false,
+            error: {
+              code: 'invalid_argument',
+              message:
+                'Unsupported reference URL. Use a PR, MR or issue URL with an identifiable provider route.',
+            },
+          }),
+        ),
+    })
+    const create = service(resolver('github'), fake)
+
+    const result = await create.handle(RPC_METHODS.ticketWorktree, {
+      workspaceRoot: WORKSPACE,
+      ref: '#6',
+      number: 6,
+    })
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        code: ERROR_CODES.worktreeCreateFailed,
+        message: expect.stringContaining('该工单链接不受 Orca 支持'),
+      },
+    })
+    if (result.ok) throw new Error('expected failure')
+    expect(result.error.message).not.toContain('invalid_argument')
+  })
+
   it('后端给不出链接时不调用 Orca 命令行', async () => {
     const fake = runner({})
     const create = service(resolver('github', { url: null }), fake)

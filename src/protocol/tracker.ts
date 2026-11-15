@@ -436,7 +436,10 @@ export interface TicketWorktreeResult {
   readonly branch: string
   /** Orca 侧边栏里的显示名；新建时与分支名同值，既有工作区沿用 Orca 记下的名字。 */
   readonly name: string
-  /** 挂到 worktree 上的工单链接，取自后端详情。 */
+  /**
+   * 工单链接，取自后端详情，面板的「工单」字段用它。
+   * Orca 认不出该链接时不会挂到 worktree 上，而是降级写进注释。
+   */
   readonly reference: string
   /** 本次是否真的新建了 worktree。 */
   readonly created: boolean
