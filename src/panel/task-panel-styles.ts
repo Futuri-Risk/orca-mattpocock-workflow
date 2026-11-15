@@ -26,6 +26,7 @@ export const COLORS = {
   /** 分段控件的槽底色。 */
   track: 'var(--mwf-track, var(--orca-muted, rgba(128, 128, 128, 0.12)))',
   accent: 'var(--mwf-accent, var(--orca-primary, #0969da))',
+  accentForeground: 'var(--mwf-accent-foreground, var(--orca-primary-foreground, #fff))',
   success: 'var(--mwf-success, #1a7f37)',
   warn: 'var(--mwf-warn, #9a6700)',
   error: 'var(--mwf-error, var(--orca-destructive, #cf222e))',
@@ -157,7 +158,7 @@ export const FEATURE_ACTION_STYLE: CSSProperties = {
   ...ACTION_BUTTON_STYLE,
   borderColor: COLORS.accent,
   background: COLORS.accent,
-  color: '#fff',
+  color: COLORS.accentForeground,
 }
 
 /** 报 bug 是次操作：中性描边，只让图标和文字带错误色。 */

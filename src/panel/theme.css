@@ -20,12 +20,15 @@
   --mwf-surface-active: var(--orca-accent, rgba(128, 128, 128, 0.18));
   --mwf-track: var(--orca-muted, rgba(128, 128, 128, 0.12));
   --mwf-accent: var(--orca-primary, #0969da);
+  /* 强调色底上的文字：Orca 深色主题的主色是浅灰，必须跟随宿主的前景令牌，不能写死白色。 */
+  --mwf-accent-foreground: var(--orca-primary-foreground, #fff);
   --mwf-success: #1a7f37;
   --mwf-warn: #9a6700;
   --mwf-error: var(--orca-destructive, #cf222e);
 }
 
 .dark {
+  --mwf-accent-foreground: var(--orca-primary-foreground, #171717);
   --mwf-success: #3fb950;
   --mwf-warn: #d29922;
 }
