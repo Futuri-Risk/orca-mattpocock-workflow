@@ -33,6 +33,9 @@ Orca 插件的能力由宿主给定，下面是本插件在这些边界内给出
 「建 worktree」只走 Orca 自己的命令行（`orca worktree create`），不用裸 `git worktree`：
 分支名按仓库约定从票推导（`feat/4-…` / `bugfix/1-…`），工单链接挂到新 worktree 上，
 建完由 Orca 切到新工作区；同分支已有工作区时直接返回既有结果，不会重复创建。
+自建 Gitea / GitHub 的 `/issues/<n>` 没有 Orca 认得的 provider 路由，不传 `--reference`，
+工单链接改补进 `--comment`，仍然建出工作区；`/pull/<n>`、`/pulls/<n>` 与 GitLab 的
+`/-/issues|merge_requests/<n>` 继续挂载。
 
 判定语义统一为一套：可接 / 阻塞 / 已关闭、triage 标签（`needs-triage`、`wontfix`、`ready-for-human` …）、
 `Blocked by:` 解析、GitLab 原生阻塞合并。

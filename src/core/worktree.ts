@@ -6,6 +6,7 @@
  * 命名规则与仓库里既有的 `feat/4-…`、`bugfix/1-…` 保持一致：
  * 缺陷票用 `bugfix`，其余（含增强与未分类）用 `feat`；工作区名直接复用分支名。
  */
+import type { BackendKind } from '../protocol/backend.ts'
 import { isRecord } from './json.ts'
 
 /** worktree 创建的时长上限：仓库的 setup hooks 可能跑很久。 */
@@ -35,9 +36,9 @@ export interface WorktreePlan {
   readonly name: string
   /** `<类型>/<票号>-<slug>`；slug 为空时为 `<类型>/<票号>`。 */
   readonly branch: string
-  /** 工单链接，取自后端详情，不拼接。 */
-  readonly reference: string
-  /** `<票号> <标题摘要>`。 */
+  /** 交给 `--reference` 的工单链接；Orca 认不出时是 null，链接只进 `comment`。 */
+  readonly reference: string | null
+  /** `<票号> <标题摘要>`；链接不能挂载时另起一行补上工单链接。 */
   readonly comment: string
 }
 
@@ -87,14 +88,119 @@ export function worktreeDisplayName(title: string): string {
   return title.replace(/\s+/g, ' ').trim()
 }
 
+/** Orca 的 URL 路由能认出的 provider；面板后端只用到前三个。 */
+type ReferenceProvider =
+  | 'github'
+  | 'gitlab'
+  | 'gitea'
+  | 'bitbucket'
+  | 'azure-devops'
+  | 'linear'
+
+/**
+ * Orca 能按公开站点认出的 host 与它的 provider；用于剥掉 `www.` 前缀，
+ * 并校验路由是否与站点一致（例如 codeberg.org 的 `/pull/<n>` 会被拒绝）。
+ */
+const PUBLIC_REFERENCE_HOSTS: Record<string, ReferenceProvider> = {
+  'github.com': 'github',
+  'gitlab.com': 'gitlab',
+  'codeberg.org': 'gitea',
+  'bitbucket.org': 'bitbucket',
+  'dev.azure.com': 'azure-devops',
+  'linear.app': 'linear',
+}
+
+/**
+ * 判断链接能否直接交给 `orca worktree create --reference`。
+ *
+ * 面板侧必须按 Orca 的实际路由判定，不能把仓库后端当成提示：Orca 的 CLI 只解析 URL，
+ * 自建 GitHub / Gitea 的 `/issues/<n>` 没有可识别的 provider，会被以
+ * `invalid_argument: Unsupported reference URL` 拒绝；`/pull/<n>`、`/pulls/<n>`
+ * 与 GitLab 的 `/-/issues|merge_requests/<n>` 则能识别。
+ * @param reference - 后端详情里的工单链接。
+ * @param kind - 当前工单后端；链接路由必须与它一致。
+ * @returns Orca 能路由且与后端一致时是 true。
+ */
+export function isOrcaReferenceUrl(reference: string, kind: BackendKind): boolean {
+  if (kind === 'markdown') return false
+
+  let url: URL
+  try {
+    url = new URL(reference.trim())
+  } catch {
+    return false
+  }
+  if (
+    (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+    url.username.length > 0 ||
+    url.password.length > 0
+  ) {
+    return false
+  }
+
+  const host = stripWww(url.hostname)
+  const pathname = url.pathname.replace(/\/+$/, '')
+  return routeProvider(host, pathname) === kind
+}
+
+function stripWww(host: string): string {
+  const bare = host.startsWith('www.') ? host.slice(4) : host
+  return PUBLIC_REFERENCE_HOSTS[bare] === undefined ? host : bare
+}
+
+/** 按 Orca 的 URL 路由表认出链接属于哪个后端；认不出时是 null。 */
+function routeProvider(host: string, pathname: string): ReferenceProvider | null {
+  const known = PUBLIC_REFERENCE_HOSTS[host]
+
+  const gitlab = /^(\/.+)\/-\/(merge_requests|issues)\/(\d+)(?:\/.*)?$/.exec(pathname)
+  if (gitlab !== null && host !== 'github.com' && host !== 'linear.app') {
+    if (!isPositiveNumber(gitlab[3])) return null
+    return known === undefined || known === 'gitlab' ? 'gitlab' : null
+  }
+
+  const git = /^(\/[^/]+\/[^/]+)\/(pull|pulls|issues)\/(\d+)(?:\/.*)?$/.exec(pathname)
+  if (git === null || host === 'linear.app' || host === 'gitlab.com') return null
+  if (!isPositiveNumber(git[3])) return null
+
+  const provider =
+    host === 'github.com' || git[2] === 'pull'
+      ? 'github'
+      : host === 'codeberg.org' || git[2] === 'pulls'
+        ? 'gitea'
+        : null
+  if (provider === null) return null
+  if (
+    (git[2] === 'pulls' && provider !== 'gitea') ||
+    (git[2] === 'pull' && provider !== 'github')
+  ) {
+    return null
+  }
+  return known === undefined || known === provider ? provider : null
+}
+
+function isPositiveNumber(raw: string | undefined): boolean {
+  if (raw === undefined) return false
+  const value = Number(raw)
+  return Number.isSafeInteger(value) && value > 0
+}
+
 /**
  * 工单摘要在注释里的写法：`<票号> <单行标题>`。
- * @param reference - 工单引用，例如 `#6`。
+ *
+ * 链接不能挂到 Orca 时另起一行补上工单 URL：评论仍可追溯，`--reference` 不会被拒绝。
+ * @param ticketRef - 工单引用，例如 `#6`。
  * @param title - 工单标题。
- * @returns 单行注释。
+ * @param reference - 无法挂载的工单链接；能挂载或没有链接时省略。
+ * @returns 单行或两行注释。
  */
-export function worktreeComment(ticketRef: string, title: string): string {
-  return `${ticketRef} ${worktreeDisplayName(title)}`
+export function worktreeComment(
+  ticketRef: string,
+  title: string,
+  reference?: string | null,
+): string {
+  const comment = `${ticketRef} ${worktreeDisplayName(title)}`
+  const url = reference?.trim() ?? ''
+  return url.length === 0 ? comment : `${comment}\n${url}`
 }
 
 /**
@@ -102,21 +208,28 @@ export function worktreeComment(ticketRef: string, title: string): string {
  *
  * 工作区名与分支名取同一个值：工单标题可能很长、含中文或标点，不适合当
  * 目录名与侧栏显示名；标题仍进 `comment`，作为人类可读的摘要。
- * @param input - 编号、标题、分类与后端给出的链接。
+ * 工单链接只在 Orca 能路由时进入 `reference`，否则连同票号、标题一起写进 `comment`。
+ * @param input - 后端类型、编号、标题、分类与后端给出的链接。
  * @returns 可直接拼进命令行的计划。
  */
 export function planWorktree(input: {
+  readonly kind: BackendKind
   readonly number: number
   readonly title: string
   readonly category: WorktreeCategory
   readonly reference: string
 }): WorktreePlan {
   const branch = worktreeBranchName(input.number, input.title, input.category)
+  const attachable = isOrcaReferenceUrl(input.reference, input.kind)
   return {
     name: branch,
     branch,
-    reference: input.reference,
-    comment: worktreeComment(`#${String(input.number)}`, input.title),
+    reference: attachable ? input.reference : null,
+    comment: worktreeComment(
+      `#${String(input.number)}`,
+      input.title,
+      attachable ? null : input.reference,
+    ),
   }
 }
 
@@ -124,8 +237,9 @@ export function planWorktree(input: {
  * `orca worktree create` 的参数。
  *
  * 只用 `--reference` 挂链接，不与 `--issue` / `--pr` / `--gitlab-issue` 混用；
- * 不传 `--base-branch`（用仓库默认基线）、不传父工作区参数（由 Orca 按当前目录推断）、
- * 不传 `--agent` / `--prompt`（本次只建工作区）。
+ * 计划里没有可挂载链接（{@link WorktreePlan.reference} 为 null）时省略该参数，
+ * 链接已在注释里。不传 `--base-branch`（用仓库默认基线）、不传父工作区参数
+ * （由 Orca 按当前目录推断）、不传 `--agent` / `--prompt`（本次只建工作区）。
  * @param plan - 命名与引用。
  * @returns 不含可执行文件的参数列表。
  */
@@ -137,8 +251,7 @@ export function worktreeCreateArgs(plan: WorktreePlan): readonly string[] {
     plan.name,
     '--branch',
     plan.branch,
-    '--reference',
-    plan.reference,
+    ...(plan.reference === null ? [] : ['--reference', plan.reference]),
     '--comment',
     plan.comment,
     '--activate',
