@@ -17,14 +17,10 @@ export interface TicketActionsState {
   readonly copyState: PromptCopyState
   /** 复制一段提示词。 */
   readonly copy: (text: string) => Promise<CopyResult>
-  /** 直接展示手动复制区。 */
-  readonly showManual: (text: string) => void
   /** 清掉复制反馈。 */
   readonly dismiss: () => void
-  /** 主键：复制这张票的提示词。 */
+  /** 复制这张票的提示词。 */
   readonly onSkillAction: (ticket: TicketSnapshot) => void
-  /** 小箭头：展示这张票提示词的手动复制区。 */
-  readonly onManual: (ticket: TicketSnapshot) => void
 }
 
 /**
@@ -38,7 +34,7 @@ export function useTicketActions(
   port: PromptCopy,
 ): TicketActionsState {
   const [copied, setCopied] = React.useState<string | null>(null)
-  const { state, copy, showManual, dismiss } = usePromptCopy(port)
+  const { state, copy, dismiss } = usePromptCopy(port)
 
   React.useEffect(() => {
     setCopied(null)
@@ -52,11 +48,5 @@ export function useTicketActions(
     })
   }
 
-  const onManual = (ticket: TicketSnapshot): void => {
-    const prompt = ticketPrompt(ticket)
-    if (prompt === null) return
-    showManual(prompt)
-  }
-
-  return { copied, copyState: state, copy, showManual, dismiss, onSkillAction, onManual }
+  return { copied, copyState: state, copy, dismiss, onSkillAction }
 }

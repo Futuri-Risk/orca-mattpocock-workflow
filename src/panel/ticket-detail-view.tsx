@@ -137,9 +137,7 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
         <SkillActionBadge
           ticket={currentTicket}
           copied={actions.copied === currentTicket.ref && currentTicket.skillAction !== 'none'}
-          canCopy={props.copy.canCopy}
           onSkillAction={actions.onSkillAction}
-          onManual={actions.onManual}
         />
         <WorktreeCreateButton
           availability={worktreeState}

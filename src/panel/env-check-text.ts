@@ -120,7 +120,7 @@ const CAPABILITIES: Readonly<Record<string, CapabilityContent>> = {
   clipboard: {
     label: '剪贴板',
     impact: '面板内一键复制可能被宿主策略拒绝，会自动尝试兼容写入，仍失败时只能用手动复制区。',
-    fix: '点提示词按钮；失败时用小箭头展开手动复制区，选中后按 ⌘C 复制',
+    fix: '点提示词按钮；写入失败时面板会自动展开手动复制区，按 ⌘C 复制',
   },
   worker: {
     label: 'worker 可达',

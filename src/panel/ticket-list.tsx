@@ -46,8 +46,6 @@ export interface TicketListProps {
   readonly emptyText: string
   /** 最近一次复制成功的工单 `ref`。 */
   readonly copied: string | null
-  /** 剪贴板是否可用；不可用时技能按钮禁用。 */
-  readonly canCopy: boolean
   /** 从概览跳过来要定位的工单 `ref`；只高亮，不改其他状态。 */
   readonly focused?: string | null | undefined
   /** 当前时间（毫秒），用于行内的相对创建时间。 */
@@ -59,7 +57,6 @@ export interface TicketListProps {
   readonly onOpenEnvCheck: (code: ErrorCode) => void
   readonly onPick: (ticket: TicketSnapshot) => void
   readonly onSkillAction: (ticket: TicketSnapshot) => void
-  readonly onManual: (ticket: TicketSnapshot) => void
 }
 
 /** 本地 Markdown 路径在卡片里的显示上限；再长就从中间截断。 */
@@ -89,7 +86,6 @@ export function TicketList(props: TicketListProps): React.ReactElement {
           key={ticket.ref}
           ticket={ticket}
           copied={ticket.ref === props.copied && ticket.skillAction !== 'none'}
-          canCopy={props.canCopy}
           focused={ticket.ref === props.focused}
           now={props.now}
           backend={props.backend}
@@ -98,7 +94,6 @@ export function TicketList(props: TicketListProps): React.ReactElement {
           onOpenEnvCheck={props.onOpenEnvCheck}
           onPick={props.onPick}
           onSkillAction={props.onSkillAction}
-          onManual={props.onManual}
         />
       ))}
     </div>
@@ -108,7 +103,6 @@ export function TicketList(props: TicketListProps): React.ReactElement {
 function TicketRow(props: {
   readonly ticket: TicketSnapshot
   readonly copied: boolean
-  readonly canCopy: boolean
   readonly focused: boolean
   readonly now: number
   /** 当前快照的后端：本地 Markdown 不提供建 worktree 入口。 */
@@ -118,7 +112,6 @@ function TicketRow(props: {
   readonly onOpenEnvCheck: (code: ErrorCode) => void
   readonly onPick: (ticket: TicketSnapshot) => void
   readonly onSkillAction: (ticket: TicketSnapshot) => void
-  readonly onManual: (ticket: TicketSnapshot) => void
 }): React.ReactElement {
   const { ticket } = props
   const display = refDisplay(ticket)
@@ -157,9 +150,7 @@ function TicketRow(props: {
           <SkillActionBadge
             ticket={ticket}
             copied={props.copied}
-            canCopy={props.canCopy}
             onSkillAction={props.onSkillAction}
-            onManual={props.onManual}
             style={CARD_ACTION_BADGE_STYLE}
           />
           <WorktreeCreateButton

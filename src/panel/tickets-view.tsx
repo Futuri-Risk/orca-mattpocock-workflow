@@ -23,7 +23,6 @@ import type { PanelClient } from './transport.ts'
 import { useNow } from './snapshot-age.ts'
 import { snapshotRefreshNotice, useSnapshotRequest } from './snapshot-request.ts'
 import { useTicketActions } from './ticket-actions.ts'
-import { SplitAction } from './split-action.tsx'
 import { TicketList } from './ticket-list.tsx'
 import {
   ACTION_BAR_STYLE,
@@ -137,15 +136,12 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
       />
       <ActionBar
         counts={snapshot === null ? null : counts}
-        canCopy={props.copy.canCopy}
         onNewFeature={(prompt) => {
           void actions.copy(prompt)
         }}
         onNewBug={(prompt) => {
           void actions.copy(prompt)
         }}
-        onNewFeatureManual={actions.showManual}
-        onNewBugManual={actions.showManual}
       />
       {error !== null ? <ErrorBanner error={error} onOpenEnvCheck={props.onOpenEnvCheck} /> : null}
       {snapshot !== null ? (
@@ -162,7 +158,6 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             visible={visible}
             ticketCount={tickets.length}
             copied={actions.copied}
-            canCopy={props.copy.canCopy}
             focused={focused}
             now={nowValue}
             client={props.client}
@@ -170,7 +165,6 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             onOpenEnvCheck={props.onOpenEnvCheck}
             onPick={props.onOpenTicket}
             onSkillAction={actions.onSkillAction}
-            onManual={actions.onManual}
           />
         </>
       ) : phase === 'loading' ? (
@@ -219,7 +213,6 @@ function TicketRows(props: {
   readonly visible: readonly TicketSnapshot[]
   readonly ticketCount: number
   readonly copied: string | null
-  readonly canCopy: boolean
   readonly focused: string | null
   readonly now: number
   readonly client: PanelClient
@@ -227,7 +220,6 @@ function TicketRows(props: {
   readonly onOpenEnvCheck: (code: ErrorCode) => void
   readonly onPick: (ticket: TicketSnapshot) => void
   readonly onSkillAction: (ticket: TicketSnapshot) => void
-  readonly onManual: (ticket: TicketSnapshot) => void
 }): React.ReactElement {
   return (
     <>
@@ -238,7 +230,6 @@ function TicketRows(props: {
         tickets={props.visible}
         emptyText={props.ticketCount === 0 ? '这个仓库还没有工单。' : '没有符合筛选条件的工单。'}
         copied={props.copied}
-        canCopy={props.canCopy}
         focused={props.focused}
         now={props.now}
         backend={props.snapshot.backend}
@@ -247,7 +238,6 @@ function TicketRows(props: {
         onOpenEnvCheck={props.onOpenEnvCheck}
         onPick={props.onPick}
         onSkillAction={props.onSkillAction}
-        onManual={props.onManual}
       />
     </>
   )
@@ -348,11 +338,8 @@ function Header(props: {
 
 function ActionBar(props: {
   readonly counts: TicketCounts | null
-  readonly canCopy: boolean
   readonly onNewFeature: (prompt: string) => void
   readonly onNewBug: (prompt: string) => void
-  readonly onNewFeatureManual: (prompt: string) => void
-  readonly onNewBugManual: (prompt: string) => void
 }): React.ReactElement {
   return (
     <div style={ACTION_BAR_STYLE}>
@@ -363,64 +350,54 @@ function ActionBar(props: {
           label="新建需求"
           title="把需求入池提示词复制到剪贴板"
           ariaLabel="新建需求：复制提示词"
-          manualTitle="手动复制需求入池提示词"
-          primaryStyle={FEATURE_ACTION_STYLE}
-          primaryHover="primary"
-          canCopy={props.canCopy}
-          onCopy={props.onNewFeature}
-          onManual={props.onNewFeatureManual}
+          style={FEATURE_ACTION_STYLE}
+          hover="primary"
+          onCopy={() => {
+            props.onNewFeature(newFeaturePrompt())
+          }}
         />
         <IntakeAction
           testId="new-bug"
           label="bug"
           title="把缺陷入池提示词复制到剪贴板"
           ariaLabel="bug：复制提示词"
-          manualTitle="手动复制缺陷入池提示词"
-          primaryStyle={BUG_ACTION_STYLE}
-          primaryHover="secondary"
-          canCopy={props.canCopy}
-          onCopy={props.onNewBug}
-          onManual={props.onNewBugManual}
+          style={BUG_ACTION_STYLE}
+          hover="secondary"
+          onCopy={() => {
+            props.onNewBug(newBugPrompt())
+          }}
         />
       </div>
     </div>
   )
 }
 
-/** 一个入池分裂动作：主键复制，小箭头给出手动复制。 */
+/**
+ * 一个入池按钮：点一下把提示词复制到剪贴板。
+ * 剪贴板写不进去时复制端口回报 manual，面板自动给出手动复制区，所以按钮从不禁用。
+ */
 function IntakeAction(props: {
   readonly testId: string
   readonly label: string
   readonly title: string
   readonly ariaLabel: string
-  readonly manualTitle: string
-  readonly primaryStyle: React.CSSProperties
-  readonly primaryHover: 'primary' | 'secondary'
-  readonly canCopy: boolean
-  readonly onCopy: (prompt: string) => void
-  readonly onManual: (prompt: string) => void
+  readonly style: React.CSSProperties
+  readonly hover: 'primary' | 'secondary'
+  readonly onCopy: () => void
 }): React.ReactElement {
-  const feature = props.testId === 'new-feature'
-  const prompt = feature ? newFeaturePrompt() : newBugPrompt()
-
   return (
-    <SplitAction
-      testId={props.testId}
-      label={props.label}
-      icon={<PlusIcon />}
+    <button
+      type="button"
+      data-testid={props.testId}
+      data-hover={props.hover}
       title={props.title}
-      ariaLabel={props.ariaLabel}
-      manualTitle={props.manualTitle}
-      primaryStyle={props.primaryStyle}
-      primaryHover={props.primaryHover}
-      disabled={!props.canCopy}
-      onPrimary={() => {
-        props.onCopy(prompt)
-      }}
-      onManual={() => {
-        props.onManual(prompt)
-      }}
-    />
+      aria-label={props.ariaLabel}
+      onClick={props.onCopy}
+      style={{ ...props.style, flex: 'none' }}
+    >
+      <PlusIcon />
+      {props.label}
+    </button>
   )
 }
 
