@@ -9,6 +9,7 @@
  */
 import type { SnapshotStore } from '../adapters/fs/snapshot-store.ts'
 import { isRecord } from '../core/json.ts'
+import { storeKeyOf } from '../core/repository-scope.ts'
 import type {
   TicketDetail,
   TicketOptions,
@@ -32,12 +33,15 @@ import {
 } from '../protocol/tracker.ts'
 import type { BackendResolver } from './backend-resolver.ts'
 import type { LogSink } from './log.ts'
+import type { RepositoryScopeResolver } from './repository-scope.ts'
 import { readTicketParams, readWorkspaceRoot, type TicketParams } from './rpc-params.ts'
 
 /** 工单服务依赖。 */
 export interface TicketServiceDeps {
   /** 按工作区解析后端；解析结果由宿主自己缓存。 */
   readonly resolve: BackendResolver
+  /** 按工作区解析仓库作用域；写操作据此定位共享的缓存。 */
+  readonly scope: RepositoryScopeResolver
   readonly now: () => number
   readonly log: LogSink
   /**
@@ -139,8 +143,10 @@ async function update(
       return unsupported(kind, '修改工单属性')
     }
 
+    // 先定位缓存键：作用域解析失败时不动远端，避免「改了却没记进缓存」。
+    const storeKey = await cacheKeyOf(deps, target.workspaceRoot, resolved.kind)
     await updateTicket(target.workspaceRoot, referenceOf(target), patch)
-    await syncCachedTicket(deps, target.workspaceRoot, target.ref, patch)
+    await syncCachedTicket(deps, storeKey, target.ref, patch)
     logResult(deps, 'info', kind, 'update', startedAt)
     return { ok: true, result: { applied: true } }
   } catch (error) {
@@ -208,8 +214,9 @@ async function remove(
       return failure(code, `没有删除这张工单的权限（${BACKEND_LABELS[kind]}）。`)
     }
 
+    const storeKey = await cacheKeyOf(deps, target.workspaceRoot, resolved.kind)
     await deleteTicket(target.workspaceRoot, referenceOf(target))
-    await removeCachedTicket(deps, target.workspaceRoot, target.ref)
+    await removeCachedTicket(deps, storeKey, target.ref)
     logResult(deps, 'info', kind, 'delete', startedAt)
     return { ok: true, result: { deleted: true } }
   } catch (error) {
@@ -220,18 +227,36 @@ async function remove(
 }
 
 /**
+ * 写操作落到哪个缓存键。
+ *
+ * 托管后端按仓库作用域共享：在一个 worktree 里打的标签、关掉的票，
+ * 同一仓库的其它 worktree 立刻读到。本地 Markdown 按工作区隔离。
+ * @param deps - 服务依赖。
+ * @param workspaceRoot - 当前工作区根目录。
+ * @param kind - 解析出的后端类型。
+ * @returns 本地快照库的缓存键。
+ */
+async function cacheKeyOf(
+  deps: TicketServiceDeps,
+  workspaceRoot: string,
+  kind: BackendKind,
+): Promise<string> {
+  return storeKeyOf(kind, await deps.scope(workspaceRoot), workspaceRoot)
+}
+
+/**
  * 变更成功后同步本地快照库里的那张票。
  *
  * 只同步列表级字段（标签、状态）；分配人不进列表快照。同步失败就跳过：
  * 缓存比远端旧一点，下一次刷新会把它拉齐。
  * @param deps - 服务依赖。
- * @param workspaceRoot - 工作区根目录。
+ * @param storeKey - 缓存键。
  * @param ref - 工单引用。
  * @param patch - 已应用的补丁。
  */
 async function syncCachedTicket(
   deps: TicketServiceDeps,
-  workspaceRoot: string,
+  storeKey: string,
   ref: string,
   patch: TicketPatch,
 ): Promise<void> {
@@ -239,7 +264,7 @@ async function syncCachedTicket(
   if (store === undefined) return
   if (patch.labels === undefined && patch.state === undefined) return
   try {
-    await store.patchTicket(workspaceRoot, ref, {
+    await store.patchTicket(storeKey, ref, {
       ...(patch.labels === undefined ? {} : { labels: patch.labels }),
       ...(patch.state === undefined ? {} : { state: patch.state }),
     })
@@ -251,18 +276,18 @@ async function syncCachedTicket(
 /**
  * 删除成功后把那张票从本地快照库里去掉。
  * @param deps - 服务依赖。
- * @param workspaceRoot - 工作区根目录。
+ * @param storeKey - 缓存键。
  * @param ref - 工单引用。
  */
 async function removeCachedTicket(
   deps: TicketServiceDeps,
-  workspaceRoot: string,
+  storeKey: string,
   ref: string,
 ): Promise<void> {
   const store = deps.store
   if (store === undefined) return
   try {
-    await store.removeTicket(workspaceRoot, ref)
+    await store.removeTicket(storeKey, ref)
   } catch {
     // 同上：缓存清不掉不影响删除结果。
   }

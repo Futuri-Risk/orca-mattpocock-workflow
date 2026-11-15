@@ -2,7 +2,8 @@
  * 宿主内部的后端解析器：读 `git remote -v`，必要时读 `glab auth status`
  * 与 `tea logins list`，调 core 的纯函数选择后端，再按结果构造对应 Tracker。
  *
- * 解析结果按工作区根目录缓存：刷新不会反复探测命令行工具；解析失败时不缓存，
+ * 解析结果按仓库作用域缓存：同一仓库的多个 worktree 共用一次 `git remote` / `glab auth`
+ * / `tea logins` 探测，换 worktree 不再各跑一遍。解析失败时不缓存，
  * 装好工具后可以直接重试。日志里只记后端类型，不记命令输出。
  */
 import { createGiteaTracker } from '../adapters/gitea/tracker.ts'
@@ -22,6 +23,7 @@ import { parseRemotes, pickRemoteAddress, type RepositoryAddress } from '../core
 import type { CommandRunner, Tracker } from '../core/ticket.ts'
 import { CommandError, TrackerError, isCommandNotFound } from '../core/tracker-error.ts'
 import type { BackendKind } from '../protocol/backend.ts'
+import type { RepositoryScopeResolver } from './repository-scope.ts'
 
 /** 一个工作区解析出的后端。 */
 export interface ResolvedBackend {
@@ -44,6 +46,11 @@ export interface BackendResolverDeps {
   readonly now: () => number
   /** 本地 Markdown 的文件读取能力；正式代码默认用 `node:fs`。 */
   readonly files?: WorkspaceFiles
+  /**
+   * 仓库作用域解析；给了就按仓库缓存解析结果，
+   * 同一仓库的多个 worktree 共用一次命令行探测。
+   */
+  readonly scope?: RepositoryScopeResolver
   /**
    * 是否按工作区缓存解析结果。快照要缓存，环境检查不要：用户刚装好 `glab`
    * 或刚加上远端时，「重新检查」必须重新探测。
@@ -81,16 +88,19 @@ export function createBackendResolver(deps: BackendResolverDeps): BackendResolve
   }
 
   const cache = new Map<string, Promise<ResolvedBackend>>()
+  const scope = deps.scope
 
-  return (workspaceRoot) => {
-    const cached = cache.get(workspaceRoot)
+  return async (workspaceRoot) => {
+    // 缓存键是仓库作用域；命令仍然在 workspaceRoot 里跑。
+    const key = scope === undefined ? workspaceRoot : await scope(workspaceRoot)
+    const cached = cache.get(key)
     if (cached !== undefined) return cached
 
     const pending = resolveBackend(deps, files, blockerCapability, workspaceRoot)
-    cache.set(workspaceRoot, pending)
+    cache.set(key, pending)
     // 解析失败（例如 glab 还没装）不缓存，刷新时可以重新探测。
     void pending.catch(() => {
-      cache.delete(workspaceRoot)
+      cache.delete(key)
     })
     return pending
   }

@@ -242,7 +242,7 @@ function CacheSection(props: { readonly state: CacheState }): React.ReactElement
         {info === null ? '正在读取本地快照库…' : info.location}
       </div>
       <div data-testid="env-cache-entries" style={ENV_DETAIL_STYLE}>
-        {info === null ? '条目数未知' : `${String(info.entries)} 条快照`}
+        {info === null ? '条目数未知' : `按仓库计：${String(info.entries)} 份缓存`}
       </div>
       <div data-testid="env-cache-written" style={ENV_DETAIL_STYLE}>
         {info === null

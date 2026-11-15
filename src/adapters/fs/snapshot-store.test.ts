@@ -27,6 +27,7 @@ afterEach(async () => {
 function entry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreEntry {
   return {
     version: SNAPSHOT_STORE_VERSION,
+    scopeRoot: workspace,
     workspaceRoot: workspace,
     backend: 'github',
     repository: 'cnzgray/repo',
@@ -86,9 +87,10 @@ describe('本地快照库的文件实现', () => {
     await expect(cache.list()).resolves.toEqual([])
   })
 
-  it('工作区目录已经不在时清掉对应条目', async () => {
+  it('缓存键指向的目录已经不在时清掉对应条目', async () => {
     const cache = store()
-    await cache.write(entry({ workspaceRoot: join(root, 'gone') }))
+    const gone = join(root, 'gone')
+    await cache.write(entry({ scopeRoot: gone, workspaceRoot: gone }))
 
     await expect(cache.prune(1_000)).resolves.toBe(1)
     await expect(cache.list()).resolves.toEqual([])
@@ -96,7 +98,9 @@ describe('本地快照库的文件实现', () => {
 
   it('长期未更新的条目被淘汰', async () => {
     const cache = store()
-    await cache.write(entry({ fetchedAt: 1_000 }))
+    await mkdir(root, { recursive: true })
+    // 键指向存在的目录（root），只有时间条件让它该被淘汰。
+    await cache.write(entry({ scopeRoot: root, fetchedAt: 1_000 }))
 
     const removed = await cache.prune(1_000 + SNAPSHOT_STORE_TTL_MS + 1)
 
@@ -110,7 +114,7 @@ describe('本地快照库的文件实现', () => {
     for (let index = 0; index < extra; index += 1) {
       const directory = join(root, `workspace-${String(index)}`)
       await mkdir(directory, { recursive: true })
-      await cache.write(entry({ workspaceRoot: directory, fetchedAt: index }))
+      await cache.write(entry({ scopeRoot: directory, workspaceRoot: directory, fetchedAt: index }))
     }
 
     const removed = await cache.prune(10_000)
@@ -119,6 +123,59 @@ describe('本地快照库的文件实现', () => {
     const remaining = await cache.list()
     expect(remaining).toHaveLength(SNAPSHOT_STORE_MAX_ENTRIES)
     expect(remaining.some((item) => item.fetchedAt === 0)).toBe(false)
+  })
+
+  it('同一仓库的两个 worktree 只占一份缓存', async () => {
+    const cache = store()
+    const main = join(root, 'main')
+    const attached = join(root, 'attached')
+    await mkdir(main, { recursive: true })
+    await mkdir(attached, { recursive: true })
+
+    await cache.write(entry({ scopeRoot: main, workspaceRoot: main, fetchedAt: 1_000 }))
+    await cache.write(entry({ scopeRoot: main, workspaceRoot: attached, fetchedAt: 2_000 }))
+
+    const entries = await cache.list()
+    expect(entries).toHaveLength(1)
+    expect(entries[0]?.workspaceRoot).toBe(attached)
+    await expect(cache.read(main)).resolves.toMatchObject({ workspaceRoot: attached })
+  })
+
+  it('本地 Markdown 按工作区各存一份', async () => {
+    const cache = store()
+    const main = join(root, 'main')
+    const attached = join(root, 'attached')
+    await mkdir(main, { recursive: true })
+    await mkdir(attached, { recursive: true })
+
+    await cache.write(
+      entry({ backend: 'markdown', scopeRoot: main, workspaceRoot: main, fetchedAt: 1_000 }),
+    )
+    await cache.write(
+      entry({ backend: 'markdown', scopeRoot: main, workspaceRoot: attached, fetchedAt: 2_000 }),
+    )
+
+    await expect(cache.list()).resolves.toHaveLength(2)
+    await expect(cache.read(attached)).resolves.toMatchObject({ workspaceRoot: attached })
+  })
+
+  it('清理时删掉升级前按工作区存的旧条目', async () => {
+    const cache = store()
+    await mkdir(join(root, 'cache'), { recursive: true })
+    await writeFile(join(root, 'cache', 'legacy.json'), JSON.stringify({ version: 1 }))
+
+    const removed = await cache.prune(1_000)
+
+    expect(removed).toBe(1)
+    await expect(cache.list()).resolves.toEqual([])
+  })
+
+  it('清空时把读不出来的文件一起删掉', async () => {
+    const cache = store()
+    await mkdir(join(root, 'cache'), { recursive: true })
+    await writeFile(join(root, 'cache', 'broken.json'), 'not json')
+
+    await expect(cache.clear()).resolves.toBe(1)
   })
 
   it('变更后缓存里那张票跟着更新', async () => {

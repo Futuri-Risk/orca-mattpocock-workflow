@@ -1,6 +1,9 @@
 /**
  * 本地快照库的条目模型：缓存文件里存什么、怎么校验。
  *
+ * 一个仓库一条记录：同一仓库的多个 worktree 共享同一份工单状态，记录里的
+ * `workspaceRoot` 表示这份数据是在哪个工作区拉到的（本地 Markdown 的缓存键）。
+ *
  * 纯逻辑：core 不做 IO。文件读写在 adapters/fs，条目能不能用在这里判定——
  * 格式版本不符或内容损坏时按「没有缓存」处理，不让一次坏文件卡住面板。
  */
@@ -9,7 +12,7 @@ import { isRecord } from './json.ts'
 import type { Ticket, TicketAuthor, TicketState } from './ticket.ts'
 
 /** 本地快照库的格式版本。版本不符的条目一律按没有缓存处理。 */
-export const SNAPSHOT_STORE_VERSION = 1
+export const SNAPSHOT_STORE_VERSION = 2
 
 /** 缓存文件里存的后端类型。 */
 const BACKENDS: readonly BackendKind[] = ['github', 'gitlab', 'gitea', 'markdown']
@@ -18,7 +21,12 @@ const BACKENDS: readonly BackendKind[] = ['github', 'gitlab', 'gitea', 'markdown
 export interface SnapshotStoreEntry {
   /** 格式版本；当前只认 {@link SNAPSHOT_STORE_VERSION}。 */
   readonly version: number
-  /** 工作区根路径；用来确认这份缓存属于哪个工作区。 */
+  /**
+   * 仓库作用域根目录（该仓库的主 worktree 根目录）。
+   * 同一仓库的多个 worktree 共用一份缓存：托管后端的缓存键就是它。
+   */
+  readonly scopeRoot: string
+  /** 拉取这份数据的工作区根路径；本地 Markdown 的缓存键就是它。 */
   readonly workspaceRoot: string
   /** 拉取时的后端类型。 */
   readonly backend: BackendKind
@@ -51,6 +59,7 @@ export interface SnapshotStoreEntry {
 export function serializeSnapshotStoreEntry(entry: SnapshotStoreEntry): string {
   return JSON.stringify({
     version: entry.version,
+    scopeRoot: entry.scopeRoot,
     workspaceRoot: entry.workspaceRoot,
     backend: entry.backend,
     repository: entry.repository,
@@ -89,6 +98,7 @@ function readEntry(value: unknown): SnapshotStoreEntry | undefined {
   if (value.version !== SNAPSHOT_STORE_VERSION) return undefined
 
   const workspaceRoot = readString(value.workspaceRoot)
+  const scopeRoot = readString(value.scopeRoot)
   const repository = readString(value.repository)
   const repositoryKey = readString(value.repositoryKey)
   const fetchedAt = readNumber(value.fetchedAt)
@@ -96,6 +106,7 @@ function readEntry(value: unknown): SnapshotStoreEntry | undefined {
   const total = readNumber(value.total)
   if (
     workspaceRoot === undefined ||
+    scopeRoot === undefined ||
     repository === undefined ||
     repositoryKey === undefined ||
     fetchedAt === undefined ||
@@ -121,6 +132,7 @@ function readEntry(value: unknown): SnapshotStoreEntry | undefined {
 
   return {
     version: SNAPSHOT_STORE_VERSION,
+    scopeRoot,
     workspaceRoot,
     backend: backend as BackendKind,
     repository,

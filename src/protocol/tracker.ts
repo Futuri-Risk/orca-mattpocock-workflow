@@ -312,7 +312,7 @@ export interface SnapshotCacheParams {
 export interface SnapshotCacheInfo {
   /** 缓存目录的位置，用符号形式给出，不含机器上的绝对路径。 */
   readonly location: string
-  /** 当前缓存条目数。 */
+  /** 当前缓存条目数：按仓库计，同一仓库的多个 worktree 只算一份。 */
   readonly entries: number
   /** 最近一次写入时间；没有条目时为 null。 */
   readonly lastWrittenAt: number | null

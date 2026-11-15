@@ -11,7 +11,7 @@ RPC 方法（面板用 `orca.plugin.request(方法名, 参数)` 调用，worker 
 - `snapshot.get` / `snapshot.refresh` / `snapshot.resolveBlockers`：列表快照与阻塞补齐；
 - `snapshot.loadMore`：按快照的游标取下一段工单并追加到已加载的列表，参数是 `{ workspaceRoot }`；
   一次取全的后端原样返回当前快照；
-- `snapshot.cache`：读取或清空本地快照库；
+- `snapshot.cache`：读取或清空本地快照库（缓存按仓库计，同一仓库的多个 worktree 共用一份）；
 - `env.check`：环境检查；
 - `ticket.get`：读取单张工单详情，参数是 `{ workspaceRoot, ref, number }`；
 - `ticket.update`：提交一次变更补丁，参数在详情参数上再加 `patch`，成功返回 `{ applied: true }`；
@@ -26,6 +26,11 @@ RPC 方法（面板用 `orca.plugin.request(方法名, 参数)` 调用，worker 
 `workspace.candidates` 事件把候选推一次（附带所属聚焦上下文键，面板据此判断选择是否还有效）；
 用户选定后由面板在后续请求里带上候选的 `path`，worker 把它记在当前聚焦上下文里，
 之后省略 `workspaceRoot` 的请求与刷新命令都沿用它。
+
+`workspaceRoot` 是命令执行的位置（git / gh / glab / tea 都在它下面跑）；缓存身份由宿主换成
+**仓库作用域**（该仓库的主 worktree 根目录）：同一仓库的多个 worktree 共用一份快照库条目、
+一份内存快照、一条增量链与一次后端探测。本地 Markdown 是例外——它的「仓库」就是当前工作区的
+`.scratch/`，缓存按工作区隔离。协议形状不变，面板仍然只传 `workspaceRoot`。
 
 错误码里与详情相关的是 `ticket-not-found`（编号不存在或已被删除）与
 `capability-unsupported`（当前后端不提供所请求的详情、补全候选、写 / 删除能力或远端链接）。
