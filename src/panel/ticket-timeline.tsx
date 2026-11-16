@@ -31,6 +31,8 @@ export function Timeline(props: { readonly detail: TicketDetail }): React.ReactE
   const t = useMessages()
   const { detail } = props
   const count = detail.comments.length
+  // 只有 GitLab 适配器会把上传附件内联成 data URL；其它后端保持原有渲染。
+  const allowInlineImages = detail.backend === 'gitlab'
 
   return (
     <div style={TIMELINE_STYLE}>
@@ -49,7 +51,11 @@ export function Timeline(props: { readonly detail: TicketDetail }): React.ReactE
             {t('detail.noBody')}
           </div>
         ) : (
-          <MarkdownBody testId="detail-body" source={detail.body} />
+          <MarkdownBody
+            testId="detail-body"
+            source={detail.body}
+            allowInlineImages={allowInlineImages}
+          />
         )}
       </TimelineCard>
       <section
@@ -69,6 +75,7 @@ export function Timeline(props: { readonly detail: TicketDetail }): React.ReactE
               key={`${comment.author?.login ?? ''}:${comment.createdAt ?? ''}:${String(index)}`}
               comment={comment}
               ticketAuthor={detail.author}
+              allowInlineImages={allowInlineImages}
             />
           ))
         )}
@@ -80,6 +87,8 @@ export function Timeline(props: { readonly detail: TicketDetail }): React.ReactE
 function CommentCard(props: {
   readonly comment: TicketComment
   readonly ticketAuthor: TicketAuthor | null
+  /** 与正文一致：只有 GitLab 详情启用在正文里渲染内联图片。 */
+  readonly allowInlineImages: boolean
 }): React.ReactElement {
   const t = useMessages()
   const { comment } = props
@@ -104,7 +113,10 @@ function CommentCard(props: {
           author: comment.author === null ? t('detail.unnamed') : authorName(comment.author),
         })}
       >
-        <MarkdownBody source={comment.body} />
+        <MarkdownBody
+          source={comment.body}
+          allowInlineImages={props.allowInlineImages}
+        />
       </TimelineCard>
     </>
   )

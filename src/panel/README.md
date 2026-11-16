@@ -30,7 +30,8 @@ Orca 右侧栏里的 MattWorkflow 面板（`ui: "html"`，独立 frame 里跑的
 - `task-panel.tsx`：面板外壳，在列表、概览、环境检查与流程帮助之间切换。
 - `theme.css`：把宿主注入的 `--orca-*` 令牌映射成面板自己的 `--mwf-*` 变量；深浅色跟随宿主。
 - `markdown-body.tsx`：自带的极简 Markdown 渲染器。工单正文是不可信输入，因此不解析原始
-  HTML，链接只放行 http(s) 与 mailto。
+  HTML，链接只放行 http(s) 与 mailto。GitLab 详情会把上传附件内联成 `data:image/` 位图；
+  渲染器只在详情明确启用时把这类 data URL 画成 `img`，其它后端的图片语法保持「`!` + 链接」。
 - `avatar-display.ts` + `avatar-source.ts` + `user-avatar.tsx`：列表、详情时间线与分配人共用的头像。
   面板 frame 的 CSP 不放行远端图片（`img-src data:`），所以 `user-avatar.tsx` 只渲染 worker
   代理回来的 data URL；`avatar-source.ts` 负责并发去重并请求 worker，不保留图片字节。

@@ -22,6 +22,7 @@ import {
 import { mapWithConcurrency } from '../../core/concurrency.ts'
 import type { RepositoryAddress } from '../../core/remote.ts'
 import type {
+  BinaryCommandRunner,
   BlockerResolution,
   CommandRunner,
   Ticket,
@@ -33,7 +34,7 @@ import type {
 } from '../../core/ticket.ts'
 import { TrackerError } from '../../core/tracker-error.ts'
 import { deleteGitlabTicket, readGitlabDeletePermission } from './delete.ts'
-import { applyGitlabChanges, readGitlabDetail } from './detail.ts'
+import { applyGitlabChanges, readGitlabDetail, type GitlabDetailDeps } from './detail.ts'
 import { readGitlabOptions } from './options.ts'
 import {
   hasNativeBlockingLinks,
@@ -47,6 +48,11 @@ import { mapGlabError, projectEndpoint, readProjectAddress } from './shared.ts'
 /** GitLab 后端依赖。 */
 export interface GitlabTrackerDeps {
   readonly run: CommandRunner
+  /**
+   * 取上传附件的二进制执行器；省略时详情不内联图片。
+   * 生产环境由 worker 注入，测试可以按需提供假实现。
+   */
+  readonly runBinary?: BinaryCommandRunner | undefined
   readonly now: () => number
   /** 单页大小；默认 100，测试可以调小以便构造分页。 */
   readonly pageSize?: number
@@ -84,7 +90,11 @@ export function createGitlabTracker(deps: GitlabTrackerDeps): Tracker {
     DEFAULT_CONCURRENCY,
   )
   const blockerCapability = deps.blockerCapability ?? new Map<string, Promise<boolean>>()
-  const detailDeps = { run: deps.run, pageSize }
+  const detailDeps: GitlabDetailDeps = {
+    run: deps.run,
+    runBinary: deps.runBinary,
+    pageSize,
+  }
 
   // 最近一次列表留下的探测线索，供补齐阶段选探测票；键为工作区根目录。
   const hints = new Map<string, BlockerHint>()

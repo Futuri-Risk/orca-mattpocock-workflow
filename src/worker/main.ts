@@ -29,7 +29,7 @@ import {
 } from './rpc-bridge.ts'
 import { createSkillCatalog } from './skill-catalog.ts'
 import { createSnapshotService, type SnapshotService } from './snapshot-service.ts'
-import { createCommandRunner } from './subprocess-runner.ts'
+import { createBinaryCommandRunner, createCommandRunner } from './subprocess-runner.ts'
 import { createTicketService } from './ticket-service.ts'
 import { createTicketWorktreeService } from './ticket-worktree-service.ts'
 import { createTimer } from './timer.ts'
@@ -49,15 +49,17 @@ const OPEN_WORKSPACE_COMMAND_ID = 'mattwf.open-workspace'
 export default function activate(orca: OrcaWorkerApi): void {
   const log = createLog(orca)
   const run = createCommandRunner()
+  // 上传附件是图片字节，不能走 UTF-8 解码；详情内联只在 GitLab 后端用到。
+  const runBinary = createBinaryCommandRunner()
   const timer = createTimer()
   const now = (): number => Date.now()
   const files = createNodeWorkspaceFiles()
 
   // 仓库作用域：同一仓库的多个 worktree 共用一份缓存，命令仍在各自工作区里跑。
   const scope = createRepositoryScopeResolver({ run })
-  const resolve = createBackendResolver({ run, now, files, scope })
+  const resolve = createBackendResolver({ run, runBinary, now, files, scope })
   // 环境检查每次都重新探测后端：刚装好 glab / tea 或刚加上远端时要能马上看到变化。
-  const resolveFresh = createBackendResolver({ run, now, files, cache: false })
+  const resolveFresh = createBackendResolver({ run, runBinary, now, files, cache: false })
   // 本地快照库：跨进程保存最近一次成功拉取的工单数据，宿主重启后面板仍能先出数据。
   const store = createNodeSnapshotStore()
   // 启动清理一次：删掉版本不符的旧条目（升级前按 worktree 存的文件）、

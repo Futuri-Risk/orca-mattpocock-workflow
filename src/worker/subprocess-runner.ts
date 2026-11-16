@@ -9,7 +9,11 @@ import { access, stat } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { delimiter, join } from 'node:path'
 
-import type { CommandOutput, CommandRunner } from '../core/ticket.ts'
+import type {
+  BinaryCommandRunner,
+  CommandRunner,
+  CommandRunOptions,
+} from '../core/ticket.ts'
 import { CommandError } from '../core/tracker-error.ts'
 
 /** 一次命令最多保留的输出；GraphQL 响应远小于此。 */
@@ -45,6 +49,49 @@ const QUIET_CLI_ENV: Readonly<Record<string, string>> = {
  * @returns 满足 core `CommandRunner` 的函数。
  */
 export function createCommandRunner(): CommandRunner {
+  const run = createByteRunner()
+  return async (command, args, options) => {
+    const output = await run(command, args, options)
+    return {
+      stdout: output.stdout.toString('utf8'),
+      stderr: output.stderr,
+      ...(output.executable === undefined ? {} : { executable: output.executable }),
+    }
+  }
+}
+
+/**
+ * 创建二进制命令执行器：标准输出保持原始字节。
+ *
+ * `glab api` 取上传附件时输出的是图片字节，按 UTF-8 解码会把非法序列换成
+ * U+FFFD，图片就坏了；这条路径必须避开文本转换。
+ * @returns 满足 core `BinaryCommandRunner` 的函数。
+ */
+export function createBinaryCommandRunner(): BinaryCommandRunner {
+  const run = createByteRunner()
+  return async (command, args, options) => {
+    const output = await run(command, args, options)
+    return {
+      stdout: output.stdout,
+      stderr: output.stderr,
+      ...(output.executable === undefined ? {} : { executable: output.executable }),
+    }
+  }
+}
+
+/** 进程层收集到的原始输出；文本执行器只在这里做一次解码。 */
+interface ByteRunOutput {
+  readonly stdout: Buffer
+  readonly stderr: string
+  readonly executable?: string | undefined
+}
+
+/** 两个公开执行器共用同一套进程与输出收集，只在解释标准输出时分开。 */
+function createByteRunner(): (
+  command: string,
+  args: readonly string[],
+  options?: CommandRunOptions,
+) => Promise<ByteRunOutput> {
   return async (command, args, options) => {
     const executable = await resolveExecutable(command)
     const cwd = options?.cwd ?? process.cwd()
@@ -105,7 +152,7 @@ async function isExecutable(path: string): Promise<boolean> {
 
 /** 一次命令的收集结果。 */
 interface Collected {
-  readonly stdout: string
+  readonly stdout: Buffer
   readonly stderr: string
   readonly exitCode: number | null
 }
@@ -122,8 +169,8 @@ function runCommand(
   args: readonly string[],
   cwd: string,
   timeoutMs: number,
-): Promise<CommandOutput> {
-  return new Promise<CommandOutput>((resolve, reject) => {
+): Promise<ByteRunOutput> {
+  return new Promise<ByteRunOutput>((resolve, reject) => {
     const child = spawn(executable, [...args], {
       cwd,
       env: { ...process.env, ...QUIET_CLI_ENV },
@@ -157,7 +204,7 @@ function runCommand(
     child.on('close', (code: number | null) => {
       clearTimeout(timeout)
       const collected: Collected = {
-        stdout: stdout.text(),
+        stdout: stdout.bytes(),
         stderr: stderr.text(),
         exitCode: code,
       }
@@ -168,7 +215,7 @@ function runCommand(
             `${command} 超时（${String(Math.round(timeoutMs / 1000))} 秒）`,
             collected.stderr,
             collected.exitCode,
-            collected.stdout,
+            collected.stdout.toString('utf8'),
           ),
         )
         return
@@ -182,7 +229,7 @@ function runCommand(
             `${command} ${label}`,
             collected.stderr,
             collected.exitCode,
-            collected.stdout,
+            collected.stdout.toString('utf8'),
           ),
         )
         return
@@ -228,6 +275,10 @@ class OutputCollector {
   }
 
   text(): string {
-    return Buffer.concat(this.chunks).toString('utf8')
+    return this.bytes().toString('utf8')
+  }
+
+  bytes(): Buffer {
+    return Buffer.concat(this.chunks)
   }
 }

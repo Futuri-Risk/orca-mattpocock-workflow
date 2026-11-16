@@ -232,6 +232,13 @@ export interface BlockerResolution {
   readonly blockedBy: ReadonlyMap<string, readonly string[]>
 }
 
+/** 执行一条命令的可选参数。 */
+export interface CommandRunOptions {
+  readonly cwd?: string
+  /** 本次命令的最长执行时间；缺省用执行器的默认值。 */
+  readonly timeoutMs?: number
+}
+
 /** 一次命令的标准输出与标准错误。 */
 export interface CommandOutput {
   readonly stdout: string
@@ -251,12 +258,30 @@ export interface CommandOutput {
 export type CommandRunner = (
   command: string,
   args: readonly string[],
-  options?: {
-    readonly cwd?: string
-    /** 本次命令的最长执行时间；缺省用执行器的默认值。 */
-    readonly timeoutMs?: number
-  },
+  options?: CommandRunOptions,
 ) => Promise<CommandOutput>
+
+/**
+ * 一次二进制命令的标准输出。图片这类字节不能经过 UTF-8 解码：
+ * 非法的多字节序列会被替换成 U+FFFD，取回来的图片就坏了。
+ */
+export interface BinaryCommandOutput {
+  /** 原始标准输出字节；不做文本解码。 */
+  readonly stdout: Uint8Array
+  readonly stderr: string
+  /** 实际执行的可执行文件路径；假 runner 可以省略。 */
+  readonly executable?: string
+}
+
+/**
+ * 执行一个命令并保留标准输出的原始字节。
+ * 成功与失败语义与 {@link CommandRunner} 一致，只是成功时输出不转字符串。
+ */
+export type BinaryCommandRunner = (
+  command: string,
+  args: readonly string[],
+  options?: CommandRunOptions,
+) => Promise<BinaryCommandOutput>
 
 /** 标签名集合，由宿主从 protocol 的常量传入，规则本身留在 core。 */
 export interface TicketLabelNames {
