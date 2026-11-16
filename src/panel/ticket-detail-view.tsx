@@ -1,14 +1,14 @@
 /**
  * 工单详情视图（GitHub issue 风格）：
  *
- * - 头部：返回、编号（远端链接）、后端徽标；右侧是技能按钮、关闭/重开、复制链接，
- *   以及有删除权限时才出现的“更多”菜单；
+ * - 头部：返回、编号（远端链接）、后端徽标；右侧是技能按钮、关闭/重开、刷新、
+ *   复制链接，以及有删除权限时才出现的“更多”菜单；
  * - 标题区：标题、实心状态徽标、作者与时间、评论数，紧跟属性条（见 ticket-detail-fields）；
  * - 时间线：正文卡片与评论卡片（见 ticket-timeline）。
  *
  * 详情不自动复制提示词：浏览与开工是两个动作，复制由明确的技能按钮触发。
  * 技能动作来自列表快照（判定在 core，只有一处），按钮与列表行徽标共用同一个组件；
- * 写操作后宿主会重建快照，这里用刷新后的快照更新徽标，不重新判定。
+ * 写操作与手动刷新后宿主会重建快照，这里用刷新后的快照更新徽标，不重新判定。
  * 数据读取与写操作在 ticket-detail-hooks 里。
  */
 import * as React from 'react'
@@ -21,11 +21,12 @@ import type {
   TicketPatch,
   TicketSnapshot,
   TicketWorktreeResult,
+  WorkspaceSnapshot,
 } from '../protocol/tracker.ts'
 import { authorName, authorTitle } from './author-text.ts'
 import { errorText } from './error-text.ts'
 import { useMessages } from './i18n.ts'
-import { ChevronLeftIcon } from './icons.tsx'
+import { ChevronLeftIcon, RefreshIcon } from './icons.tsx'
 import type { PromptCopy, PromptCopyState } from './injection.ts'
 import { PromptCopyArea } from './prompt-copy.tsx'
 import type { PanelClient } from './transport.ts'
@@ -47,6 +48,7 @@ import {
 } from './ticket-detail-fields.tsx'
 import {
   useCopyLink,
+  useDetailRefresh,
   useDetailRequest,
   useEscapeKey,
   useTicketDeletion,
@@ -64,6 +66,7 @@ import {
   DETAIL_SCROLL_STYLE,
   DETAIL_STACK_STYLE,
   DETAIL_TITLE_STYLE,
+  HEADER_ICON_BUTTON_STYLE,
 } from './ticket-detail-styles.ts'
 import { Timeline, formatTime } from './ticket-timeline.tsx'
 import {
@@ -83,7 +86,7 @@ import {
 export interface TicketDetailViewProps {
   readonly client: PanelClient
   readonly workspaceRoot: string
-  /** 列表里选中的那张票：详情按它的引用加载，技能动作也来自它（写操作后按刷新结果更新）。 */
+  /** 列表里选中的那张票：详情按它的引用加载，技能动作也来自它（写操作与手动刷新后按快照更新）。 */
   readonly ticket: TicketSnapshot
   /** 面板的提示词复制端口。 */
   readonly copy: PromptCopy
@@ -106,16 +109,24 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
   React.useEffect(() => {
     setCurrentTicket(ticket)
   }, [ticket])
+  // 写操作与手动刷新都把快照里的同一行换进详情头部，技能徽标随之更新。
+  const applySnapshot = (snapshot: WorkspaceSnapshot): void => {
+    const next = snapshot.tickets.find((item) => item.ref === ref)
+    if (next !== undefined) setCurrentTicket(next)
+  }
   const mutation = useTicketMutation(client, {
     workspaceRoot,
     ref,
     number,
     onUpdated: request.replace,
-    onSnapshot: (snapshot) => {
-      const next = snapshot.tickets.find((item) => item.ref === ref)
-      if (next !== undefined) setCurrentTicket(next)
-    },
+    onSnapshot: applySnapshot,
   })
+  const refresh = useDetailRefresh(
+    client,
+    { workspaceRoot, ref, number },
+    request.replace,
+    applySnapshot,
+  )
   const deletion = useTicketDeletion(client, {
     workspaceRoot,
     ref,
@@ -130,7 +141,8 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
       ? { visible: false, enabled: false, reason: null }
       : worktreeAvailability(currentTicket, detail.backend, workspaceRoot, t)
   const link = useCopyLink(detail?.url ?? null)
-  const busy = mutation.busy || deletion.deleting
+  // 刷新期间一并禁用写控件：半截编辑不能撞上刚换掉的数据。
+  const busy = mutation.busy || deletion.deleting || refresh.refreshing
   useEscapeKey(props.onBack)
 
   return (
@@ -153,10 +165,22 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
             onApply={mutation.apply}
             copy={link.copy}
             onCopy={link.onCopy}
+            afterState={
+              <RefreshButton
+                refreshing={refresh.refreshing}
+                disabled={mutation.busy || deletion.deleting || deletion.confirming}
+                onRefresh={refresh.refresh}
+              />
+            }
           />
         )}
         {detail?.capabilities.delete === true ? <MoreMenu onDelete={deletion.open} /> : null}
       </DetailHeader>
+      {refresh.error === null ? null : (
+        <div role="alert" data-testid="detail-refresh-error" style={ERROR_STYLE}>
+          {t('detail.refreshFailed', { detail: errorText(refresh.error, t) })}
+        </div>
+      )}
       {detail !== null ? (
         <DetailContent
           detail={detail}
@@ -180,6 +204,34 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
         </div>
       )}
     </div>
+  )
+}
+
+/** 详情头部的手动刷新：图标按钮，刷新中禁用并把名称改成「正在刷新工单…」。 */
+function RefreshButton(props: {
+  readonly refreshing: boolean
+  readonly disabled: boolean
+  readonly onRefresh: () => void
+}): React.ReactElement {
+  const t = useMessages()
+  const label = props.refreshing ? t('detail.refreshing') : t('detail.refresh')
+  return (
+    <button
+      type="button"
+      data-testid="detail-refresh"
+      data-hover="soft"
+      disabled={props.disabled || props.refreshing}
+      aria-label={label}
+      title={label}
+      onClick={props.onRefresh}
+      style={
+        props.refreshing
+          ? { ...HEADER_ICON_BUTTON_STYLE, opacity: 0.5 }
+          : HEADER_ICON_BUTTON_STYLE
+      }
+    >
+      <RefreshIcon />
+    </button>
   )
 }
 

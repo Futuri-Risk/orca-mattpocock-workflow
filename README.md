@@ -22,7 +22,8 @@ The interaction is designed around the capabilities Orca plugins actually expose
   click.
 - **Overview**: pressure at a glance (size / blocking / staleness), key numbers, status and category
   composition, and the tickets to look at first.
-- **Detail**: timeline, fields and native blocking relations for one ticket.
+- **Detail**: timeline, fields and native blocking relations for one ticket. The header can refresh
+  manually: it re-reads the ticket and syncs the list snapshot without going back to the list.
 - **Environment check**: checks the main directory, backend selection, Orca CLI, CLI install and
   login, repository reachability, workspace initialization, the local ticket directory and the skills
   the panel uses. Every failure comes with an executable remedy.

@@ -37,6 +37,10 @@ The MattWorkflow panel in Orca's right sidebar (`ui: "html"`, a React app runnin
 - `tickets-view.tsx`: the list view. The people-filter row under the status segments renders only
   when the snapshot carries a signed-in user; the two pill toggles show counts, "Clear" appears when
   either toggle is on, and the row ends with `@login`.
+- `ticket-detail-view.tsx` / `ticket-detail-hooks.ts`: the ticket detail view and its data hooks.
+  The manual refresh in the header re-reads the ticket while keeping loaded content, and
+  concurrently refreshes the list snapshot; a failure is reported under the header without clearing
+  the detail.
 - `ticket-tree.ts`: pure functions for list layout. Turns the filtered, sorted visible tickets into
   render rows: in the tree layout it gives depth, whether the row has children, expand state, whether
   the parent is outside the list and the descendant count; cycles and self-references fall back to

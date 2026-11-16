@@ -56,9 +56,15 @@ export interface CopyState {
 /**
  * 头部右侧的工单操作：关闭/重开、复制链接。都是低频动作，放在导航行里不占正文区域；
  * 关闭用错误色文字，复制是图标按钮，成功后图标短暂变成对勾。
+ * `afterState` 插在关闭/重开之后、复制链接之前，详情用它放手动刷新。
  */
 export function HeaderActions(
-  props: FieldProps & { readonly copy: CopyState; readonly onCopy: () => void },
+  props: FieldProps & {
+    readonly copy: CopyState
+    readonly onCopy: () => void
+    /** 关闭/重开之后、复制链接之前的操作（详情头部的手动刷新）。 */
+    readonly afterState?: React.ReactNode
+  },
 ): React.ReactElement {
   const t = useMessages()
   const { detail, busy } = props
@@ -82,6 +88,7 @@ export function HeaderActions(
           {next === 'closed' ? t('detail.close') : t('detail.reopen')}
         </button>
       ) : null}
+      {props.afterState}
       {detail.url === null ? null : (
         <button
           type="button"

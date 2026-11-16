@@ -2,6 +2,7 @@
  * 工单详情视图的数据 hooks：读取详情、提交变更、按需读取补全候选、删除工单、Esc 返回。
  *
  * 写操作成功后重新读取详情（不做乐观更新），并刷新列表快照让徽标同步；
+ * 详情头部的手动刷新保留已加载内容重读这张票，同样同步列表快照；
  * 删除成功后刷新列表并返回列表。
  */
 import * as React from 'react'
@@ -71,6 +72,122 @@ export function useDetailRequest(
     },
     replace: setDetail,
   }
+}
+
+/** 手动刷新要重读的一张票。 */
+export interface DetailRefreshTarget {
+  readonly workspaceRoot: string
+  readonly ref: string
+  readonly number: number | null
+}
+
+/** 刷新结果落地的回调；`isCurrent` 为 false 时全部丢弃。 */
+export interface DetailRefreshHooks {
+  /** 视图仍在且目标没变时才返回 true；在途结果据此决定是否落地。 */
+  readonly isCurrent: () => boolean
+  readonly onDetail: (detail: TicketDetail) => void
+  readonly onSnapshot: (snapshot: WorkspaceSnapshot) => void
+  readonly onError: (error: RpcErrorBody) => void
+}
+
+/**
+ * 重读一张票的详情，同时增量刷新列表快照。
+ *
+ * 两个请求并行、互不等待：详情先回来就先替换，列表快照稍后落地；
+ * 详情失败只报告详情错误，列表刷新失败不改变详情内容（列表头部有自己的提示）。
+ * @param client - 面板客户端。
+ * @param target - 工作区与工单定位。
+ * @param hooks - 落地回调与过期判断。
+ * @returns 两个请求都结束后 resolve。
+ */
+export function refreshTicket(
+  client: PanelClient,
+  target: DetailRefreshTarget,
+  hooks: DetailRefreshHooks,
+): Promise<void> {
+  const detail = client
+    .getDetail(target.workspaceRoot, target.ref, target.number)
+    .then((result) => {
+      if (!hooks.isCurrent()) return
+      if (result.ok) hooks.onDetail(result.result)
+      else hooks.onError(result.error)
+    })
+  const snapshot = client.refresh(target.workspaceRoot).then((result) => {
+    if (!hooks.isCurrent() || !result.ok) return
+    hooks.onSnapshot(result.result)
+  })
+  return Promise.all([detail, snapshot]).then(() => undefined)
+}
+
+/** 详情头部手动刷新的状态与入口。 */
+export interface DetailRefresh {
+  readonly refreshing: boolean
+  /** 最近一次刷新失败的原因；下一次刷新成功时清除。 */
+  readonly error: RpcErrorBody | null
+  readonly refresh: () => void
+}
+
+/**
+ * 手动刷新当前这张票：保留已加载的详情重读，并同步列表快照。
+ *
+ * 刷新不走 {@link useDetailRequest} 的 `reload`：那条路径会清空详情并把阶段打回
+ * loading，页面上会出现整页加载占位。这里只在失败时记录独立错误，成功时替换详情。
+ * 只有最新一次读取能落地：引用、编号、工作区变化或组件卸载时丢弃旧结果。
+ * @param client - 面板客户端。
+ * @param target - 当前打开的工单。
+ * @param onDetail - 读取成功后的详情。
+ * @param onSnapshot - 列表快照读取成功后的回调。
+ * @returns 刷新中标志、刷新错误与触发入口。
+ */
+export function useDetailRefresh(
+  client: PanelClient,
+  target: DetailRefreshTarget,
+  onDetail: (detail: TicketDetail) => void,
+  onSnapshot: (snapshot: WorkspaceSnapshot) => void,
+): DetailRefresh {
+  const [refreshing, setRefreshing] = React.useState(false)
+  const [error, setError] = React.useState<RpcErrorBody | null>(null)
+  const running = React.useRef(false)
+  const mounted = React.useRef(true)
+  const key = `${target.workspaceRoot}\n${target.ref}\n${String(target.number)}`
+  const latest = React.useRef(key)
+  latest.current = key
+
+  React.useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
+
+  // 换票/换工作区后，上一张票的刷新错误不能挂在新详情下面。
+  React.useEffect(() => {
+    setError(null)
+  }, [key])
+
+  const refresh = (): void => {
+    // state 更新是异步的，用 ref 立即拦住第二次点击。
+    if (running.current) return
+    running.current = true
+    setRefreshing(true)
+    const started = key
+    const isCurrent = (): boolean => mounted.current && latest.current === started
+    void refreshTicket(client, target, {
+      isCurrent,
+      onDetail: (detail) => {
+        setError(null)
+        onDetail(detail)
+      },
+      onSnapshot,
+      onError: setError,
+    }).finally(() => {
+      running.current = false
+      // 旧目标的结果不落地，但「刷新中」不能因此卡死：目标变了也恢复按钮。
+      if (mounted.current) setRefreshing(false)
+    })
+  }
+
+  return { refreshing, error, refresh }
 }
 
 export interface TicketMutation {

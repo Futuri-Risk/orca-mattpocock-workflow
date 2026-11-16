@@ -387,6 +387,9 @@ const ZH_CN = {
   'detail.updatedAt': '更新于 {time}',
   'detail.commentCount': '{n} 条评论',
   'detail.loadFailed': '读取工单详情失败。',
+  'detail.refresh': '刷新工单',
+  'detail.refreshing': '正在刷新工单…',
+  'detail.refreshFailed': '刷新失败：{detail}',
   'detail.close': '关闭工单',
   'detail.reopen': '重新打开',
   'detail.copyLink': '复制链接',
@@ -957,6 +960,9 @@ const EN = {
   'detail.updatedAt': 'Updated {time}',
   'detail.commentCount': '{n} comments',
   'detail.loadFailed': 'Failed to load ticket details.',
+  'detail.refresh': 'Refresh ticket',
+  'detail.refreshing': 'Refreshing ticket…',
+  'detail.refreshFailed': 'Refresh failed: {detail}',
   'detail.close': 'Close ticket',
   'detail.reopen': 'Reopen',
   'detail.copyLink': 'Copy link',
@@ -1256,6 +1262,7 @@ export interface MessageParams {
   'detail.createdAt': { readonly time: string }
   'detail.updatedAt': { readonly time: string }
   'detail.commentCount': { readonly n: number }
+  'detail.refreshFailed': { readonly detail: string }
   'detail.copyLinkWithUrl': { readonly url: string }
   'detail.removeLabel': { readonly value: string }
   'detail.removeAssignee': { readonly value: string }
