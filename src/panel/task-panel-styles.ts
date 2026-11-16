@@ -265,7 +265,7 @@ export const STAT_VALUE_STYLE: CSSProperties = {
 }
 
 /**
- * 筛选、布局与排序同一行；放不下时整组换行，
+ * 筛选与排序同一行；放不下时排序整组换到下一行并靠右，
  * 不会把任何一组挤出页边距。
  */
 export const TOOLBAR_STYLE: CSSProperties = {
@@ -410,8 +410,17 @@ export const PEOPLE_VIEWER_STYLE: CSSProperties = {
   maxWidth: '100%',
 }
 
-export const LOADED_STYLE: CSSProperties = {
+/** 「已加载 / 共」行：左侧计数，右侧布局切换。 */
+export const LOADED_ROW_STYLE: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 8,
   padding: '0 12px 6px',
+  minWidth: 0,
+}
+
+export const LOADED_STYLE: CSSProperties = {
   color: COLORS.tertiary,
   fontSize: 11,
   fontVariantNumeric: 'tabular-nums',

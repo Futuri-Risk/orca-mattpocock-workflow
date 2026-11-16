@@ -215,3 +215,31 @@ export function TrashIcon(): React.ReactElement {
     </svg>
   )
 }
+
+/** 平铺布局：三行等宽横线。 */
+export function FlatListIcon(): React.ReactElement {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M2.5 4h11M2.5 8h11M2.5 12h11"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+/** 父子布局：首行较短、后续行缩进，表示树层级。 */
+export function HierarchyIcon(): React.ReactElement {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M2.5 3.5h5M2.5 8h11M5.5 12.5h8"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}

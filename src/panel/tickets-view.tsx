@@ -48,6 +48,7 @@ import {
   FEATURE_ACTION_STYLE,
   FILTERS,
   HEADER_STYLE,
+  LOADED_ROW_STYLE,
   LOADED_STYLE,
   REFRESH_BUTTON_STYLE,
   REPO_CHIP_STYLE,
@@ -222,11 +223,8 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             filter={preference.filter}
             sortKey={preference.sortKey}
             direction={preference.direction}
-            layout={preference.layout}
-            hierarchy={hierarchy}
             onFilter={setFilter}
             onSort={toggleSort}
-            onLayout={setLayout}
           />
           {/* 认不出当前用户时整行不出现：不放永远点不出结果的按钮。 */}
           <PeopleFilterRow
@@ -241,6 +239,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             snapshot={snapshot}
             rows={rows}
             layout={layout}
+            hierarchy={hierarchy}
             ticketCount={tickets.length}
             appending={appending}
             copied={actions.copied}
@@ -253,6 +252,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             onPick={props.onOpenTicket}
             onSkillAction={actions.onSkillAction}
             onToggleCollapse={toggleCollapse}
+            onLayout={setLayout}
           />
         </>
       ) : phase === 'loading' ? (
@@ -308,6 +308,7 @@ function TicketRows(props: {
   readonly snapshot: WorkspaceSnapshot
   readonly rows: readonly TicketTreeRow[]
   readonly layout: TicketLayout
+  readonly hierarchy: HierarchyAvailability
   readonly ticketCount: number
   readonly appending: boolean
   readonly copied: string | null
@@ -320,16 +321,24 @@ function TicketRows(props: {
   readonly onPick: (ticket: TicketSnapshot) => void
   readonly onSkillAction: (ticket: TicketSnapshot) => void
   readonly onToggleCollapse: (ref: string) => void
+  readonly onLayout: (layout: TicketLayout) => void
 }): React.ReactElement {
   const t = useMessages()
   const remaining = Math.max(0, props.snapshot.total - props.snapshot.loaded)
   return (
     <>
-      <div data-testid="loaded-total" style={LOADED_STYLE}>
-        {t('tickets.loadedTotal', {
-          loaded: props.snapshot.loaded,
-          total: props.snapshot.total,
-        })}
+      <div style={LOADED_ROW_STYLE}>
+        <span data-testid="loaded-total" style={LOADED_STYLE}>
+          {t('tickets.loadedTotal', {
+            loaded: props.snapshot.loaded,
+            total: props.snapshot.total,
+          })}
+        </span>
+        <LayoutToggle
+          layout={props.layout}
+          hierarchy={props.hierarchy}
+          onLayout={props.onLayout}
+        />
       </div>
       <TicketList
         rows={props.rows}
@@ -590,12 +599,8 @@ function Toolbar(props: {
   readonly filter: TicketFilter
   readonly sortKey: TicketSortKey
   readonly direction: SortDirection
-  /** 用户偏好里的布局；不可用时仍显示为选中，由说明解释降级。 */
-  readonly layout: TicketLayout
-  readonly hierarchy: HierarchyAvailability
   readonly onFilter: (filter: TicketFilter) => void
   readonly onSort: (key: TicketSortKey) => void
-  readonly onLayout: (layout: TicketLayout) => void
 }): React.ReactElement {
   const t = useMessages()
   const ascending = props.direction === 'asc'
@@ -619,11 +624,6 @@ function Toolbar(props: {
           />
         ))}
       </div>
-      <LayoutToggle
-        layout={props.layout}
-        hierarchy={props.hierarchy}
-        onLayout={props.onLayout}
-      />
       <div role="group" aria-label={t('tickets.sortGroup')} style={SORT_GROUP_STYLE}>
         <select
           data-testid="sort-key"
