@@ -26,6 +26,7 @@ const HEADING = /^#\s+(.+?)\s*$/
 const COMMENTS_HEADING = /^##\s+Comments\b/i
 const STATUS = /^\s*Status:\s*(.+?)\s*$/i
 const BLOCKED_BY = /^\s*Blocked by:\s*(.*?)\s*$/i
+const PARENT = /^\s*Parent:\s*(.*?)\s*$/i
 const FILE_NUMBER = /^(\d+)(?:-|\.md$)/
 const REFERENCE = /\d+/g
 
@@ -45,7 +46,9 @@ export function parseMarkdownTickets(files: readonly MarkdownTicketFile[]): Tick
   }
 
   return files.map((file) => {
-    const blockers = blockersOf(file, byFeature.get(file.feature))
+    const siblings = byFeature.get(file.feature)
+    const blockers = blockersOf(file, siblings)
+    const parent = parentOf(file, siblings)
     return {
       ref: file.path,
       number: null,
@@ -58,6 +61,7 @@ export function parseMarkdownTickets(files: readonly MarkdownTicketFile[]): Tick
       updatedAt: file.updatedAt,
       openBlockers: blockers.openBlockers,
       blockedBy: blockers.blockedBy,
+      ...(parent === undefined ? {} : { parent }),
     }
   })
 }
@@ -169,8 +173,39 @@ function blockedByLine(content: string): string | undefined {
 }
 
 /**
+ * 解析 `Parent:` 行：只看 `## Comments` 之前，取第一个数字。
+ *
+ * 父票必须是同一 feature 下的另一张工单。指向不存在的票、指向自己或跨 feature 时
+ * 按无父级处理；坏引用只影响这一张票，不让列表出错。
+ * @param file - 当前工单文件。
+ * @param siblings - 同一 feature 下的文件（按编号）。
+ * @returns 父票的文件路径；没有可用的父级时为 undefined。
+ */
+function parentOf(
+  file: MarkdownTicketFile,
+  siblings: ReadonlyMap<number, MarkdownTicketFile> | undefined,
+): string | undefined {
+  if (siblings === undefined) return undefined
+
+  const line = parentLine(file.content)
+  if (line === undefined) return undefined
+
+  const [reference] = referencedNumbers(line)
+  if (reference === undefined || reference === fileNumber(file.name)) return undefined
+  return siblings.get(reference)?.path
+}
+
+function parentLine(content: string): string | undefined {
+  for (const line of preambleOf(content).split('\n')) {
+    const match = PARENT.exec(line)
+    if (match !== null) return match[1] ?? ''
+  }
+  return undefined
+}
+
+/**
  * 只看 `## Comments` 之前的内容：评论追加在这个标题下，
- * 评论里引用的 `Status:` / `Blocked by:` 不能改变这张票的判定。
+ * 评论里引用的 `Status:` / `Blocked by:` / `Parent:` 不能改变这张票的判定与层级。
  */
 function preambleOf(content: string): string {
   const heading = /^##\s+Comments\b/im.exec(content)

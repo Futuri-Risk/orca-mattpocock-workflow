@@ -31,6 +31,11 @@
   列表响应自带分配人，另发一次 `glab api user` / `tea api /user` 查身份，与列表并行发出。
   身份查询失败只让 `viewer` 为 null，不影响列表；本地 Markdown 的 `viewer` 为 null、分配人为空数组。
   分配人只存登录名，不读展示名与头像。
+- 父子能力由每个后端显式声明：GitHub 从列表查询一并取 `parent`（同仓库存 `#编号`，跨仓库存
+  `owner/name#编号`）；GitLab 在列表返回后按每批 100 个 iid 查工作项层级（issue / task 父级存
+  `#iid`，epic 存 `&iid`，失败只降级能力、不影响列表）；本地 Markdown 解析同一 feature 内的
+  `Parent:` 行；Gitea 声明为无。共用契约套件会断言能力声明与父级引用一致，声明为无的后端
+  不得出现 `parent`。
 - 详情只在打开详情时请求，不进入列表快照；创建人、评论作者与分配人都是结构化用户
   （登录名 / 展示名 / 头像地址），与列表的创建人同源同形：GitHub 的 `author.login` + `avatarUrl`、
   GitLab 的 `username` + `avatar_url`、Gitea 的 `login` + `avatar_url`（相对地址按实例基准补全）；

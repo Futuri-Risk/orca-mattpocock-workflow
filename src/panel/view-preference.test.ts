@@ -33,6 +33,7 @@ describe('视图偏好按仓库归并', () => {
       direction: 'desc',
       assignedToMe: true,
       createdByMe: false,
+      layout: 'hierarchy',
     } as const
 
     await writeViewPreference(store, viewPreferenceKey(github, MAIN), sorted)
@@ -50,6 +51,7 @@ describe('视图偏好按仓库归并', () => {
       direction: 'desc',
       assignedToMe: false,
       createdByMe: false,
+      layout: 'flat',
     })
     const other = { ...github, repository: 'o/other' }
 
@@ -67,6 +69,7 @@ describe('视图偏好按仓库归并', () => {
       direction: 'asc',
       assignedToMe: false,
       createdByMe: false,
+      layout: 'flat',
     })
 
     await expect(
@@ -86,12 +89,61 @@ describe('视图偏好按仓库归并', () => {
       direction: 'asc',
       assignedToMe: false,
       createdByMe: false,
+      layout: 'hierarchy',
     } as const
     await writeViewPreference(store, MAIN, legacy)
 
     await expect(
       readViewPreference(store, viewPreferenceKey(github, MAIN), MAIN),
     ).resolves.toEqual(legacy)
+  })
+
+  it('旧存档没有布局字段时默认平铺', async () => {
+    const store = memoryStore()
+    const legacy = { filter: 'closed', sortKey: 'updated', direction: 'desc' } as const
+    await writeViewPreference(store, viewPreferenceKey(github, MAIN), DEFAULT_VIEW)
+    // 直接改写存档，模拟升级前写下的条目：布局字段缺失。
+    const key = viewPreferenceKey(github, MAIN)
+    if (key === undefined) throw new Error('偏好键不应为空')
+    const map = JSON.parse(String(store.data.get('view-preferences'))) as {
+      entries: Record<string, unknown>
+    }
+    map.entries[key] = { ...legacy, savedAt: 1 }
+    store.data.set('view-preferences', JSON.stringify(map))
+
+    await expect(readViewPreference(store, key, MAIN)).resolves.toEqual({
+      ...legacy,
+      assignedToMe: false,
+      createdByMe: false,
+      layout: 'flat',
+    })
+  })
+
+  it('布局字段非法时退回平铺', async () => {
+    const store = memoryStore()
+    await writeViewPreference(store, viewPreferenceKey(github, MAIN), {
+      ...DEFAULT_VIEW,
+      layout: 'flat',
+    })
+    const key = viewPreferenceKey(github, MAIN)
+    if (key === undefined) throw new Error('偏好键不应为空')
+    const map = JSON.parse(String(store.data.get('view-preferences'))) as {
+      entries: Record<string, unknown>
+    }
+    map.entries[key] = { ...DEFAULT_VIEW, layout: 'rows', savedAt: 1 }
+    store.data.set('view-preferences', JSON.stringify(map))
+
+    const preference = await readViewPreference(store, key, MAIN)
+
+    expect(preference.layout).toBe('flat')
+    expect(preference.filter).toBe(DEFAULT_VIEW.filter)
+  })
+
+  it('存储不可用时退回默认视图（含平铺布局）', async () => {
+    await expect(readViewPreference(undefined, 'github@github.com/o/r')).resolves.toEqual(
+      DEFAULT_VIEW,
+    )
+    expect(DEFAULT_VIEW.layout).toBe('flat')
   })
 })
 
@@ -109,6 +161,7 @@ describe('人员开关的读写与回退', () => {
       direction: 'asc',
       assignedToMe: true,
       createdByMe: true,
+      layout: 'flat',
     } as const
 
     await writeViewPreference(store, viewPreferenceKey(github, MAIN), people)
@@ -136,6 +189,7 @@ describe('人员开关的读写与回退', () => {
       direction: 'desc',
       assignedToMe: false,
       createdByMe: false,
+      layout: 'flat',
     })
   })
 
@@ -166,6 +220,7 @@ describe('人员开关的读写与回退', () => {
       direction: 'asc',
       assignedToMe: false,
       createdByMe: true,
+      layout: 'flat',
     })
   })
 

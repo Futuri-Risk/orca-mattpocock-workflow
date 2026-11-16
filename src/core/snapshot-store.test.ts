@@ -34,6 +34,7 @@ function entry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreEntry 
         openBlockers: 0,
       },
     ],
+    hierarchy: 'native',
     ...overrides,
   }
 }
@@ -54,6 +55,37 @@ describe('本地快照库条目', () => {
     expect(restored?.nextCursor).toBe('cursor-2')
   })
 
+  it('父子能力与父级引用随条目保存', () => {
+    const original = entry()
+    const withParent = {
+      ...original,
+      hierarchy: 'convention' as const,
+      tickets: [{ ...original.tickets[0]!, parent: '.scratch/login/issues/01-token.md' }],
+    }
+
+    const restored = parseSnapshotStoreEntry(serializeSnapshotStoreEntry(withParent))
+
+    expect(restored).toEqual(withParent)
+    expect(restored?.hierarchy).toBe('convention')
+    expect(restored?.tickets[0]?.parent).toBe('.scratch/login/issues/01-token.md')
+  })
+
+  it('父子能力不是已知枚举时整份作废', () => {
+    const raw = JSON.stringify({ ...entry(), hierarchy: 'guess' })
+
+    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  })
+
+  it('父级引用不是非空字符串时整份作废', () => {
+    const original = entry()
+    const legacy = {
+      ...original,
+      tickets: [{ ...original.tickets[0], parent: 42 }],
+    }
+
+    expect(parseSnapshotStoreEntry(JSON.stringify(legacy))).toBeUndefined()
+  })
+
   it('游标不是非空字符串时整份作废', () => {
     const raw = JSON.stringify({ ...entry(), nextCursor: 42 })
 
@@ -68,6 +100,12 @@ describe('本地快照库条目', () => {
 
   it('升级前按工作区存的旧条目（版本 1）读不出来', () => {
     const raw = JSON.stringify({ ...entry(), version: 1 })
+
+    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  })
+
+  it('上一版（版本 2）缓存整体作废，不把缺父子字段的数据当成完整树', () => {
+    const raw = JSON.stringify({ ...entry(), version: 2 })
 
     expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
   })

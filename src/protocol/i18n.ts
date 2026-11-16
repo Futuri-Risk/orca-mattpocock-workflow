@@ -97,6 +97,27 @@ const ZH_CN = {
   'tickets.newBugHint': '把缺陷入池提示词复制到剪贴板',
   'tickets.newBugLabel': 'bug：复制提示词',
   'tickets.filterGroup': '状态过滤',
+  'tickets.layoutGroup': '布局',
+  'tickets.layout.flat': '平铺',
+  'tickets.layout.hierarchy': '父子',
+  'tickets.layout.flatHint': '平铺：所有票按当前排序排成一条线',
+  'tickets.layout.nativeHint': '父子：父子关系来自 GitHub 原生子工单',
+  'tickets.layout.conventionHint': '父子：父子关系来自本地工单的 Parent: 行',
+  'tickets.layout.gitlabHint': '父子：父子关系来自 GitLab 工作项层级；epic 分组不在列表里',
+  'tickets.layout.unavailableGitea': 'Gitea 没有原生子工单，父子布局不可用；平铺照常',
+  'tickets.layout.unavailableGitlab':
+    '这次没有取到 GitLab 工作项层级，父子布局暂不可用；下次刷新会重试',
+  'tickets.layout.unavailable': '当前后端不提供父子关系，父子布局不可用',
+  'tickets.layout.fallback':
+    '当前快照没有父子关系，已按平铺显示；偏好已保留，刷新成功或换回支持的后端后自动恢复。',
+  'tickets.layout.coverage':
+    '父子关系只覆盖已加载的 {loaded} / 共 {total} 张票；继续加载更多会补齐。',
+  'tickets.childCount': '{count} 张子票',
+  'tickets.collapse': '收起子票',
+  'tickets.expand': '展开子票',
+  'tickets.parentOutside': '父级 {parent}（不在列表）',
+  'tickets.parentOutsideHint':
+    '父级可能被筛选掉、还没加载、在别的仓库，或是 GitLab epic；继续加载或调整筛选可能补齐。',
   'tickets.sortGroup': '排序',
   'tickets.sortField': '排序字段',
   'tickets.sortAscHint': '升序，点击改为降序',
@@ -636,6 +657,31 @@ const EN = {
   'tickets.newBugHint': 'Copy the bug intake prompt to the clipboard',
   'tickets.newBugLabel': 'bug: copy prompt',
   'tickets.filterGroup': 'Status filter',
+  'tickets.layoutGroup': 'Layout',
+  'tickets.layout.flat': 'Flat',
+  'tickets.layout.hierarchy': 'Hierarchy',
+  'tickets.layout.flatHint': 'Flat: every ticket follows the current sort in one list',
+  'tickets.layout.nativeHint': 'Hierarchy: relationships come from GitHub sub-issues',
+  'tickets.layout.conventionHint':
+    'Hierarchy: relationships come from the Parent: line in local tickets',
+  'tickets.layout.gitlabHint':
+    'Hierarchy: relationships come from GitLab work item hierarchy; epic groups are not in the list',
+  'tickets.layout.unavailableGitea':
+    'Gitea has no native sub-issues, so hierarchy layout is unavailable; flat layout still works',
+  'tickets.layout.unavailableGitlab':
+    'This refresh could not read the GitLab work item hierarchy, so hierarchy layout is unavailable; the next refresh retries',
+  'tickets.layout.unavailable':
+    'This backend does not provide parent-child relationships, so hierarchy layout is unavailable',
+  'tickets.layout.fallback':
+    'This snapshot has no parent-child relationships, so the list is flat. Your preference is kept and returns when a refresh succeeds or you switch back to a capable backend.',
+  'tickets.layout.coverage':
+    'Parent-child relationships cover only the {loaded} loaded of {total} tickets; load more to fill the rest.',
+  'tickets.childCount': '{count} sub-tickets',
+  'tickets.collapse': 'Collapse sub-tickets',
+  'tickets.expand': 'Expand sub-tickets',
+  'tickets.parentOutside': 'Parent {parent} (not in list)',
+  'tickets.parentOutsideHint':
+    'The parent may be filtered out, not loaded yet, in another repository, or a GitLab epic; loading more or changing the filter may fill it in.',
   'tickets.sortGroup': 'Sort',
   'tickets.sortField': 'Sort field',
   'tickets.sortAscHint': 'Ascending; click for descending',
@@ -1127,6 +1173,9 @@ export interface MessageParams {
   'language.effective': { readonly language: string }
   'language.autoEffective': { readonly language: string }
   'tickets.loadedTotal': { readonly loaded: number; readonly total: number }
+  'tickets.layout.coverage': { readonly loaded: number; readonly total: number }
+  'tickets.childCount': { readonly count: number }
+  'tickets.parentOutside': { readonly parent: string }
   'tickets.loadMoreRemaining': { readonly count: number }
   'tickets.people.viewer': { readonly login: string }
   'tickets.people.viewerHint': { readonly login: string }

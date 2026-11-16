@@ -51,6 +51,7 @@ function entry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreEntry 
         openBlockers: 0,
       },
     ],
+    hierarchy: 'native',
     ...overrides,
   }
 }

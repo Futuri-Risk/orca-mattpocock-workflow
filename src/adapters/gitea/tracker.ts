@@ -89,6 +89,8 @@ export function createGiteaTracker(deps: GiteaTrackerDeps): Tracker {
         total: Math.max(issues.total ?? tickets.length, tickets.length),
         tickets,
         viewer: await viewer,
+        // Gitea 没有原生子工单能力；不发明正文约定，父子布局禁用。
+        hierarchy: 'none',
       }
     },
 
@@ -161,6 +163,7 @@ async function readGiteaChanges(
     truncated: issues.truncated,
     // 身份查询失败时省略，宿主沿用基准数据里的身份。
     ...(login === null ? {} : { viewer: login }),
+    hierarchy: 'none',
   }
 }
 

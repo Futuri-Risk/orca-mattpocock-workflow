@@ -34,6 +34,7 @@ function snapshot(overrides: Partial<WorkspaceSnapshot> = {}): WorkspaceSnapshot
     loaded: 1,
     total: 1,
     hasMore: false,
+    hierarchy: 'native',
     tickets: [ticket()],
     metrics: emptyMetrics(),
     blockersFinalized: true,

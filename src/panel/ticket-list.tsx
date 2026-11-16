@@ -33,11 +33,16 @@ import {
 } from './task-panel-styles.ts'
 import {
   AUTHOR_NAME_STYLE,
+  CARD_MAIN_STYLE,
   CARD_META_STYLE,
+  COLLAPSE_BUTTON_STYLE,
+  COLLAPSE_SPACER_STYLE,
   LABEL_BADGE_STYLE,
+  PARENT_BADGE_STYLE,
   ROW_AGE_STYLE,
 } from './ticket-row-styles.ts'
 import { UserAvatar } from './user-avatar.tsx'
+import type { TicketLayout, TicketTreeRow } from './ticket-tree.ts'
 import {
   WorktreeCreateButton,
   WorktreeOutcome,
@@ -47,7 +52,10 @@ import {
 
 /** 工单列表依赖。 */
 export interface TicketListProps {
-  readonly tickets: readonly TicketSnapshot[]
+  /** 渲染行：平铺是每票一行，父子模式带深度、折叠与父级提示。 */
+  readonly rows: readonly TicketTreeRow[]
+  /** 当前布局；平铺模式不显示任何父子装饰。 */
+  readonly layout: TicketLayout
   /** 列表为空时的提示：区分仓库本来没有工单和被筛选条件过滤掉。 */
   readonly emptyText: string
   /** 最近一次复制成功的工单 `ref`。 */
@@ -63,6 +71,8 @@ export interface TicketListProps {
   readonly onOpenEnvCheck: (code: ErrorCode) => void
   readonly onPick: (ticket: TicketSnapshot) => void
   readonly onSkillAction: (ticket: TicketSnapshot) => void
+  /** 折叠或展开一张父票的整棵子树。 */
+  readonly onToggleCollapse: (ref: string) => void
 }
 
 /** 本地 Markdown 路径在卡片里的显示上限；再长就从中间截断。 */
@@ -77,7 +87,7 @@ const MAX_EXTRA_LABELS = 3
  * @returns 卡片列表或空状态。
  */
 export function TicketList(props: TicketListProps): React.ReactElement {
-  if (props.tickets.length === 0) {
+  if (props.rows.length === 0) {
     return (
       <div data-testid="empty" style={EMPTY_STYLE}>
         {props.emptyText}
@@ -85,14 +95,21 @@ export function TicketList(props: TicketListProps): React.ReactElement {
     )
   }
 
+  // 只有列表里真有可折叠的父票时才给每行留折叠槽位；全是叶子就不留，
+  // 否则父子模式下每张卡片左侧都会白空一块。
+  const reserveCollapseSlot =
+    props.layout === 'hierarchy' && props.rows.some((row) => row.hasChildren)
+
   return (
     <div role="list" data-testid="ticket-list" style={LIST_STYLE}>
-      {props.tickets.map((ticket) => (
+      {props.rows.map((row) => (
         <TicketRow
-          key={ticket.ref}
-          ticket={ticket}
-          copied={ticket.ref === props.copied && ticket.skillAction !== 'none'}
-          focused={ticket.ref === props.focused}
+          key={row.ticket.ref}
+          row={row}
+          layout={props.layout}
+          reserveCollapseSlot={reserveCollapseSlot}
+          copied={row.ticket.ref === props.copied && row.ticket.skillAction !== 'none'}
+          focused={row.ticket.ref === props.focused}
           now={props.now}
           backend={props.backend}
           workspaceRoot={props.workspaceRoot}
@@ -100,14 +117,21 @@ export function TicketList(props: TicketListProps): React.ReactElement {
           onOpenEnvCheck={props.onOpenEnvCheck}
           onPick={props.onPick}
           onSkillAction={props.onSkillAction}
+          onToggleCollapse={props.onToggleCollapse}
         />
       ))}
     </div>
   )
 }
 
+/** 每层缩进的像素数；固定且较小，窄侧栏优先。 */
+const INDENT_STEP = 12
+
 function TicketRow(props: {
-  readonly ticket: TicketSnapshot
+  readonly row: TicketTreeRow
+  readonly layout: TicketLayout
+  /** 是否在左侧留折叠槽位；列表里没有父票时为 false。 */
+  readonly reserveCollapseSlot: boolean
   readonly copied: boolean
   readonly focused: boolean
   readonly now: number
@@ -118,15 +142,24 @@ function TicketRow(props: {
   readonly onOpenEnvCheck: (code: ErrorCode) => void
   readonly onPick: (ticket: TicketSnapshot) => void
   readonly onSkillAction: (ticket: TicketSnapshot) => void
+  readonly onToggleCollapse: (ref: string) => void
 }): React.ReactElement {
-  const { ticket } = props
+  const { ticket } = props.row
   const t = useMessages()
   const display = refDisplay(ticket)
   const worktree = useWorktreeCreate(props.client, props.workspaceRoot, ticket)
   const availability = worktreeAvailability(ticket, props.backend, props.workspaceRoot, t)
+  const hierarchy = props.layout === 'hierarchy'
+  const indent = hierarchy ? props.row.depth * INDENT_STEP : 0
 
   return (
-    <div role="listitem">
+    <div
+      role="listitem"
+      data-testid="ticket-row-item"
+      data-depth={props.row.depth}
+      data-parent-outside={hierarchy && props.row.parentOutsideView ? 'true' : undefined}
+      style={indent === 0 ? undefined : { paddingLeft: indent }}
+    >
       <div
         data-hover="card"
         // 卡片的表面在这一层：空白页边距也算行的一部分。按钮是键盘可达的打开入口，
@@ -136,25 +169,33 @@ function TicketRow(props: {
         }}
         style={{ ...CARD_ROW_STYLE, ...(props.focused ? CARD_FOCUSED_STYLE : undefined) }}
       >
-        <button
-          type="button"
-          data-testid="ticket-row"
-          data-ref={ticket.ref}
-          data-focused={props.focused ? 'true' : undefined}
-          style={CARD_STYLE}
-        >
-          <span style={CARD_TITLE_STYLE}>
-            <span
-              data-testid="ticket-ref"
-              style={NUMBER_BADGE_STYLE}
-              {...(display.full === undefined ? {} : { title: display.full })}
-            >
-              {display.text}
-            </span>
-            {ticket.title}
-          </span>
-          <MetaRow ticket={ticket} now={props.now} />
-        </button>
+        {props.reserveCollapseSlot ? (
+          <div style={CARD_MAIN_STYLE}>
+            <CollapseControl
+              row={props.row}
+              onToggle={() => {
+                props.onToggleCollapse(ticket.ref)
+              }}
+            />
+            <RowButton
+              ticket={ticket}
+              display={display}
+              focused={props.focused}
+              now={props.now}
+              row={props.row}
+              hierarchy={hierarchy}
+            />
+          </div>
+        ) : (
+          <RowButton
+            ticket={ticket}
+            display={display}
+            focused={props.focused}
+            now={props.now}
+            row={props.row}
+            hierarchy={hierarchy}
+          />
+        )}
         <div style={ACTION_COLUMN_STYLE}>
           <SkillActionBadge
             ticket={ticket}
@@ -180,6 +221,70 @@ function TicketRow(props: {
   )
 }
 
+/** 行按钮：编号 + 标题与元信息；点击冒泡到卡片打开详情。 */
+function RowButton(props: {
+  readonly ticket: TicketSnapshot
+  readonly display: { readonly text: string; readonly full?: string }
+  readonly focused: boolean
+  readonly now: number
+  readonly row: TicketTreeRow
+  readonly hierarchy: boolean
+}): React.ReactElement {
+  return (
+    <button
+      type="button"
+      data-testid="ticket-row"
+      data-ref={props.ticket.ref}
+      data-focused={props.focused ? 'true' : undefined}
+      style={CARD_STYLE}
+    >
+      <span style={CARD_TITLE_STYLE}>
+        <span
+          data-testid="ticket-ref"
+          style={NUMBER_BADGE_STYLE}
+          {...(props.display.full === undefined ? {} : { title: props.display.full })}
+        >
+          {props.display.text}
+        </span>
+        {props.ticket.title}
+      </span>
+      <MetaRow ticket={props.ticket} now={props.now} row={props.row} hierarchy={props.hierarchy} />
+    </button>
+  )
+}
+
+/** 折叠控件：原生按钮，可 Tab 到达并用 Enter / Space 操作。 */
+function CollapseControl(props: {
+  readonly row: TicketTreeRow
+  readonly onToggle: () => void
+}): React.ReactElement {
+  const t = useMessages()
+  if (!props.row.hasChildren) return (
+      <span data-testid="ticket-collapse-spacer" aria-hidden="true" style={COLLAPSE_SPACER_STYLE} />
+    )
+
+  const label = props.row.expanded ? t('tickets.collapse') : t('tickets.expand')
+  return (
+    <button
+      type="button"
+      data-testid="ticket-collapse"
+      data-ref={props.row.ticket.ref}
+      data-expanded={props.row.expanded ? 'true' : 'false'}
+      aria-expanded={props.row.expanded}
+      aria-label={label}
+      title={label}
+      style={COLLAPSE_BUTTON_STYLE}
+      onClick={(event) => {
+        // 折叠不打开详情：点击只停在这里。
+        event.stopPropagation()
+        props.onToggle()
+      }}
+    >
+      {props.row.expanded ? '▾' : '▸'}
+    </button>
+  )
+}
+
 /** 右列：技能动作在上，建 worktree 在下；窄面板里不挤压标题。 */
 const ACTION_COLUMN_STYLE: React.CSSProperties = {
   display: 'flex',
@@ -192,11 +297,15 @@ const ACTION_COLUMN_STYLE: React.CSSProperties = {
 function MetaRow(props: {
   readonly ticket: TicketSnapshot
   readonly now: number
+  readonly row: TicketTreeRow
+  readonly hierarchy: boolean
 }): React.ReactElement {
   const t = useMessages()
   const { ticket } = props
   const extra = ticket.labels.filter((label) => label !== ticket.category)
   const { shown, hidden } = pickRowLabels(extra, MAX_EXTRA_LABELS)
+  const parent = ticket.parent
+  const parentDisplay = parent === undefined ? undefined : clipRef(parent)
 
   return (
     <span style={CARD_META_STYLE}>
@@ -207,6 +316,20 @@ function MetaRow(props: {
       {ticket.category === null ? null : (
         <span style={CATEGORY_BADGES[ticket.category]}>{ticket.category}</span>
       )}
+      {props.hierarchy && props.row.hasChildren ? (
+        <span data-testid="ticket-children" style={LABEL_BADGE_STYLE}>
+          {t('tickets.childCount', { count: props.row.descendantCount })}
+        </span>
+      ) : null}
+      {props.hierarchy && props.row.parentOutsideView && parentDisplay !== undefined ? (
+        <span
+          data-testid="ticket-parent"
+          style={PARENT_BADGE_STYLE}
+          title={`${parentDisplay.full ?? parentDisplay.text} · ${t('tickets.parentOutsideHint')}`}
+        >
+          {t('tickets.parentOutside', { parent: parentDisplay.text })}
+        </span>
+      ) : null}
       {shown.map((label) => (
         <span key={label} data-testid="ticket-label" style={LABEL_BADGE_STYLE}>
           {label}
@@ -300,12 +423,17 @@ function pickRowLabels(
 
 function refDisplay(ticket: TicketSnapshot): { readonly text: string; readonly full?: string } {
   if (ticket.number !== null) return { text: `#${String(ticket.number)}` }
-  if (ticket.ref.length <= REF_DISPLAY_LIMIT) return { text: ticket.ref }
+  return clipRef(ticket.ref)
+}
+
+/** 过长的引用从中间截断，完整值放在 `full` 里供悬停显示。 */
+function clipRef(ref: string): { readonly text: string; readonly full?: string } {
+  if (ref.length <= REF_DISPLAY_LIMIT) return { text: ref }
 
   const head = Math.ceil((REF_DISPLAY_LIMIT - 1) / 2)
   const tail = REF_DISPLAY_LIMIT - 1 - head
   return {
-    text: `${ticket.ref.slice(0, head)}…${ticket.ref.slice(ticket.ref.length - tail)}`,
-    full: ticket.ref,
+    text: `${ref.slice(0, head)}…${ref.slice(ref.length - tail)}`,
+    full: ref,
   }
 }

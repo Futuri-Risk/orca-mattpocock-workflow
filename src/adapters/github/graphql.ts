@@ -64,12 +64,13 @@ export interface ParsedChanges {
 export function parseIssueGraphql(output: string): ParsedIssues {
   const payload = parseJson(output, 'gh 返回的不是有效 JSON')
   const repository = readRepository(payload)
+  const repositoryName = readRepositoryName(repository)
   const issues = readIssues(repository)
 
   const nodes = issues.nodes
   if (!Array.isArray(nodes)) throw invalid('仓库的 issues.nodes 不是数组')
 
-  const tickets = nodes.map((node, index) => parseIssueNode(node, index))
+  const tickets = nodes.map((node, index) => parseIssueNode(node, index, repositoryName))
   const total = issues.totalCount
   if (typeof total !== 'number' || !Number.isInteger(total) || total < 0) {
     throw invalid('仓库的 issues.totalCount 不是非负整数')
@@ -94,12 +95,13 @@ export function parseIssueGraphql(output: string): ParsedIssues {
 export function parseIssueChangesGraphql(output: string): ParsedChanges {
   const payload = parseJson(output, 'gh 返回的不是有效 JSON')
   const repository = readRepository(payload)
+  const repositoryName = readRepositoryName(repository)
   const issues = readIssues(repository)
 
   const nodes = issues.nodes
   if (!Array.isArray(nodes)) throw invalid('仓库的 issues.nodes 不是数组')
 
-  const tickets = nodes.map((node, index) => parseIssueNode(node, index))
+  const tickets = nodes.map((node, index) => parseIssueNode(node, index, repositoryName))
   const total = readRepositoryTotal(repository)
 
   return {
@@ -170,7 +172,7 @@ function readRepositoryTotal(repository: Record<string, unknown>): number | unde
   return total
 }
 
-function parseIssueNode(value: unknown, index: number): Ticket {
+function parseIssueNode(value: unknown, index: number, repository: string | undefined): Ticket {
   if (!isRecord(value)) throw invalid(`第 ${String(index + 1)} 张票不是对象`)
   const number = value.number
   if (typeof number !== 'number' || !Number.isInteger(number) || number <= 0) {
@@ -180,6 +182,7 @@ function parseIssueNode(value: unknown, index: number): Ticket {
   const title = readString(value.title, `第 ${String(number)} 张票的标题`)
   const state = readState(value.state, number)
   const closedAt = readClosedAt(value.closedAt, number)
+  const parent = readParent(value.parent, repository)
 
   return {
     ref: `#${String(number)}`,
@@ -193,6 +196,7 @@ function parseIssueNode(value: unknown, index: number): Ticket {
     updatedAt: readString(value.updatedAt, `第 ${String(number)} 张票的更新时间`),
     openBlockers: readOpenBlockers(value.issueDependenciesSummary),
     ...(closedAt === undefined ? {} : { closedAt }),
+    ...(parent === undefined ? {} : { parent }),
   }
 }
 
@@ -205,6 +209,38 @@ function parseIssueNode(value: unknown, index: number): Ticket {
 function readAssigneeLogins(value: unknown): readonly string[] {
   if (!isRecord(value)) return []
   return readLogins(value.nodes, AUTHOR_FIELDS)
+}
+
+/**
+ * 仓库的 `nameWithOwner`。父票要靠它区分同仓库与跨仓库：
+ * 跨仓库父票必须保留完整引用，绝不能把裸编号误配到本仓库同号票上。
+ * 响应里没有这个字段时无法安全比较，所有父级引用按缺失处理。
+ */
+function readRepositoryName(repository: Record<string, unknown>): string | undefined {
+  const name = repository.nameWithOwner
+  return typeof name === 'string' && name.length > 0 ? name : undefined
+}
+
+/**
+ * 父票引用：同仓库存 `#编号`，跨仓库存 `owner/name#编号`。
+ * 父票为空、字段不合法或仓库不可见时按无父级处理：层级是增强信息，
+ * 不能因为它拖垮整个列表。
+ */
+function readParent(value: unknown, repository: string | undefined): string | undefined {
+  if (repository === undefined || !isRecord(value)) return undefined
+
+  const number = value.number
+  if (typeof number !== 'number' || !Number.isInteger(number) || number <= 0) return undefined
+
+  const parentRepository = value.repository
+  if (!isRecord(parentRepository)) return undefined
+
+  const nameWithOwner = parentRepository.nameWithOwner
+  if (typeof nameWithOwner !== 'string' || nameWithOwner.length === 0) return undefined
+
+  return nameWithOwner === repository
+    ? `#${String(number)}`
+    : `${nameWithOwner}#${String(number)}`
 }
 
 function readRepository(payload: unknown): Record<string, unknown> {

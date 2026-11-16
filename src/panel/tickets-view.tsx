@@ -15,9 +15,12 @@ import type {
 import type { MessageId } from '../protocol/i18n.ts'
 import { backendLabel } from './backend-label.ts'
 import { ErrorBanner } from './error-banner.tsx'
+import { hierarchyAvailability, type HierarchyAvailability } from './hierarchy-text.ts'
+import { HierarchyNotice } from './hierarchy-notice.tsx'
 import { useMessages } from './i18n.ts'
 import { FolderIcon, PeopleIcon, PlusIcon, RefreshIcon } from './icons.tsx'
 import type { PromptCopy } from './injection.ts'
+import { LayoutToggle } from './layout-toggle.tsx'
 import { newBugPrompt, newFeaturePrompt } from './prompts.ts'
 import { PromptCopyArea } from './prompt-copy.tsx'
 import { formatRelativeTime } from './relative-time.ts'
@@ -26,6 +29,12 @@ import { useNow } from './snapshot-age.ts'
 import { snapshotRefreshNotice, useSnapshotRequest } from './snapshot-request.ts'
 import { useTicketActions } from './ticket-actions.ts'
 import { TicketList } from './ticket-list.tsx'
+import {
+  buildTicketRows,
+  expandAncestors,
+  type TicketLayout,
+  type TicketTreeRow,
+} from './ticket-tree.ts'
 import {
   ACTION_BAR_STYLE,
   AGE_STYLE,
@@ -125,10 +134,8 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
   const clock = props.now ?? Date.now
   const { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore } =
     useSnapshotRequest(props.client, props.workspaceRoot, props.refreshToken ?? 0)
-  const { preference, setFilter, toggleSort, togglePerson, clearPeople } = useViewPreference(
-    props.workspaceRoot,
-    snapshot,
-  )
+  const { preference, setFilter, toggleSort, togglePerson, clearPeople, setLayout } =
+    useViewPreference(props.workspaceRoot, snapshot)
   const nowValue = useNow(clock)
   const actions = useTicketActions(props.workspaceRoot, props.copy)
 
@@ -144,7 +151,46 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
   const visible = view.visible
   const busy = phase === 'loading' || phase === 'refreshing' || appending
 
-  const focused = useFocusedTicket(props.focusRef, props.onFocusHandled, props.workspaceRoot)
+  const focusedTicket = useFocusedTicket(
+    props.focusRef,
+    props.onFocusHandled,
+    props.workspaceRoot,
+  )
+  const focused = focusedTicket.ref
+  const hierarchy: HierarchyAvailability =
+    snapshot === null
+      ? { available: false, hint: t('tickets.layout.unavailable') }
+      : hierarchyAvailability(snapshot.backend, snapshot.hierarchy, t)
+  // 只有快照声明了父子能力时父子布局才生效；偏好本身保留，换回有能力的后端会自动恢复。
+  const layout: TicketLayout =
+    preference.layout === 'hierarchy' && hierarchy.available ? 'hierarchy' : 'flat'
+  const [collapsed, setCollapsed] = React.useState<ReadonlySet<string>>(new Set())
+  // 每个定位请求只展开一次祖先链：之后刷新 / 加载更多不能取消用户刚做的折叠。
+  const expandedFocusToken = React.useRef(0)
+
+  // 折叠是会话内状态：换工作区时清空，避免把上一个仓库的父票引用带过来。
+  React.useEffect(() => {
+    setCollapsed(new Set())
+  }, [props.workspaceRoot])
+
+  // 从概览定位一张被折叠的票时，自动展开它的祖先链；展开状态保留。
+  React.useEffect(() => {
+    if (focusedTicket.ref === null || expandedFocusToken.current === focusedTicket.token) return
+    // 票还没进入当前可见集合（例如首屏未到）：等下一次快照再展开。
+    if (!tickets.some((ticket) => ticket.ref === focusedTicket.ref)) return
+    expandedFocusToken.current = focusedTicket.token
+    setCollapsed((current) => expandAncestors(tickets, current, focusedTicket.ref))
+  }, [focusedTicket, tickets])
+
+  const rows = buildTicketRows(visible, layout, collapsed)
+  const toggleCollapse = (ref: string): void => {
+    setCollapsed((current) => {
+      const next = new Set(current)
+      if (next.has(ref)) next.delete(ref)
+      else next.add(ref)
+      return next
+    })
+  }
 
   return (
     <div
@@ -176,8 +222,11 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             filter={preference.filter}
             sortKey={preference.sortKey}
             direction={preference.direction}
+            layout={preference.layout}
+            hierarchy={hierarchy}
             onFilter={setFilter}
             onSort={toggleSort}
+            onLayout={setLayout}
           />
           {/* 认不出当前用户时整行不出现：不放永远点不出结果的按钮。 */}
           <PeopleFilterRow
@@ -187,9 +236,11 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             onToggle={togglePerson}
             onClear={clearPeople}
           />
+          <HierarchyNotice snapshot={snapshot} preference={preference} layout={layout} />
           <TicketRows
             snapshot={snapshot}
-            visible={visible}
+            rows={rows}
+            layout={layout}
             ticketCount={tickets.length}
             appending={appending}
             copied={actions.copied}
@@ -201,6 +252,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             onLoadMore={loadMore}
             onPick={props.onOpenTicket}
             onSkillAction={actions.onSkillAction}
+            onToggleCollapse={toggleCollapse}
           />
         </>
       ) : phase === 'loading' ? (
@@ -215,21 +267,29 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
 
 /**
  * 从概览跳过来时要定位的票：只高亮，不复制提示词——概览是只读视图。
+ *
+ * `token` 每次外部定位请求递增：同一张票再次从概览点进来也算一次新请求，
+ * 祖先链会重新展开；刷新 / 加载更多不会改动令牌，折叠状态因此得以保留。
  * @param focusRef - 面板传下来的待定位引用。
  * @param onFocusHandled - 定位完成后的回调，面板据此清空待定位状态。
  * @param workspaceRoot - 当前工作区；换工作区时定位失效。
- * @returns 当前要定位的引用；没有时为 null。
+ * @returns 当前要定位的引用与请求令牌。
  */
 function useFocusedTicket(
   focusRef: string | null | undefined,
   onFocusHandled: (() => void) | undefined,
   workspaceRoot: string | undefined,
-): string | null {
-  const [focused, setFocused] = React.useState<string | null>(null)
+): { readonly ref: string | null; readonly token: number } {
+  const [focused, setFocused] = React.useState<{
+    readonly ref: string | null
+    readonly token: number
+  }>({ ref: null, token: 0 })
+  const token = React.useRef(0)
 
   React.useEffect(() => {
     if (focusRef === null || focusRef === undefined) return
-    setFocused(focusRef)
+    token.current += 1
+    setFocused({ ref: focusRef, token: token.current })
     onFocusHandled?.()
   }, [focusRef, onFocusHandled])
 
@@ -238,7 +298,7 @@ function useFocusedTicket(
   React.useEffect(() => {
     if (previousRoot.current === workspaceRoot) return
     previousRoot.current = workspaceRoot
-    setFocused(null)
+    setFocused((current) => (current.ref === null ? current : { ref: null, token: token.current }))
   }, [workspaceRoot])
 
   return focused
@@ -246,7 +306,8 @@ function useFocusedTicket(
 
 function TicketRows(props: {
   readonly snapshot: WorkspaceSnapshot
-  readonly visible: readonly TicketSnapshot[]
+  readonly rows: readonly TicketTreeRow[]
+  readonly layout: TicketLayout
   readonly ticketCount: number
   readonly appending: boolean
   readonly copied: string | null
@@ -258,6 +319,7 @@ function TicketRows(props: {
   readonly onLoadMore: () => void
   readonly onPick: (ticket: TicketSnapshot) => void
   readonly onSkillAction: (ticket: TicketSnapshot) => void
+  readonly onToggleCollapse: (ref: string) => void
 }): React.ReactElement {
   const t = useMessages()
   const remaining = Math.max(0, props.snapshot.total - props.snapshot.loaded)
@@ -270,7 +332,8 @@ function TicketRows(props: {
         })}
       </div>
       <TicketList
-        tickets={props.visible}
+        rows={props.rows}
+        layout={props.layout}
         emptyText={
           props.ticketCount === 0 ? t('tickets.emptyRepo') : t('tickets.emptyFiltered')
         }
@@ -283,6 +346,7 @@ function TicketRows(props: {
         onOpenEnvCheck={props.onOpenEnvCheck}
         onPick={props.onPick}
         onSkillAction={props.onSkillAction}
+        onToggleCollapse={props.onToggleCollapse}
       />
       {/* 翻页入口贴在列表下沿：滚到列表底部就能看到，不随内容滚走。 */}
       {props.snapshot.hasMore ? (
@@ -526,8 +590,12 @@ function Toolbar(props: {
   readonly filter: TicketFilter
   readonly sortKey: TicketSortKey
   readonly direction: SortDirection
+  /** 用户偏好里的布局；不可用时仍显示为选中，由说明解释降级。 */
+  readonly layout: TicketLayout
+  readonly hierarchy: HierarchyAvailability
   readonly onFilter: (filter: TicketFilter) => void
   readonly onSort: (key: TicketSortKey) => void
+  readonly onLayout: (layout: TicketLayout) => void
 }): React.ReactElement {
   const t = useMessages()
   const ascending = props.direction === 'asc'
@@ -551,6 +619,11 @@ function Toolbar(props: {
           />
         ))}
       </div>
+      <LayoutToggle
+        layout={props.layout}
+        hierarchy={props.hierarchy}
+        onLayout={props.onLayout}
+      />
       <div role="group" aria-label={t('tickets.sortGroup')} style={SORT_GROUP_STYLE}>
         <select
           data-testid="sort-key"

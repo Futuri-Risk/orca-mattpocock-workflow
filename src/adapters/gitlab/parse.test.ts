@@ -8,6 +8,7 @@ import {
   parseCurrentUsername,
   parseIssuesPage,
   parseNativeBlockers,
+  parseWorkItemHierarchy,
 } from './parse.ts'
 
 describe('GitLab 工单解析', () => {
@@ -237,5 +238,61 @@ describe('GitLab 人员信息解析', () => {
     expect(parseCurrentUsername('not json')).toBeNull()
     expect(parseCurrentUsername('[]')).toBeNull()
     expect(parseCurrentUsername('{"username":""}')).toBeNull()
+  })
+})
+
+describe('GitLab 工作项层级解析', () => {
+  it('issue / task 父级写成 #iid，epic 父级写成 &iid，其它类型忽略', () => {
+    const output = JSON.stringify({
+      data: {
+        project: {
+          workItems: {
+            nodes: [
+              {
+                iid: '16',
+                workItemType: { name: 'Task' },
+                widgets: [{ parent: { iid: '15', workItemType: { name: 'Issue' } } }],
+              },
+              {
+                iid: '17',
+                workItemType: { name: 'Issue' },
+                widgets: [{ parent: { iid: '3', workItemType: { name: 'Epic' } } }],
+              },
+              {
+                iid: '18',
+                workItemType: { name: 'Issue' },
+                widgets: [{ parent: { iid: '9', workItemType: { name: 'Objective' } } }],
+              },
+              {
+                iid: '19',
+                workItemType: { name: 'Issue' },
+                widgets: [{ parent: null }],
+              },
+            ],
+          },
+        },
+      },
+    })
+
+    expect(parseWorkItemHierarchy(output)).toEqual(
+      new Map([
+        [16, '#15'],
+        [17, '&3'],
+      ]),
+    )
+  })
+
+  it('GraphQL 返回 errors 时按格式错误抛出', () => {
+    const output = JSON.stringify({
+      errors: [{ message: "Field 'workItems' doesn't exist on type 'Project'" }],
+    })
+
+    expect(() => parseWorkItemHierarchy(output)).toThrow(/workItems/)
+  })
+
+  it('缺少工作项数组时返回格式错误', () => {
+    expect(() => parseWorkItemHierarchy(JSON.stringify({ data: { project: {} } }))).toThrow(
+      /workItems/,
+    )
   })
 })

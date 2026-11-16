@@ -50,11 +50,13 @@ const ISSUE_NODES = `nodes {
         author { ${GITHUB_USER_FIELDS} }
         assignees(first: 10) { nodes { login } }
         issueDependenciesSummary { blockedBy }
+        parent { number repository { nameWithOwner } }
       }`
 
 const ISSUE_QUERY = `query ($owner: String!, $name: String!, $limit: Int!, $after: String) {
   viewer { login }
   repository(owner: $owner, name: $name) {
+    nameWithOwner
     issues(first: $limit, after: $after, orderBy: { field: UPDATED_AT, direction: DESC }) {
       totalCount
       pageInfo { hasNextPage endCursor }
@@ -74,6 +76,7 @@ const ISSUE_QUERY = `query ($owner: String!, $name: String!, $limit: Int!, $afte
 const CHANGES_QUERY = `query ($owner: String!, $name: String!, $limit: Int!, $since: DateTime!) {
   viewer { login }
   repository(owner: $owner, name: $name) {
+    nameWithOwner
     repositoryTotal: issues(first: 1) { totalCount }
     issues(first: $limit, orderBy: { field: UPDATED_AT, direction: DESC }, filterBy: { since: $since }) {
       pageInfo { hasNextPage }
@@ -103,6 +106,8 @@ export function createGithubTracker(deps: GithubTrackerDeps): Tracker {
         total: tickets.total,
         tickets: tickets.tickets,
         viewer: tickets.viewer,
+        // GitHub 的子工单是原生父子关系。
+        hierarchy: 'native',
         // 还有下一页时给出游标；这份快照只覆盖到这一页。
         ...(nextCursor === undefined ? {} : { nextCursor }),
       }
@@ -116,6 +121,7 @@ export function createGithubTracker(deps: GithubTrackerDeps): Tracker {
         tickets: changes.tickets,
         truncated: changes.truncated,
         viewer: changes.viewer,
+        hierarchy: 'native',
         ...(changes.total === undefined ? {} : { total: changes.total }),
       }
     },

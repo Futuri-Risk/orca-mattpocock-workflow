@@ -748,6 +748,7 @@ describeTrackerContract('Gitea', {
     fetchedAt: NOW,
   },
   nativeBlockers: { kind: 'snapshot', expected: [0, 1, 0] },
+  hierarchy: { hierarchy: 'none' },
   changes: {
     createTracker: () => createGiteaTracker({ run: recordedRunner().runner, now: () => NOW }),
     since: SINCE,

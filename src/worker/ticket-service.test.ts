@@ -44,6 +44,7 @@ function storedEntry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStore
     loaded: 1,
     total: 1,
     tickets: [ticket(1)],
+    hierarchy: 'native',
     ...overrides,
   }
 }

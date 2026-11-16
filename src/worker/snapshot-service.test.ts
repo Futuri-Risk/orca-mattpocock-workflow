@@ -65,6 +65,7 @@ function page(
     total: options.total ?? tickets.length,
     tickets,
     viewer: options.viewer ?? null,
+    hierarchy: 'native',
     ...(nextCursor === undefined ? {} : { nextCursor }),
   }
 }
@@ -152,6 +153,7 @@ function storeEntry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreE
     loaded: 2,
     total: 6,
     tickets: [ticket(5), ticket(4)],
+    hierarchy: 'native',
     ...overrides,
   }
 }
@@ -197,6 +199,65 @@ describe('快照分页', () => {
     expect(snapshot.total).toBe(6)
     expect(snapshot.hasMore).toBe(true)
     expect(refs(snapshot)).toEqual(['#5', '#4'])
+  })
+
+  it('快照带父子能力与父级引用，加载更多后仍在', async () => {
+    const { tracker } = pagedTracker(
+      new Map([
+        ['', page([ticket(5, { parent: '#1' }), ticket(4)], { total: 3, nextCursor: 'cursor-2' })],
+        ['cursor-2', page([ticket(3)], { total: 3 })],
+      ]),
+    )
+    const snapshots = service(tracker)
+    const first = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+
+    expect(first.hierarchy).toBe('native')
+    expect(first.tickets.find((item) => item.ref === '#5')?.parent).toBe('#1')
+
+    const more = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotLoadMore, { workspaceRoot: ROOT }),
+    )
+
+    expect(more.hierarchy).toBe('native')
+    expect(more.tickets.find((item) => item.ref === '#5')?.parent).toBe('#1')
+  })
+
+  it('后端取不到层级时快照标为无父子能力，列表仍然成功', async () => {
+    const { tracker } = pagedTracker(
+      new Map([['', { ...page([ticket(1)]), hierarchy: 'none' as const }]]),
+    )
+
+    const snapshot = resultOf(
+      await service(tracker).handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+
+    expect(snapshot.hierarchy).toBe('none')
+    expect(refs(snapshot)).toEqual(['#1'])
+  })
+
+  it('阻塞补齐重建快照后父子能力与父级引用仍在', async () => {
+    const pageTracker = pagedTracker(
+      new Map([['', page([ticket(5, { parent: '#9' }), ticket(4)], { total: 2 })]]),
+    )
+    const tracker: Tracker = {
+      ...pageTracker.tracker,
+      resolveBlockers: () =>
+        Promise.resolve({ open: new Map([['#5', 0]]), blockedBy: new Map() }),
+    }
+    const snapshots = service(tracker)
+    const first = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+    expect(first.blockersFinalized).toBe(false)
+
+    const settled = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotResolveBlockers, { workspaceRoot: ROOT }),
+    )
+
+    expect(settled.hierarchy).toBe('native')
+    expect(settled.tickets.find((item) => item.ref === '#5')?.parent).toBe('#9')
   })
 
   it('加载更多按游标追加，直到覆盖全部', async () => {
@@ -329,12 +390,93 @@ describe('快照分页持久化', () => {
     expect(stored?.nextCursor).toBe('cursor-3')
   })
 
+  it('父子能力与父级引用随缓存进出，缓存首屏直接可用', async () => {
+    const store = memoryStore()
+    const online = service(
+      pagedTracker(
+        new Map([['', page([ticket(5, { parent: '#4' }), ticket(4)], { total: 2 })]]),
+      ).tracker,
+      store,
+    )
+    await online.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT })
+
+    const stored = store.entries.get(ROOT)
+    expect(stored?.hierarchy).toBe('native')
+    expect(stored?.tickets.find((item) => item.ref === '#5')?.parent).toBe('#4')
+
+    // 新进程：后端不可用也不能阻止首屏读缓存。
+    const offline = service(
+      {
+        fetchSnapshot: () => Promise.reject(new TrackerError('fetch-failed', '离线')),
+      },
+      store,
+    )
+    const cached = resultOf(
+      await offline.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+
+    expect(cached.source).toBe('cache')
+    expect(cached.hierarchy).toBe('native')
+    expect(cached.tickets.find((item) => item.ref === '#5')?.parent).toBe('#4')
+  })
+
+  it('增量父子能力与库里不一致时退回全量重拉', async () => {
+    const store = memoryStore()
+    store.entries.set(
+      ROOT,
+      storeEntry({ loaded: 1, total: 1, tickets: [ticket(5)] }),
+    )
+    const { tracker, calls, changeCalls } = pagedTracker(
+      new Map([['', page([ticket(5, { parent: '#4' }), ticket(4)], { total: 2 })]]),
+      () => ({ tickets: [ticket(5, { title: '只取到半棵树' })], truncated: false, hierarchy: 'none' }),
+    )
+
+    const snapshot = resultOf(
+      await service(tracker, store).handle(RPC_METHODS.snapshotRefresh, { workspaceRoot: ROOT }),
+    )
+
+    expect(changeCalls).toHaveLength(1)
+    expect(calls).toEqual([undefined])
+    expect(snapshot.hierarchy).toBe('native')
+    expect(refs(snapshot)).toEqual(['#5', '#4'])
+  })
+
+  it('父子能力一致时增量保留未变更票的父级引用', async () => {
+    const store = memoryStore()
+    store.entries.set(
+      ROOT,
+      storeEntry({
+        loaded: 1,
+        total: 1,
+        tickets: [ticket(5, { parent: '#9' })],
+      }),
+    )
+    const { tracker, changeCalls } = pagedTracker(
+      new Map(),
+      () => ({
+        tickets: [ticket(6)],
+        truncated: false,
+        total: 2,
+        hierarchy: 'native',
+      }),
+    )
+
+    const snapshot = resultOf(
+      await service(tracker, store).handle(RPC_METHODS.snapshotRefresh, { workspaceRoot: ROOT }),
+    )
+
+    expect(changeCalls).toHaveLength(1)
+    expect(snapshot.hierarchy).toBe('native')
+    expect(snapshot.tickets.find((item) => item.ref === '#5')?.parent).toBe('#9')
+    expect(snapshot.tickets.find((item) => item.ref === '#6')?.parent).toBeUndefined()
+  })
+
   it('窗口没有游标的旧缓存改走全量重拉，升级后也能继续加载', async () => {
     const store = memoryStore()
     store.entries.set(ROOT, storeEntry())
     const { tracker, calls, changeCalls } = pagedTracker(
       new Map([['', page([ticket(5), ticket(4)], { total: 6, nextCursor: 'cursor-2' })]]),
-      () => ({ tickets: [], truncated: false }),
+      () => ({ tickets: [], truncated: false, hierarchy: 'native' }),
     )
 
     const snapshot = resultOf(
@@ -364,6 +506,7 @@ describe('快照分页持久化', () => {
       tickets: [ticket(1, { updatedAt: '2026-11-21T00:00:00Z' })],
       truncated: false,
       total: 6,
+      hierarchy: 'native',
     }))
 
     const snapshot = resultOf(
@@ -490,6 +633,7 @@ describe('仓库作用域', () => {
     const { tracker, calls, changeCalls } = pagedTracker(new Map(), () => ({
       tickets: [],
       truncated: false,
+      hierarchy: 'native',
     }))
     const snapshots = scopedService({ [MAIN_ROOT]: MAIN_ROOT, [ATTACHED_ROOT]: MAIN_ROOT }, tracker, store)
 
@@ -598,7 +742,7 @@ describe('写操作跨 worktree 可见（端到端）', () => {
         lists.push('list')
         return Promise.resolve(page([ticket(1), ticket(2)]))
       },
-      fetchChanges: () => Promise.resolve({ tickets: [], truncated: false }),
+      fetchChanges: () => Promise.resolve({ tickets: [], truncated: false, hierarchy: 'native' }),
       updateTicket: (_root: string, reference: TicketReference, patch: TicketPatch) => {
         writes.push(`update ${reference.ref} ${JSON.stringify(patch)}`)
         return Promise.resolve()
@@ -764,6 +908,7 @@ describe('当前用户与分配人的快照传播', () => {
       tickets: [ticket(6, { updatedAt: '2026-11-21T00:00:00Z' })],
       truncated: false,
       viewer: 'new',
+      hierarchy: 'native',
     }))
     const first = resultOf(
       await service(updated.tracker, withViewer).handle(RPC_METHODS.snapshotRefresh, {
@@ -776,6 +921,7 @@ describe('当前用户与分配人的快照传播', () => {
     const silent = pagedTracker(new Map(), () => ({
       tickets: [ticket(6, { updatedAt: '2026-11-21T00:00:00Z' })],
       truncated: false,
+      hierarchy: 'native',
     }))
     const second = resultOf(
       await service(silent.tracker, kept).handle(RPC_METHODS.snapshotRefresh, {

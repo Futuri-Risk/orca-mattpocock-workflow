@@ -265,7 +265,7 @@ export const STAT_VALUE_STYLE: CSSProperties = {
 }
 
 /**
- * 筛选与排序同一行；放不下时排序整组换到下一行并靠右，
+ * 筛选、布局与排序同一行；放不下时整组换行，
  * 不会把任何一组挤出页边距。
  */
 export const TOOLBAR_STYLE: CSSProperties = {
@@ -470,6 +470,7 @@ export const CARD_STYLE: CSSProperties = {
   alignItems: 'start',
   rowGap: 2,
   minWidth: 0,
+  flex: '1',
   padding: 0,
   border: 'none',
   background: 'transparent',

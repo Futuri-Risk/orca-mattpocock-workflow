@@ -166,6 +166,28 @@ export const GITLAB_BLOCKED_BY_OUTPUT = JSON.stringify({
     },
   },
 })
+
+/**
+ * 工作项层级查询的录制响应：任务 #16 挂在工单 #15 下。
+ * 父级是 issue / task 时写成 `#iid`；epic 的用例在解析测试里单独构造。
+ */
+export const GITLAB_HIERARCHY_OUTPUT = JSON.stringify({
+  data: {
+    project: {
+      workItems: {
+        nodes: [
+          { iid: '15', workItemType: { name: 'Issue' }, widgets: [{ parent: null }] },
+          {
+            iid: '16',
+            workItemType: { name: 'Task' },
+            widgets: [{ parent: { iid: '15', workItemType: { name: 'Issue' } } }],
+          },
+          { iid: '9', workItemType: { name: 'Issue' }, widgets: [] },
+        ],
+      },
+    },
+  },
+})
 /** 构造 `/projects/:id/issues/:iid` 的详情对象。 */
 export function gitlabIssueDetail(overrides: {
   readonly iid: number

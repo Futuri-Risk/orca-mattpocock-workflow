@@ -231,6 +231,8 @@ function referencedSiblings(
   for (const ticket of probe) {
     if (!movedPaths.has(ticket.ref)) continue
     for (const ref of ticket.blockedBy ?? []) referenced.add(ref)
+    // 只改子文件时父级关系也不能丢：父票文件一并作为上下文读入。
+    if (ticket.parent !== undefined) referenced.add(ticket.parent)
   }
 
   return untouched.filter(({ entry }) => referenced.has(`.scratch/${feature}/issues/${entry.name}`))

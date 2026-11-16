@@ -9,13 +9,16 @@
  */
 import type { BackendKind } from '../protocol/backend.ts'
 import { isRecord } from './json.ts'
-import type { Ticket, TicketAuthor, TicketState } from './ticket.ts'
+import type { Ticket, TicketAuthor, TicketHierarchy, TicketState } from './ticket.ts'
 
 /** 本地快照库的格式版本。版本不符的条目一律按没有缓存处理。 */
 export const SNAPSHOT_STORE_VERSION = 3
 
 /** 缓存文件里存的后端类型。 */
 const BACKENDS: readonly BackendKind[] = ['github', 'gitlab', 'gitea', 'markdown']
+
+/** 缓存文件里认的父子能力。 */
+const HIERARCHIES: readonly TicketHierarchy[] = ['native', 'convention', 'none']
 
 /** 本地快照库里的一条记录：某个工作区最近一次成功拉取的工单数据。 */
 export interface SnapshotStoreEntry {
@@ -51,6 +54,8 @@ export interface SnapshotStoreEntry {
   readonly nextCursor?: string
   /** 当时拿到的工单原始数据，不含判定结果。 */
   readonly tickets: readonly Ticket[]
+  /** 这份快照的父子能力来源；与工单的 `parent` 一起进出缓存。 */
+  readonly hierarchy: TicketHierarchy
 }
 
 /**
@@ -73,6 +78,7 @@ export function serializeSnapshotStoreEntry(entry: SnapshotStoreEntry): string {
     total: entry.total,
     ...(entry.nextCursor === undefined ? {} : { nextCursor: entry.nextCursor }),
     tickets: entry.tickets,
+    hierarchy: entry.hierarchy,
   })
 }
 
@@ -138,6 +144,11 @@ function readEntry(value: unknown): SnapshotStoreEntry | undefined {
   const tickets = readTickets(value.tickets)
   if (tickets === undefined) return undefined
 
+  const hierarchy = value.hierarchy
+  if (typeof hierarchy !== 'string' || !HIERARCHIES.includes(hierarchy as TicketHierarchy)) {
+    return undefined
+  }
+
   return {
     version: SNAPSHOT_STORE_VERSION,
     scopeRoot,
@@ -152,6 +163,7 @@ function readEntry(value: unknown): SnapshotStoreEntry | undefined {
     total,
     ...(nextCursor === undefined ? {} : { nextCursor }),
     tickets,
+    hierarchy: hierarchy as TicketHierarchy,
   }
 }
 
@@ -203,6 +215,9 @@ function readTicket(value: unknown): Ticket | undefined {
   const closedAt = value.closedAt
   if (closedAt !== undefined && typeof closedAt !== 'string') return undefined
 
+  const parent = value.parent
+  if (parent !== undefined && (typeof parent !== 'string' || parent.length === 0)) return undefined
+
   const blockedBy = value.blockedBy
   if (blockedBy !== undefined) {
     const refs = readStringArray(blockedBy)
@@ -220,6 +235,7 @@ function readTicket(value: unknown): Ticket | undefined {
       openBlockers,
       ...(closedAt === undefined ? {} : { closedAt }),
       blockedBy: refs,
+      ...(parent === undefined ? {} : { parent }),
     }
   }
 
@@ -235,6 +251,7 @@ function readTicket(value: unknown): Ticket | undefined {
     updatedAt,
     openBlockers,
     ...(closedAt === undefined ? {} : { closedAt }),
+    ...(parent === undefined ? {} : { parent }),
   }
 }
 

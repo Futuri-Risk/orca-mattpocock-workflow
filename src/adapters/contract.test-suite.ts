@@ -9,6 +9,7 @@ import type {
   BlockerResolution,
   TicketAuthor,
   TicketDetail,
+  TicketHierarchy,
   TicketOptions,
   TicketPatch,
   TicketReference,
@@ -53,6 +54,19 @@ export type NativeBlockersFixture =
       readonly expected: BlockerResolution
     }
   | { readonly kind: 'none'; readonly expected: readonly number[] }
+/**
+ * 后端的父子能力，必须由各后端显式声明：
+ * - `native`：后端提供原生父子工单；
+ * - `convention`：按正文约定推导（本地 Markdown 的 `Parent:`）；
+ * - `none`：没有父子能力，所有工单都不得带父级引用。
+ *
+ * `parents` 给出期望的 `ref → 父级引用`；未列出的票必须没有父级。
+ */
+export interface TicketHierarchyFixture {
+  readonly hierarchy: TicketHierarchy
+  readonly parents?: Readonly<Record<string, string>>
+}
+
 /** 后端实现补全候选能力时给出的工厂与期望输出。 */
 export interface TicketOptionsFixture {
   readonly createTracker: () => Tracker
@@ -103,6 +117,11 @@ export interface TrackerContractFixture {
    * 避免新增后端时悄悄漏掉阻塞能力。
    */
   readonly nativeBlockers: NativeBlockersFixture
+  /**
+   * 父子能力的显式声明。每个后端都必须填写，避免新增后端时悄悄漏掉；
+   * 声明为 `none` 的后端不得出现父级引用。
+   */
+  readonly hierarchy: TicketHierarchyFixture
   /**
    * 增量能力的显式声明。每个后端都必须填写：
    * 实现增量的给出工厂、窗口起点与期望的工单引用，
@@ -169,6 +188,18 @@ function describeListContract(fixture: TrackerContractFixture): void {
     expect(snapshot.total).toBe(0)
     expect(snapshot.repository).toBe(fixture.empty.repository)
     expect(snapshot.fetchedAt).toBe(fixture.empty.fetchedAt)
+    expect(snapshot.hierarchy).toBe(fixture.hierarchy.hierarchy)
+  })
+
+  it('按声明提供父子能力与父级引用', async () => {
+    const snapshot = await fixture.createTracker().fetchSnapshot(fixture.workspaceRoot)
+
+    expect(snapshot.hierarchy).toBe(fixture.hierarchy.hierarchy)
+    const parents = fixture.hierarchy.parents ?? {}
+    for (const ticket of snapshot.tickets) {
+      expect(ticket.parent).toBe(parents[ticket.ref])
+      if (fixture.hierarchy.hierarchy === 'none') expect(ticket.parent).toBeUndefined()
+    }
   })
 
   it('每张票都带 ref 与判定所需的字段', async () => {
@@ -266,6 +297,7 @@ function describeChangesContract(fixture: TrackerContractFixture): void {
     expect(
       viewer === undefined || viewer === null || (typeof viewer === 'string' && viewer.length > 0),
     ).toBe(true)
+    expect(observed?.hierarchy).toBe(fixture.hierarchy.hierarchy)
   })
 }
 

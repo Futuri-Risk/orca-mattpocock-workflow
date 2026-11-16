@@ -7,6 +7,17 @@
 export type TicketState = 'open' | 'closed'
 
 /**
+ * 父子关系的来源：原生、约定或没有。
+ *
+ * - `native`：后端提供原生父子工单（GitHub 子工单、GitLab 工作项层级）；
+ * - `convention`：按正文约定推导（本地 Markdown 的 `Parent:` 行）；
+ * - `none`：当前后端或本次刷新没有父子关系。
+ *
+ * 父子关系只用于组织与展示，不参与开工判定。
+ */
+export type TicketHierarchy = 'native' | 'convention' | 'none'
+
+/**
  * 工单创建人。core 与 protocol 各自声明同形状的类型：core 保持纯逻辑，
  * protocol 保持叶子，两者都不跨目录引用。
  */
@@ -50,6 +61,12 @@ export interface Ticket {
    * 引用不在已加载列表里时，链深度只按已知的未关闭票计算。
    */
   readonly blockedBy?: readonly string[]
+  /**
+   * 父级引用：同列表里的票（可嵌套）或列表外的父级。
+   * 与 {@link Ticket.ref} 同形状；跨仓库父票带 `owner/name#编号`，GitLab epic 带 `&iid`。
+   * 省略表示这张票在顶层。父子关系只用于组织与展示，不参与判定。
+   */
+  readonly parent?: string
 }
 
 /**
@@ -70,6 +87,8 @@ export interface TrackerSnapshot {
   readonly tickets: readonly Ticket[]
   /** 当前登录用户的远端登录名；识别不出时（本地 Markdown）为 null。 */
   readonly viewer: string | null
+  /** 本次快照的父子能力来源；只用于列表布局，不参与判定。 */
+  readonly hierarchy: TicketHierarchy
   /**
    * 还有下一页时给出的后端游标；缺省表示这份快照已经覆盖全部。
    * 宿主按它请求下一段，界面据此决定要不要显示「加载更多」。
@@ -93,6 +112,11 @@ export interface TrackerChanges {
    * 与快照上的 null（查过但没有身份）区分开。
    */
   readonly viewer?: string | null
+  /**
+   * 本次增量拿到的父子能力。与本地快照库的能力不一致时，宿主不发布这次增量，
+   * 退回全量重拉，避免把一棵缺边的树当成完整结果。
+   */
+  readonly hierarchy: TicketHierarchy
 }
 
 /**

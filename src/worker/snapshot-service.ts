@@ -448,6 +448,10 @@ async function mergeIncremental(
     return undefined
   }
 
+  // 父子能力与库里不一致时（例如上次原生、这次层级查询失败），
+  // 这份增量补不出同一棵树，退回全量重拉；全量也取不到时快照标为无能力。
+  if (changes.hierarchy !== base.hierarchy) return undefined
+
   // 不按窗口上限裁剪：增量里可能有窗口外的票被更新，它们现在属于最前面；
   // 裁掉尾部会留下一个游标已经越过的空洞，而那些票再也取不回来。
   const merged = mergeTickets(base.tickets, changes.tickets)
@@ -460,6 +464,7 @@ async function mergeIncremental(
     tickets: merged,
     // 增量没查身份时沿用基准数据里的；查了但没识别出来则按 null 记。
     viewer: changes.viewer === undefined ? base.viewer : changes.viewer,
+    hierarchy: changes.hierarchy,
     // 游标仍指向已加载窗口之后的第一张；窗口大小由已加载数表达。
     ...(nextCursor === undefined ? {} : { nextCursor }),
   }
@@ -561,6 +566,8 @@ async function appendPage(
     tickets: merged,
     // 扩窗响应没带身份时沿用当前已知身份，不因为翻页把筛选行清掉。
     viewer: withViewerFallback(page, entry.raw.viewer).viewer,
+    // 父子能力属于整份快照；追加一页不改变它的来源。
+    hierarchy: entry.raw.hierarchy,
     ...(nextCursor === undefined ? {} : { nextCursor }),
   }
   return await publish(deps, cache, target, resolved, raw, startedAt, 'more')
@@ -841,6 +848,7 @@ function buildSnapshot(
     loaded: tickets.length,
     total: raw.total,
     hasMore: raw.nextCursor !== undefined,
+    hierarchy: raw.hierarchy,
     blockersFinalized,
     metrics,
     source,
@@ -863,6 +871,7 @@ function buildSnapshot(
       openBlockers: ticket.openBlockers,
       ...(ticket.closedAt === undefined ? {} : { closedAt: ticket.closedAt }),
       ...(ticket.blockedBy === undefined ? {} : { blockedBy: ticket.blockedBy }),
+      ...(ticket.parent === undefined ? {} : { parent: ticket.parent }),
     })),
   }
 }

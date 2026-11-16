@@ -184,6 +184,7 @@ export async function writeStored(
     total: raw.total,
     ...(raw.nextCursor === undefined ? {} : { nextCursor: raw.nextCursor }),
     tickets: raw.tickets,
+    hierarchy: raw.hierarchy,
   }
   try {
     await store.write(entry)
@@ -226,6 +227,7 @@ export function buildStoredSnapshot(
     loaded: tickets.length,
     total: raw.total,
     hasMore: raw.nextCursor !== undefined,
+    hierarchy: stored.hierarchy,
     blockersFinalized: false,
     metrics,
     source: 'cache',
@@ -248,6 +250,7 @@ export function buildStoredSnapshot(
       openBlockers: ticket.openBlockers,
       ...(ticket.closedAt === undefined ? {} : { closedAt: ticket.closedAt }),
       ...(ticket.blockedBy === undefined ? {} : { blockedBy: ticket.blockedBy }),
+      ...(ticket.parent === undefined ? {} : { parent: ticket.parent }),
     })),
   }
 }
@@ -365,6 +368,7 @@ function rawOf(stored: SnapshotStoreEntry): TrackerSnapshot {
     total: stored.total,
     tickets: stored.tickets,
     viewer: stored.viewer,
+    hierarchy: stored.hierarchy,
     ...(stored.nextCursor === undefined ? {} : { nextCursor: stored.nextCursor }),
   }
 }

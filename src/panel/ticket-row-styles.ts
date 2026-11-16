@@ -79,3 +79,48 @@ export const ROW_AGE_STYLE: CSSProperties = {
   lineHeight: '18px',
   whiteSpace: 'nowrap',
 }
+
+/**
+ * 折叠按钮：真正的原生按钮，放在卡片左侧的独立槽位里。
+ * 尺寸固定，折叠与展开只换箭头，不让标题左右跳动。
+ */
+export const COLLAPSE_BUTTON_STYLE: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flex: 'none',
+  width: 18,
+  height: 20,
+  padding: 0,
+  border: 'none',
+  borderRadius: 4,
+  background: 'transparent',
+  color: COLORS.secondary,
+  cursor: 'pointer',
+  font: 'inherit',
+  fontSize: 10,
+  lineHeight: '20px',
+}
+
+/** 叶子行占住折叠按钮的位置，让同层的标题左缘对齐。 */
+export const COLLAPSE_SPACER_STYLE: CSSProperties = {
+  width: 18,
+  height: 20,
+  flex: 'none',
+}
+
+/** 父子模式的行内容：折叠槽位 + 行按钮，整体仍是卡片的一列。 */
+export const CARD_MAIN_STYLE: CSSProperties = {
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: 4,
+  minWidth: 0,
+}
+
+/** 父级不在列表时的徽标：沿用标签徽标，但允许省略长引用。 */
+export const PARENT_BADGE_STYLE: CSSProperties = {
+  ...LABEL_BADGE_STYLE,
+  maxWidth: '26ch',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+}

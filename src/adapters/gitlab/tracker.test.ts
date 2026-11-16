@@ -12,6 +12,7 @@ import {
 import {
   GITLAB_BLOCKED_BY_OUTPUT,
   GITLAB_CHANGES_OUTPUT,
+  GITLAB_HIERARCHY_OUTPUT,
   GITLAB_ISSUES,
   GITLAB_ISSUES_OUTPUT,
   GITLAB_LINKS,
@@ -34,22 +35,31 @@ interface RunnerOptions {
   /** 带 `updated_after` 的增量查询用这一组输出。 */
   readonly changes?: (page: number) => string
   readonly links?: (iid: number) => string
+  /** 阻塞计数查询用这一组输出。 */
   readonly graphql?: () => string
   /** `glab api user` 的响应；默认返回录制里的当前用户。 */
   readonly user?: () => string
+  /** 工作项层级查询用这一组输出。 */
+  readonly hierarchy?: () => string
 }
 
 interface RecordedRunner {
   readonly runner: CommandRunner
   readonly calls: readonly (readonly string[])[]
   readonly linkCalls: readonly number[]
+  /** 全部 GraphQL 调用，按发生顺序。 */
   readonly graphqlCalls: readonly string[]
+  /** 只含阻塞计数查询，避免层级查询混进阻塞断言。 */
+  readonly blockerGraphqlCalls: readonly string[]
+  readonly hierarchyGraphqlCalls: readonly string[]
 }
 
 function recordedRunner(options: RunnerOptions = {}): RecordedRunner {
   const calls: string[][] = []
   const linkCalls: number[] = []
   const graphqlCalls: string[] = []
+  const blockerGraphqlCalls: string[] = []
+  const hierarchyGraphqlCalls: string[] = []
   const runner: CommandRunner = (command, args) => {
     calls.push([command, ...args])
     if (command === 'git') {
@@ -68,7 +78,16 @@ function recordedRunner(options: RunnerOptions = {}): RecordedRunner {
     }
 
     if (endpoint === 'graphql') {
-      graphqlCalls.push(args.join(' '))
+      const query = args.join(' ')
+      graphqlCalls.push(query)
+      if (query.includes('workItems')) {
+        hierarchyGraphqlCalls.push(query)
+        return Promise.resolve({
+          stdout: (options.hierarchy ?? (() => GITLAB_HIERARCHY_OUTPUT))(),
+          stderr: '',
+        })
+      }
+      blockerGraphqlCalls.push(query)
       return Promise.resolve({
         stdout: (options.graphql ?? (() => GITLAB_BLOCKED_BY_OUTPUT))(),
         stderr: '',
@@ -94,7 +113,7 @@ function recordedRunner(options: RunnerOptions = {}): RecordedRunner {
       stderr: '',
     })
   }
-  return { runner, calls, linkCalls, graphqlCalls }
+  return { runner, calls, linkCalls, graphqlCalls, blockerGraphqlCalls, hierarchyGraphqlCalls }
 }
 
 function trackerWith(
@@ -105,6 +124,8 @@ function trackerWith(
   readonly calls: readonly (readonly string[])[]
   readonly linkCalls: readonly number[]
   readonly graphqlCalls: readonly string[]
+  readonly blockerGraphqlCalls: readonly string[]
+  readonly hierarchyGraphqlCalls: readonly string[]
 } {
   const recorded = recordedRunner(options)
   return {
@@ -116,6 +137,8 @@ function trackerWith(
     calls: recorded.calls,
     linkCalls: recorded.linkCalls,
     graphqlCalls: recorded.graphqlCalls,
+    blockerGraphqlCalls: recorded.blockerGraphqlCalls,
+    hierarchyGraphqlCalls: recorded.hierarchyGraphqlCalls,
   }
 }
 
@@ -193,6 +216,76 @@ describe('GitLab 工单后端', () => {
     expect(snapshot.tickets[0]?.assignees).toEqual(['alice'])
   })
 
+  it('按工作项层级把任务挂在工单下', async () => {
+    const { tracker, hierarchyGraphqlCalls } = trackerWith()
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.hierarchy).toBe('native')
+    expect(snapshot.tickets.find((ticket) => ticket.ref === '#16')?.parent).toBe('#15')
+    expect(snapshot.tickets.find((ticket) => ticket.ref === '#15')?.parent).toBeUndefined()
+    expect(hierarchyGraphqlCalls).toHaveLength(1)
+    expect(hierarchyGraphqlCalls[0]).toContain('workItems')
+    expect(hierarchyGraphqlCalls[0]).toContain('"15"')
+    expect(hierarchyGraphqlCalls[0]).toContain('"16"')
+  })
+
+  it('父票不在已加载窗口时仍保留父级引用', async () => {
+    const { tracker } = trackerWith({
+      hierarchy: () =>
+        JSON.stringify({
+          data: {
+            project: {
+              workItems: {
+                nodes: [
+                  {
+                    iid: '16',
+                    workItemType: { name: 'Task' },
+                    widgets: [{ parent: { iid: '99', workItemType: { name: 'Issue' } } }],
+                  },
+                ],
+              },
+            },
+          },
+        }),
+    })
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.hierarchy).toBe('native')
+    expect(snapshot.tickets.find((ticket) => ticket.ref === '#16')?.parent).toBe('#99')
+  })
+
+  it('层级查询失败时列表仍然返回，本次父子能力为无', async () => {
+    const { tracker } = trackerWith({
+      hierarchy: () => {
+        throw new CommandError('failed', 'glab 退出码 1', 'HTTP 502: Bad Gateway', 1)
+      },
+    })
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.hierarchy).toBe('none')
+    expect(snapshot.tickets).toHaveLength(3)
+    expect(snapshot.tickets.every((ticket) => ticket.parent === undefined)).toBe(true)
+  })
+
+  it('层级查询按 100 个工作项一批，不逐票请求', async () => {
+    const many = Array.from({ length: 250 }, (_, index) =>
+      gitlabIssue({ iid: index + 1, title: `票 ${String(index + 1)}` }),
+    )
+    const { tracker, hierarchyGraphqlCalls } = trackerWith({
+      issues: (page) => issuesJson(many.slice((page - 1) * 100, page * 100)),
+    })
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.loaded).toBe(250)
+    expect(hierarchyGraphqlCalls).toHaveLength(3)
+    expect(hierarchyGraphqlCalls[0]).toContain('first: 100')
+    expect(hierarchyGraphqlCalls[2]).toContain('first: 50')
+  })
+
   it('超过一页时按页循环到短页为止', async () => {
     const recorded = recordedRunner({
       issues: (page) =>
@@ -210,17 +303,20 @@ describe('GitLab 工单后端', () => {
   })
 
   it('首屏列表不发任何阻塞相关请求，阻塞数先按描述回退', async () => {
-    const { tracker, linkCalls, graphqlCalls } = trackerWith({ issues: describedIssuesJson })
+    const { tracker, linkCalls, blockerGraphqlCalls, hierarchyGraphqlCalls } = trackerWith({
+      issues: describedIssuesJson,
+    })
 
     const snapshot = await tracker.fetchSnapshot('/workspace')
 
     expect(linkCalls).toEqual([])
-    expect(graphqlCalls).toEqual([])
+    expect(blockerGraphqlCalls).toEqual([])
+    expect(hierarchyGraphqlCalls).toHaveLength(1)
     expect(snapshot.tickets.map((ticket) => ticket.openBlockers)).toEqual([0, 1, 0])
   })
 
   it('列表带 blocking_issues_count 时补齐阶段直接判定支持，不发能力探测', async () => {
-    const { tracker, linkCalls, graphqlCalls } = trackerWith({
+    const { tracker, linkCalls, blockerGraphqlCalls } = trackerWith({
       issues: () =>
         issuesJson([
           { ...gitlabIssue({ iid: 15, title: '前置任务' }), blocking_issues_count: 0 },
@@ -236,7 +332,7 @@ describe('GitLab 工单后端', () => {
     // 计数走批量查询；阻塞引用要票号，只对真有阻塞的票再读一次 links，
     // 这次请求失败时只丢引用，计数仍然可用。
     expect(linkCalls).toEqual([16])
-    expect(graphqlCalls).toHaveLength(1)
+    expect(blockerGraphqlCalls).toHaveLength(1)
     expect(native.open).toEqual(
       new Map([
         ['#15', 0],
@@ -255,13 +351,13 @@ describe('GitLab 工单后端', () => {
   })
 
   it('能力探测按实例主机缓存，重复刷新不重复探测', async () => {
-    const { tracker, linkCalls, graphqlCalls } = trackerWith()
+    const { tracker, linkCalls, blockerGraphqlCalls } = trackerWith()
 
     await listThenResolve(tracker)
     await listThenResolve(tracker)
 
     expect(linkCalls).toEqual([15, 16, 16])
-    expect(graphqlCalls).toHaveLength(2)
+    expect(blockerGraphqlCalls).toHaveLength(2)
   })
 
   it('多个 tracker 共用能力缓存时，同一主机只探测一次', async () => {
@@ -274,23 +370,23 @@ describe('GitLab 工单后端', () => {
 
     expect(first.linkCalls).toEqual([15, 16])
     expect(second.linkCalls).toEqual([16])
-    expect(second.graphqlCalls).toHaveLength(1)
+    expect(second.blockerGraphqlCalls).toHaveLength(1)
   })
 
   it('原生阻塞数随一次批量查询取回，阻塞引用另读一次 links', async () => {
-    const { tracker, graphqlCalls } = trackerWith()
+    const { tracker, blockerGraphqlCalls } = trackerWith()
 
     const native = await listThenResolve(tracker)
 
-    expect(graphqlCalls).toHaveLength(1)
-    expect(graphqlCalls[0]).toContain('"15"')
-    expect(graphqlCalls[0]).toContain('"16"')
+    expect(blockerGraphqlCalls).toHaveLength(1)
+    expect(blockerGraphqlCalls[0]).toContain('"15"')
+    expect(blockerGraphqlCalls[0]).toContain('"16"')
     expect(native.open.get('#16')).toBe(1)
     expect(native.blockedBy.get('#16')).toEqual(['#15', '#7'])
   })
 
   it('探测命中 200 + 空数组时不补齐，且不再请求批量计数', async () => {
-    const { tracker, linkCalls, graphqlCalls } = trackerWith({
+    const { tracker, linkCalls, blockerGraphqlCalls } = trackerWith({
       issues: describedIssuesJson,
       links: () => '[]',
     })
@@ -298,7 +394,7 @@ describe('GitLab 工单后端', () => {
     const native = await listThenResolve(tracker)
 
     expect(linkCalls).toEqual([16])
-    expect(graphqlCalls).toEqual([])
+    expect(blockerGraphqlCalls).toEqual([])
     expect(native.open.size).toBe(0)
   })
 
@@ -307,7 +403,7 @@ describe('GitLab 工单后端', () => {
     '404 Not Found: native blocking links are not available',
     'HTTP 502: Bad Gateway',
   ])('探测失败（%s）时不补齐且不重试', async (stderr) => {
-    const { tracker, linkCalls, graphqlCalls } = trackerWith({
+    const { tracker, linkCalls, blockerGraphqlCalls } = trackerWith({
       issues: describedIssuesJson,
       links: () => {
         throw new CommandError('failed', 'glab 退出码 1', stderr, 1)
@@ -318,7 +414,7 @@ describe('GitLab 工单后端', () => {
     await listThenResolve(tracker)
 
     expect(linkCalls).toEqual([16])
-    expect(graphqlCalls).toEqual([])
+    expect(blockerGraphqlCalls).toEqual([])
     expect(native.open.size).toBe(0)
   })
 
@@ -331,7 +427,7 @@ describe('GitLab 工单后端', () => {
   })
 
   it('没有列表线索时补齐阶段自己读远端并探测第一张票', async () => {
-    const { tracker, linkCalls, graphqlCalls } = trackerWith()
+    const { tracker, linkCalls, blockerGraphqlCalls } = trackerWith()
 
     const native = await tracker.resolveBlockers?.('/workspace', [
       { ref: '#15', number: 15 },
@@ -339,13 +435,13 @@ describe('GitLab 工单后端', () => {
     ])
 
     expect(linkCalls).toEqual([15, 16])
-    expect(graphqlCalls).toHaveLength(1)
+    expect(blockerGraphqlCalls).toHaveLength(1)
     expect(native?.open.get('#16')).toBe(1)
     expect(native?.blockedBy.get('#16')).toEqual(['#15', '#7'])
   })
 
   it('批量计数失败时抛错，由宿主保留首屏的描述回退', async () => {
-    const { tracker, graphqlCalls } = trackerWith({
+    const { tracker, blockerGraphqlCalls } = trackerWith({
       issues: describedIssuesJson,
       links: () => JSON.stringify([{ iid: 15, link_type: 'is_blocked_by' }]),
       graphql: () => {
@@ -354,18 +450,18 @@ describe('GitLab 工单后端', () => {
     })
 
     await expect(listThenResolve(tracker)).rejects.toThrow()
-    expect(graphqlCalls).toHaveLength(1)
+    expect(blockerGraphqlCalls).toHaveLength(1)
   })
 
   it('没有开放票时不做能力探测', async () => {
-    const { tracker, linkCalls, graphqlCalls } = trackerWith({
+    const { tracker, linkCalls, blockerGraphqlCalls } = trackerWith({
       issues: () => issuesJson([gitlabIssue({ iid: 9, title: '已关闭', state: 'closed' })]),
     })
 
     const native = await listThenResolve(tracker)
 
     expect(linkCalls).toEqual([])
-    expect(graphqlCalls).toEqual([])
+    expect(blockerGraphqlCalls).toEqual([])
     expect(native.open.size).toBe(0)
   })
 
@@ -825,6 +921,10 @@ describeTrackerContract('GitLab', {
       // 只有真有未关闭阻塞的票才读一次 links，#15 没有阻塞票，没有原生引用。
       blockedBy: new Map([['#16', ['#15', '#7']]]),
     },
+  },
+  hierarchy: {
+    hierarchy: 'native',
+    parents: { '#16': '#15' },
   },
   changes: {
     createTracker: () => createGitlabTracker({ run: recordedRunner().runner, now: () => NOW }),

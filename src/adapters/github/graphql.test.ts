@@ -47,6 +47,44 @@ describe('GraphQL 工单解析', () => {
     expect(parsed.tickets.find((ticket) => ticket.number === 7)?.openBlockers).toBe(2)
   })
 
+  it('同仓库父票存 #编号，跨仓库父票存完整引用', () => {
+    const parsed = parseIssueGraphql(GH_ISSUES_OUTPUT)
+    const parents = new Map(parsed.tickets.map((ticket) => [ticket.ref, ticket.parent]))
+
+    expect(parents.get('#16')).toBe('#15')
+    expect(parents.get('#12')).toBe('someone/other#42')
+    expect(parents.get('#15')).toBeUndefined()
+    expect(parents.get('#9')).toBeUndefined()
+    expect(parents.get('#7')).toBeUndefined()
+  })
+
+  it('父票仓库不可见时按无父级处理', () => {
+    const output = JSON.stringify({
+      data: {
+        repository: {
+          nameWithOwner: 'cnzgray/repo',
+          issues: {
+            totalCount: 1,
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [
+              {
+                number: 1,
+                title: '父票不可见',
+                state: 'OPEN',
+                createdAt: '2026-01-01T00:00:00Z',
+                updatedAt: '2026-01-01T00:00:00Z',
+                labels: { nodes: [] },
+                parent: { number: 15, repository: null },
+              },
+            ],
+          },
+        },
+      },
+    })
+
+    expect(parseIssueGraphql(output).tickets[0]?.parent).toBeUndefined()
+  })
+
   it('缺少依赖汇总时按 0 处理', () => {
     const output = JSON.stringify({
       data: {

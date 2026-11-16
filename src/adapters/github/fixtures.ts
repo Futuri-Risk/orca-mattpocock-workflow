@@ -18,6 +18,7 @@ const RECORDED_ISSUES = {
   data: {
     viewer: { login: 'cnzgray' },
     repository: {
+      nameWithOwner: 'cnzgray/dsh-mattpocock-workflow',
       issues: {
         totalCount: 30,
         pageInfo: { hasNextPage: false, endCursor: null },
@@ -43,6 +44,10 @@ const RECORDED_ISSUES = {
             author: AUTHOR,
             assignees: { nodes: [{ login: 'alice' }, { login: 'bob' }] },
             issueDependenciesSummary: { blockedBy: 1 },
+            parent: {
+              number: 15,
+              repository: { nameWithOwner: 'cnzgray/dsh-mattpocock-workflow' },
+            },
           },
           {
             number: 12,
@@ -53,6 +58,7 @@ const RECORDED_ISSUES = {
             labels: { nodes: [{ name: 'bug' }] },
             author: AUTHOR,
             issueDependenciesSummary: { blockedBy: 0 },
+            parent: { number: 42, repository: { nameWithOwner: 'someone/other' } },
           },
           {
             number: 9,
@@ -63,6 +69,7 @@ const RECORDED_ISSUES = {
             labels: { nodes: [{ name: 'needs-triage' }] },
             author: AUTHOR,
             issueDependenciesSummary: { blockedBy: 0 },
+            parent: null,
           },
           {
             number: 7,
@@ -134,6 +141,7 @@ export const GH_CHANGES_OUTPUT = JSON.stringify(
     data: {
       viewer: { login: 'cnzgray' },
       repository: {
+        nameWithOwner: 'cnzgray/dsh-mattpocock-workflow',
         repositoryTotal: { totalCount: 30 },
         issues: {
           pageInfo: { hasNextPage: false },
@@ -147,6 +155,10 @@ export const GH_CHANGES_OUTPUT = JSON.stringify(
               labels: { nodes: [{ name: 'enhancement' }, { name: 'ready-for-agent' }] },
               author: AUTHOR,
               issueDependenciesSummary: { blockedBy: 1 },
+              parent: {
+                number: 15,
+                repository: { nameWithOwner: 'cnzgray/dsh-mattpocock-workflow' },
+              },
             },
             {
               number: 12,
@@ -158,6 +170,7 @@ export const GH_CHANGES_OUTPUT = JSON.stringify(
               labels: { nodes: [{ name: 'bug' }] },
               author: AUTHOR,
               issueDependenciesSummary: { blockedBy: 0 },
+              parent: { number: 42, repository: { nameWithOwner: 'someone/other' } },
             },
           ],
         },

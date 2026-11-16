@@ -73,7 +73,7 @@ const TREE: TreeSpec = {
       content: '# 令牌刷新\n\nStatus: resolved\n',
     },
     '/ws/.scratch/login/issues/02-bug.md': {
-      content: '# 会话 bug\n\nStatus: ready-for-agent\nBlocked by: 01, 03\n',
+      content: '# 会话 bug\n\nStatus: ready-for-agent\nBlocked by: 01, 03\nParent: 01\n',
     },
     '/ws/.scratch/login/issues/03-session.md': {
       content:
@@ -96,7 +96,7 @@ const MOVED_TREE: TreeSpec = {
   files: {
     ...TREE.files,
     '/ws/.scratch/login/issues/02-bug.md': {
-      content: '# 会话 bug\n\nStatus: ready-for-agent\nBlocked by: 01, 03\n',
+      content: '# 会话 bug\n\nStatus: ready-for-agent\nBlocked by: 01, 03\nParent: 01\n',
       updatedAt: UPDATED + 60_000,
     },
   },
@@ -147,6 +147,7 @@ describe('本地 Markdown 工单后端', () => {
       total: 0,
       tickets: [],
       viewer: null,
+      hierarchy: 'convention',
     })
   })
 
@@ -168,6 +169,59 @@ describe('本地 Markdown 工单后端', () => {
     await expect(trackerFor(tree).fetchSnapshot('/ws')).rejects.toMatchObject({
       code: 'markdown-read-failed',
     })
+  })
+})
+
+describe('本地 Markdown Parent 约定', () => {
+  const BUG = '/ws/.scratch/login/issues/02-bug.md'
+  const TOKEN = '.scratch/login/issues/01-token.md'
+
+  function treeWith(content: string): TreeSpec {
+    return {
+      directories: TREE.directories,
+      files: { ...TREE.files, [BUG]: { content } },
+    }
+  }
+
+  it('取 Parent: 行里的第一个数字，指向同一 feature 的工单', async () => {
+    const snapshot = await trackerFor(treeWith('# 会话 bug\n\nStatus: open\nParent: 01, 03\n'))
+      .fetchSnapshot('/ws')
+
+    expect(snapshot.tickets.find((ticket) => ticket.ref === '.scratch/login/issues/02-bug.md')?.parent)
+      .toBe(TOKEN)
+  })
+
+  it('Parent: 只在 ## Comments 之前生效', async () => {
+    const snapshot = await trackerFor(
+      treeWith('# 会话 bug\n\nStatus: open\n\n## Comments\n\nParent: 01\n'),
+    ).fetchSnapshot('/ws')
+
+    expect(
+      snapshot.tickets.find((ticket) => ticket.ref === '.scratch/login/issues/02-bug.md')?.parent,
+    ).toBeUndefined()
+  })
+
+  it('指向不存在的票、指向自己或跨 feature 时按无父级处理', async () => {
+    const missing = await trackerFor(treeWith('# 会话 bug\n\nStatus: open\nParent: 09\n'))
+      .fetchSnapshot('/ws')
+    const self = await trackerFor(treeWith('# 会话 bug\n\nStatus: open\nParent: 02\n'))
+      .fetchSnapshot('/ws')
+    const cross = await trackerFor({
+      directories: TREE.directories,
+      files: {
+        ...TREE.files,
+        '/ws/.scratch/billing/issues/05-refund.md': {
+          content: '# 退款流程\n\nStatus: claimed\nParent: 01\n',
+        },
+      },
+    }).fetchSnapshot('/ws')
+
+    const bugRef = '.scratch/login/issues/02-bug.md'
+    expect(missing.tickets.find((ticket) => ticket.ref === bugRef)?.parent).toBeUndefined()
+    expect(self.tickets.find((ticket) => ticket.ref === bugRef)?.parent).toBeUndefined()
+    expect(
+      cross.tickets.find((ticket) => ticket.ref === '.scratch/billing/issues/05-refund.md')?.parent,
+    ).toBeUndefined()
   })
 })
 
@@ -201,6 +255,7 @@ describe('本地 Markdown 工单增量', () => {
     const full = snapshot.tickets.find((ticket) => ticket.ref === '.scratch/login/issues/02-bug.md')
     expect(changed?.openBlockers).toBe(full?.openBlockers)
     expect(changed?.blockedBy).toEqual(full?.blockedBy)
+    expect(changed?.parent).toBe(full?.parent)
   })
 
   it('工作区还没有 .scratch 时返回空增量', async () => {
@@ -326,6 +381,12 @@ describeTrackerContract('本地 Markdown', {
     fetchedAt: NOW,
   },
   nativeBlockers: { kind: 'none', expected: [0, 0, 1, 0] },
+  hierarchy: {
+    hierarchy: 'convention',
+    parents: {
+      '.scratch/login/issues/02-bug.md': '.scratch/login/issues/01-token.md',
+    },
+  },
   changes: {
     createTracker: () => trackerFor(MOVED_TREE),
     since: UPDATED,

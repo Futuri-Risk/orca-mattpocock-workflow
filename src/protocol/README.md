@@ -50,9 +50,12 @@ worktree 另有两个错误码：`orca-missing`（找不到 Orca 命令行，属
 `WorkspaceSnapshot`：
 
 - 工单级：判定结果（`status`、`category`）、关闭时间（`closedAt`，能给才给）、阻塞引用（`blockedBy`，
-  能给才给；GitHub 列表查询没有依赖边）与分配人登录名（`assignees`，没有分配人时为空数组）；
-- 快照级：仓库标识、后端、实例主机、拉取时间、已加载数与总数、阻塞是否定稿，以及当前登录用户
-  （`viewer`，识别不出时为 null；人员筛选靠它判断「我」是谁）；
+  能给才给；GitHub 列表查询没有依赖边）、分配人登录名（`assignees`，没有分配人时为空数组）与父级引用
+  （`parent`，能给才给；跨仓库父票是 `owner/name#编号`，GitLab epic 是 `&iid`）；
+- 快照级：仓库标识、后端、实例主机、拉取时间、已加载数与总数、阻塞是否定稿、当前登录用户
+  （`viewer`，识别不出时为 null；人员筛选靠它判断「我」是谁），以及父子能力来源
+  （`hierarchy`：`native` / `convention` / `none`）。`none` 时面板禁用父子布局并说明，
+  平铺照常；父子关系不参与判定、统计或指标；
 - 分页：`hasMore` 为 true 时后端还有未加载的工单，界面据此给出「加载更多」入口。游标只在宿主内部
   流转（快照库条目里的 `nextCursor`），不暴露给面板；一次取全的后端 `hasMore` 恒为 false；
 - 指标级：`metrics`，含三个压力维度（`PressureDimension` / `PressureTier`）、关键数字、样本覆盖度

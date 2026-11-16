@@ -757,6 +757,10 @@ describeTrackerContract('GitHub', {
     fetchedAt: NOW,
   },
   nativeBlockers: { kind: 'snapshot', expected: [0, 1, 0, 0, 2] },
+  hierarchy: {
+    hierarchy: 'native',
+    parents: { '#16': '#15', '#12': 'someone/other#42' },
+  },
   changes: {
     createTracker: () => createGithubTracker({ run: changesRunner().runner, now: () => NOW }),
     since: SINCE,

@@ -132,6 +132,81 @@ export function parseBlockedByCounts(output: string): ReadonlyMap<number, number
 }
 
 /**
+ * 从批量 GraphQL 工作项查询里读取每张票的父级引用。
+ *
+ * 只保留同项目内的 issue / task 父子边，父级写成 `#iid`；
+ * epic 不在工单列表里，写成 `&iid` 作为列表外父级引用。
+ * 其它工作项类型、缺失父级与畸形父级都忽略，不让层级拖垮列表。
+ * @param output - `glab api graphql` 的工作项层级响应。
+ * @returns 工单编号 → 父级引用。
+ * @throws {TrackerError} 响应带 GraphQL 错误或缺少工作项数组。
+ */
+export function parseWorkItemHierarchy(output: string): ReadonlyMap<number, string> {
+  const payload = parseJson(output)
+  if (!isRecord(payload)) throw invalid('工作项层级响应不是对象')
+
+  const errors: unknown = payload.errors
+  if (Array.isArray(errors) && errors.length > 0) {
+    const first: unknown = errors[0]
+    const message =
+      isRecord(first) && typeof first.message === 'string' ? first.message : '未知 GraphQL 错误'
+    throw invalid(`工作项层级查询失败：${message}`)
+  }
+
+  const data = payload.data
+  if (!isRecord(data)) throw invalid('工作项层级响应缺少 data')
+  const project = data.project
+  if (!isRecord(project)) throw invalid('工作项层级响应缺少 project')
+  const workItems = project.workItems
+  if (!isRecord(workItems)) throw invalid('工作项层级响应缺少 project.workItems')
+  const nodes = workItems.nodes
+  if (!Array.isArray(nodes)) throw invalid('工作项层级响应的 nodes 不是数组')
+
+  const parents = new Map<number, string>()
+  for (const node of nodes) {
+    if (!isRecord(node)) continue
+    const iid = lenientIid(node.iid)
+    if (iid === undefined) continue
+
+    const parent = readParentNode(node.widgets)
+    if (parent === undefined) continue
+
+    const parentIid = lenientIid(parent.iid)
+    if (parentIid === undefined) continue
+
+    const type = parent.workItemType
+    const typeName = isRecord(type) && typeof type.name === 'string' ? type.name.toLowerCase() : ''
+    if (typeName === 'issue' || typeName === 'task') {
+      parents.set(iid, `#${String(parentIid)}`)
+    } else if (typeName === 'epic') {
+      parents.set(iid, `&${String(parentIid)}`)
+    }
+  }
+  return parents
+}
+
+/** 从 `widgets` 里找 `WorkItemWidgetHierarchy` 的父级节点；没有时忽略。 */
+function readParentNode(value: unknown): Record<string, unknown> | undefined {
+  if (!Array.isArray(value)) return undefined
+  for (const widget of value) {
+    if (!isRecord(widget) || !Object.hasOwn(widget, 'parent')) continue
+    const parent = widget.parent
+    if (isRecord(parent)) return parent
+  }
+  return undefined
+}
+
+/** 宽松读取工作项编号：畸形值只丢这一条父级边，不让整次层级查询失败。 */
+function lenientIid(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isInteger(value) && value > 0) return value
+  if (typeof value === 'string' && /^\d+$/.test(value)) {
+    const iid = Number.parseInt(value, 10)
+    if (Number.isInteger(iid) && iid > 0) return iid
+  }
+  return undefined
+}
+
+/**
  * 把 `group/sub/project` 编码成 GitLab API 的单个路径段。
  * @param path - 远端解析出的项目路径。
  * @returns URL 编码后的路径。

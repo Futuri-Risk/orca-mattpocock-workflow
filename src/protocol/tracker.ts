@@ -60,6 +60,14 @@ export interface AvatarReadResult {
 /** 工单的开闭状态。 */
 export type TicketState = 'open' | 'closed'
 
+/**
+ * 父子关系的来源：原生、约定或没有。与 core 的同名类型形状一致；
+ * protocol 是叶子，不引用 core。
+ *
+ * 父子关系只用于组织与展示，不参与开工判定。
+ */
+export type TicketHierarchy = 'native' | 'convention' | 'none'
+
 /** 分类标签，没有分类时为 null。 */
 export type TicketCategory = 'bug' | 'enhancement' | null
 
@@ -228,6 +236,11 @@ export interface TicketSnapshot {
    * （GitHub 列表查询只给未关闭阻塞数）；宿主用它算最长阻塞链。
    */
   readonly blockedBy?: readonly string[]
+  /**
+   * 父级引用：同列表里的票或列表外的父级。与 `ref` 同形状；
+   * 跨仓库父票带 `owner/name#编号`，GitLab epic 带 `&iid`。省略表示顶层。
+   */
+  readonly parent?: string
 }
 
 /** 一个工作区的工单快照。 */
@@ -258,6 +271,11 @@ export interface WorkspaceSnapshot {
    */
   readonly hasMore: boolean
   readonly tickets: readonly TicketSnapshot[]
+  /**
+   * 本次快照的父子能力来源。为 `none` 时面板禁用父子布局并说明原因；
+   * 父子关系只用于布局，不参与判定、统计或指标。
+   */
+  readonly hierarchy: TicketHierarchy
   /**
    * 项目指标与压力判档。宿主在列表返回时算一次，阻塞补齐完成后重算；
    * 界面只渲染，不重复判定。

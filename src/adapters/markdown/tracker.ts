@@ -53,6 +53,8 @@ export function createMarkdownTracker(deps: MarkdownTrackerDeps): Tracker {
         tickets: parsed,
         // 本地 Markdown 没有远端用户，人员筛选整行不出现。
         viewer: null,
+        // 本地工单用 `Parent:` 行建立父子关系，属于正文约定。
+        hierarchy: 'convention',
       }
     },
 
@@ -69,9 +71,9 @@ export function createMarkdownTracker(deps: MarkdownTrackerDeps): Tracker {
         )
       }
 
-      if (files === undefined) return { tickets: [], truncated: false }
+      if (files === undefined) return { tickets: [], truncated: false, hierarchy: 'convention' }
 
-      // 补读的兄弟文件只为判定阻塞，结果里只留窗口内动过的票。
+      // 补读的兄弟文件只为判定阻塞与父级，结果里只留窗口内动过的票。
       const parsed = parseMarkdownTickets([...files.changed, ...files.context])
       const moved = new Set(files.changed.map((file) => file.path))
 
@@ -79,6 +81,7 @@ export function createMarkdownTracker(deps: MarkdownTrackerDeps): Tracker {
         tickets: parsed.filter((ticket) => moved.has(ticket.ref)),
         // 本地目录扫描没有上限，一次就能看全。
         truncated: false,
+        hierarchy: 'convention',
       }
     },
 

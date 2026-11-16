@@ -26,6 +26,7 @@ import type {
   BlockerResolution,
   CommandRunner,
   Ticket,
+  TicketHierarchy,
   TicketReference,
   TicketState,
   Tracker,
@@ -42,6 +43,7 @@ import {
   parseCurrentUsername,
   parseIssuesPage,
   parseNativeBlockers,
+  parseWorkItemHierarchy,
   type ParsedIssue,
 } from './parse.ts'
 import { callGlabApi, mapGlabError, projectEndpoint, readProjectAddress } from './shared.ts'
@@ -73,6 +75,8 @@ const DEFAULT_PAGE_SIZE = 100
 const DEFAULT_INCREMENTAL_PAGE_LIMIT = 5
 /** GraphQL 的 `first` 上限；开放票更多时分批查询。 */
 const BLOCKER_COUNT_BATCH = 100
+/** 工作项层级查询的批次大小；与 GraphQL 的 `first` 上限一致。 */
+const HIERARCHY_BATCH = 100
 const DEFAULT_CONCURRENCY = 8
 
 /**
@@ -112,8 +116,13 @@ export function createGitlabTracker(deps: GitlabTrackerDeps): Tracker {
       }
       hints.set(workspaceRoot, blockerHint(project, issues))
 
+      // 工作项层级是列表能力的增强：查询失败时列表照常，本次标为无父子能力。
+      const workItems = await readWorkItemHierarchy(deps, workspaceRoot, project.path, issues)
+
       // 首屏只等列表：阻塞数先按描述回退，原生计数留给补齐阶段。
-      const tickets = issues.map((issue) => withOpenBlockers(issue, states))
+      const tickets = issues.map((issue) =>
+        withParent(withOpenBlockers(issue, states), parentOf(issue, workItems.parents)),
+      )
 
       return {
         repository: project.path,
@@ -122,12 +131,39 @@ export function createGitlabTracker(deps: GitlabTrackerDeps): Tracker {
         total: tickets.length,
         tickets,
         viewer: await viewer,
+        hierarchy: workItems.hierarchy,
       }
     },
 
     async fetchChanges(workspaceRoot: string, since: number): Promise<TrackerChanges> {
+      if (!Number.isFinite(since)) {
+        throw new TrackerError('fetch-failed', '增量窗口的起点不是有效时间戳。')
+      }
+
+      const project = await readProjectAddress(deps.run, workspaceRoot)
+      const viewer = readCurrentViewer(deps, workspaceRoot)
       const listing = { pageSize, pageLimit: incrementalPageLimit }
-      return readGitlabChanges(deps, workspaceRoot, listing, since)
+      const { issues, truncated } = await readChangedIssues(
+        deps,
+        workspaceRoot,
+        project.path,
+        listing,
+        new Date(since).toISOString(),
+      )
+
+      // 增量也带父子能力：取不到层级就报无能力，宿主据此退回全量重拉。
+      const workItems = await readWorkItemHierarchy(deps, workspaceRoot, project.path, issues)
+      const login = await viewer
+
+      return {
+        tickets: issues.map((issue) =>
+          withParent(issue.ticket, parentOf(issue, workItems.parents)),
+        ),
+        truncated,
+        // 身份查询失败时省略，宿主沿用基准数据里的身份。
+        ...(login === null ? {} : { viewer: login }),
+        hierarchy: workItems.hierarchy,
+      }
     },
 
     async resolveBlockers(workspaceRoot, targets) {
@@ -214,40 +250,55 @@ interface GitlabListing {
   readonly pageLimit: number
 }
 
+/** 一次工作项层级查询的结果：父级映射与由此派生的父子能力一起返回。 */
+interface WorkItemHierarchy {
+  readonly parents: ReadonlyMap<number, string>
+  readonly hierarchy: TicketHierarchy
+}
+
 /**
- * 读取某个时刻之后变更过的工单。
+ * 批量读取工作项层级。
  *
- * 与列表查询走同一个接口、同一套过滤条件，只多一个时间窗口；翻页按更新时间升序，
- * 到页数上限就标记截断，由宿主改用全量重拉，不把没取全的增量当成完整结果。
+ * 层级只能走 GraphQL；一次查询最多 100 个工作项，票多时按批合并，不逐票请求。
+ * 查询失败（实例不支持、字段缺失、命令失败）时返回空映射并标为无能力：
+ * 列表仍然可用，下一次刷新再试。
+ * @param deps - 命令执行器与时钟。
+ * @param workspaceRoot - 工作区根目录。
+ * @param project - 项目完整路径。
+ * @param issues - 本次列表里的工单。
+ * @returns 父级映射与父子能力来源。
  */
-async function readGitlabChanges(
+async function readWorkItemHierarchy(
   deps: GitlabTrackerDeps,
   workspaceRoot: string,
-  listing: GitlabListing,
-  since: number,
-): Promise<TrackerChanges> {
-  if (!Number.isFinite(since)) {
-    throw new TrackerError('fetch-failed', '增量窗口的起点不是有效时间戳。')
-  }
-
-  const project = await readProjectAddress(deps.run, workspaceRoot)
-  const viewer = readCurrentViewer(deps, workspaceRoot)
-  const { issues, truncated } = await readChangedIssues(
-    deps,
-    workspaceRoot,
-    project.path,
-    listing,
-    new Date(since).toISOString(),
+  project: string,
+  issues: readonly ParsedIssue[],
+): Promise<WorkItemHierarchy> {
+  const numbers = issues.flatMap((issue) =>
+    issue.ticket.number === null ? [] : [issue.ticket.number],
   )
+  if (numbers.length === 0) return { parents: new Map(), hierarchy: 'native' }
 
-  const login = await viewer
-  return {
-    // 增量只负责取回变更过的票，阻塞判定由宿主在合并后统一处理。
-    tickets: issues.map((issue) => issue.ticket),
-    truncated,
-    // 身份查询失败时省略，宿主沿用基准数据里的身份。
-    ...(login === null ? {} : { viewer: login }),
+  const parents = new Map<number, string>()
+  try {
+    for (let start = 0; start < numbers.length; start += HIERARCHY_BATCH) {
+      const batch = numbers.slice(start, start + HIERARCHY_BATCH)
+      const iids = batch.map((number) => `"${String(number)}"`).join(', ')
+      const query = `query ($project: ID!) { project(fullPath: $project) { workItems(iids: [${iids}], first: ${String(batch.length)}) { nodes { iid workItemType { name } widgets { ... on WorkItemWidgetHierarchy { parent { iid workItemType { name } } } } } } } }`
+      const output = (
+        await deps.run(
+          'glab',
+          ['api', 'graphql', '-f', `query=${query}`, '-f', `project=${project}`],
+          { cwd: workspaceRoot },
+        )
+      ).stdout
+
+      for (const [iid, parent] of parseWorkItemHierarchy(output)) parents.set(iid, parent)
+    }
+  } catch {
+    return { parents: new Map(), hierarchy: 'none' }
   }
+  return { parents, hierarchy: 'native' }
 }
 
 /**
@@ -266,6 +317,20 @@ async function readCurrentViewer(
   } catch {
     return null
   }
+}
+
+/** 一张票的父级引用；票没有编号时省略。 */
+function parentOf(
+  issue: ParsedIssue,
+  parents: ReadonlyMap<number, string>,
+): string | undefined {
+  if (issue.ticket.number === null) return undefined
+  return parents.get(issue.ticket.number)
+}
+
+/** 把父级引用并入工单；没有父级时原样返回。 */
+function withParent(ticket: Ticket, parent: string | undefined): Ticket {
+  return parent === undefined ? ticket : { ...ticket, parent }
 }
 
 /**

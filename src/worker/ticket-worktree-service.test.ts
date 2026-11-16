@@ -112,6 +112,7 @@ function resolver(
         total: 1,
         tickets: [],
         viewer: null,
+        hierarchy: 'none',
       }),
       fetchDetail: async () => ({
         ...detailOf(detail),

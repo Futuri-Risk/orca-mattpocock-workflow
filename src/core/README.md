@@ -10,6 +10,8 @@
 工单详情相关：
 
 - `ticket.ts` 里的 `TicketDetail` / `TicketComment` / `TicketPatch` 是适配器与宿主共用的模型；
+  `Ticket` 上的 `parent` 是父级引用，`TrackerSnapshot` / `TrackerChanges` 的 `hierarchy`
+  声明父子能力来源（`native` / `convention` / `none`）；两者只用于列表组织，不参与判定；
   详情里的创建人、评论作者与分配人都是结构化的 `TicketAuthor`（登录名 / 展示名 / 头像地址），
   写侧的分配人补丁仍是登录名数组；
 - `author.ts` 是远端用户的唯一解析入口：`readAuthor` / `readAuthors` 按各后端字段名取值，
@@ -25,6 +27,10 @@
 - 补全候选的归一化也在这里：`normalizeLabelColor` 把颜色统一成小写 `#rrggbb`，
   `dedupeBy` 按名字去重并保留首次出现的顺序；
 - `markdown.ts` 里的 `parseMarkdownDetail` 把本地工单文件切成标题、正文与评论段落；
+  `parseMarkdownTickets` 同时解析 `Parent:` 行：只看 `## Comments` 之前，取第一个数字，
+  只认同 feature 下的另一张工单；缺失、自引用与跨 feature 都按无父级处理；
+- `snapshot-store.ts` 的条目格式版本升到 3，保存快照级的 `hierarchy` 与工单级的 `parent`；
+  版本不符或枚举非法时整份作废，避免把缺父子字段的旧缓存当成完整的树；
 - `worktree.ts` 推导 worktree 的分支名、工作区名与注释（工作区名与分支名同值），按 Orca 的 URL 路由表判定工单链接能否挂载
   （自建 Gitea / GitHub 的 `/issues/<n>` 不挂，链接补进注释），拼装 Orca 命令行参数，并解析它的 JSON 输出；
 - `repository-scope.ts` 解析 `git worktree list --porcelain`，给出仓库作用域（主 worktree 根目录）
