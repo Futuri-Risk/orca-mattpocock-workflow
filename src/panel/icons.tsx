@@ -24,6 +24,28 @@ export function FolderIcon(): React.ReactElement {
   )
 }
 
+/** 人员筛选行前的人形图标。 */
+export function PeopleIcon(): React.ReactElement {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+      style={{ flex: 'none' }}
+    >
+      <circle cx="8" cy="5" r="2.6" stroke="currentColor" strokeWidth="1.3" />
+      <path
+        d="M3.2 13.2c.5-2.5 2.4-4 4.8-4s4.3 1.5 4.8 4"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 /** 刷新按钮图标。 */
 export function RefreshIcon(): React.ReactElement {
   return (

@@ -34,6 +34,7 @@ function entry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreEntry 
     repositoryKey: 'github@github.com/cnzgray/repo',
     repositoryHost: 'github.com',
     fetchedAt: 1_000,
+    viewer: 'cnzgray',
     loaded: 1,
     total: 1,
     tickets: [
@@ -44,6 +45,7 @@ function entry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreEntry 
         state: 'open',
         labels: ['ready-for-agent'],
         author: null,
+        assignees: [],
         createdAt: '2026-01-01T00:00:00Z',
         updatedAt: '2026-01-01T00:00:00Z',
         openBlockers: 0,

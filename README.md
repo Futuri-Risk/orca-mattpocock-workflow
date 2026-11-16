@@ -8,6 +8,7 @@ Orca 插件：在右侧栏运行 [mattpocock/skills](https://github.com/mattpoco
 ## 视图
 
 - **列表**：读当前工作区的工单，按「可接 / 阻塞 / 其他开放 / 已关闭」判定，支持状态过滤与多键排序；
+  工具栏下方还有「分配给我 / 我创建的」两个人员开关，与状态筛选交叉生效，两个都开时取并集；
   每张票给出技能动作徽标，点击「复制提示词」把 `/implement #40` 这类手势写进剪贴板；
   能开工的远端工单还有一个「建 worktree」动作，一次点击就建出 Orca 托管的 worktree。
 - **概览**：一屏给出压力总览（规模 / 阻塞 / 时效）、关键数字、状态与分类构成、最该先看的票。
@@ -27,7 +28,7 @@ Orca 插件的能力由宿主给定，下面是本插件在这些边界内给出
 | 注册运行时技能 `/mattwf-feature`、`/mattwf-bug` | 技能文件随插件分发，环境检查里一键安装 | Orca 插件不能贡献技能（`contributes.skills` 是保留点） |
 | 插件私有 HTTP 路由 | 面板 ↔ worker 进程内桥（`orca.plugin.request`） | Orca 面板与 worker 同属一个插件，直接用桥 |
 | 宿主数据根下的缓存目录 | `~/.orca-mattpocock-workflow/cache/` | Orca 没有对应数据根 |
-| 浏览器 `localStorage` 记视图偏好 | `orca.storage` | 插件私有存储，按工作区记 |
+| 浏览器 `localStorage` 记视图偏好 | `orca.storage` | 插件私有存储，按仓库记筛选、排序与人员开关 |
 | 宿主 `subprocess` 服务 | worker 内 `node:child_process` | worker 是独立 Node 进程 |
 
 「建 worktree」只走 Orca 自己的命令行（`orca worktree create`），不用裸 `git worktree`：
@@ -68,6 +69,14 @@ worker 侧的 `workspace.readContext` 会带工作区 id（与 `workspace.list` 
 - `gitlab.com` 或 `glab` 已登录的自建实例 → GitLab（`glab`），支持嵌套 group
 - `tea` 已登录的自建 Gitea 实例 → Gitea（`tea`）
 - 其余情况 → 本地 Markdown（`.scratch/<feature>/issues/*.md`）
+
+远端后端在列表快照里带每张票的分配人登录名与当前登录用户：GitHub 在同一次 GraphQL 查询里
+取 `viewer.login` 与 `assignees[].login`，GitLab / Gitea 的列表响应自带分配人、另发一次身份查询。
+本地 Markdown 没有创建人与分配人，因此不显示人员筛选行。
+
+本地快照库（`~/.orca-mattpocock-workflow/cache/`）保存当前用户与每张票的分配人；
+格式版本已升到 3，旧版本条目按没有缓存处理，升级后第一次打开会全量重拉一次。
+身份查询临时失败时沿用同一仓库上一次已知的身份，人员筛选不会因为一次抖动整行消失。
 
 ## 开发
 

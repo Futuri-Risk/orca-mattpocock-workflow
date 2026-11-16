@@ -51,6 +51,8 @@ export function createMarkdownTracker(deps: MarkdownTrackerDeps): Tracker {
         loaded: parsed.length,
         total: parsed.length,
         tickets: parsed,
+        // 本地 Markdown 没有远端用户，人员筛选整行不出现。
+        viewer: null,
       }
     },
 

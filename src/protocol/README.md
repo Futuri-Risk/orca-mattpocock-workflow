@@ -49,9 +49,10 @@ worktree 另有两个错误码：`orca-missing`（找不到 Orca 命令行，属
 `snapshot.get`、`snapshot.refresh`、`snapshot.loadMore` 与 `snapshot.resolveBlockers` 都返回同一个
 `WorkspaceSnapshot`：
 
-- 工单级：判定结果（`status`、`category`）、关闭时间（`closedAt`，能给才给）与阻塞引用（`blockedBy`，
-  能给才给；GitHub 列表查询没有依赖边）；
-- 快照级：仓库标识、后端、实例主机、拉取时间、已加载数与总数、阻塞是否定稿；
+- 工单级：判定结果（`status`、`category`）、关闭时间（`closedAt`，能给才给）、阻塞引用（`blockedBy`，
+  能给才给；GitHub 列表查询没有依赖边）与分配人登录名（`assignees`，没有分配人时为空数组）；
+- 快照级：仓库标识、后端、实例主机、拉取时间、已加载数与总数、阻塞是否定稿，以及当前登录用户
+  （`viewer`，识别不出时为 null；人员筛选靠它判断「我」是谁）；
 - 分页：`hasMore` 为 true 时后端还有未加载的工单，界面据此给出「加载更多」入口。游标只在宿主内部
   流转（快照库条目里的 `nextCursor`），不暴露给面板；一次取全的后端 `hasMore` 恒为 false；
 - 指标级：`metrics`，含三个压力维度（`PressureDimension` / `PressureTier`）、关键数字、样本覆盖度

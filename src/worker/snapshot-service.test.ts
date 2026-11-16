@@ -41,6 +41,7 @@ function ticket(number: number, overrides: Partial<Ticket> = {}): Ticket {
     state: 'open',
     labels: [],
     author: null,
+    assignees: [],
     createdAt: '2026-11-01T00:00:00Z',
     updatedAt: `2026-11-${String(Math.min(number, 28)).padStart(2, '0')}T00:00:00Z`,
     openBlockers: 0,
@@ -50,7 +51,11 @@ function ticket(number: number, overrides: Partial<Ticket> = {}): Ticket {
 
 function page(
   tickets: readonly Ticket[],
-  options: { readonly total?: number; readonly nextCursor?: string } = {},
+  options: {
+    readonly total?: number
+    readonly nextCursor?: string
+    readonly viewer?: string | null
+  } = {},
 ): TrackerSnapshot {
   const nextCursor = options.nextCursor
   return {
@@ -59,6 +64,7 @@ function page(
     loaded: tickets.length,
     total: options.total ?? tickets.length,
     tickets,
+    viewer: options.viewer ?? null,
     ...(nextCursor === undefined ? {} : { nextCursor }),
   }
 }
@@ -142,6 +148,7 @@ function storeEntry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreE
     repositoryKey: 'github@github.com/cnzgray/repo',
     repositoryHost: 'github.com',
     fetchedAt: NOW - 60_000,
+    viewer: 'cnzgray',
     loaded: 2,
     total: 6,
     tickets: [ticket(5), ticket(4)],
@@ -699,5 +706,124 @@ describe('写操作跨 worktree 可见（端到端）', () => {
     expect(writes).toEqual(['delete #1'])
     expect(refs(seen)).toEqual(['#2'])
     expect(lists).toEqual(['list'])
+  })
+})
+
+describe('当前用户与分配人的快照传播', () => {
+  it('缓存优先快照带当前用户与分配人', async () => {
+    const store = memoryStore()
+    store.entries.set(
+      ROOT,
+      storeEntry({ tickets: [ticket(5, { assignees: ['alice'] }), ticket(4)] }),
+    )
+    const { tracker } = pagedTracker(new Map())
+
+    const snapshot = resultOf(
+      await service(tracker, store).handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+
+    expect(snapshot.source).toBe('cache')
+    expect(snapshot.viewer).toBe('cnzgray')
+    expect(snapshot.tickets.find((item) => item.ref === '#5')?.assignees).toEqual(['alice'])
+  })
+
+  it('全量刷新更新当前用户，并写回缓存', async () => {
+    const store = memoryStore()
+    const { tracker } = pagedTracker(
+      new Map([['', page([ticket(1)], { viewer: 'newbie' })]]),
+    )
+
+    const snapshot = resultOf(
+      await service(tracker, store).handle(RPC_METHODS.snapshotRefresh, {
+        workspaceRoot: ROOT,
+      }),
+    )
+
+    expect(snapshot.viewer).toBe('newbie')
+    expect(store.entries.get(ROOT)?.viewer).toBe('newbie')
+  })
+
+  it('全量返回 null 时沿用上一次已知身份', async () => {
+    const store = memoryStore()
+    store.entries.set(ROOT, storeEntry({ viewer: 'cnzgray' }))
+    const { tracker } = pagedTracker(new Map([['', page([ticket(5)], { viewer: null })]]))
+    const snapshots = service(tracker, store)
+    await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT })
+
+    const snapshot = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotRefresh, { workspaceRoot: ROOT }),
+    )
+
+    expect(snapshot.viewer).toBe('cnzgray')
+  })
+
+  it('增量有身份时覆盖基准，没有时沿用基准', async () => {
+    const withViewer = memoryStore()
+    withViewer.entries.set(ROOT, storeEntry({ nextCursor: 'cursor-2', viewer: 'old' }))
+    const updated = pagedTracker(new Map(), () => ({
+      tickets: [ticket(6, { updatedAt: '2026-11-21T00:00:00Z' })],
+      truncated: false,
+      viewer: 'new',
+    }))
+    const first = resultOf(
+      await service(updated.tracker, withViewer).handle(RPC_METHODS.snapshotRefresh, {
+        workspaceRoot: ROOT,
+      }),
+    )
+
+    const kept = memoryStore()
+    kept.entries.set(ROOT, storeEntry({ nextCursor: 'cursor-2', viewer: 'old' }))
+    const silent = pagedTracker(new Map(), () => ({
+      tickets: [ticket(6, { updatedAt: '2026-11-21T00:00:00Z' })],
+      truncated: false,
+    }))
+    const second = resultOf(
+      await service(silent.tracker, kept).handle(RPC_METHODS.snapshotRefresh, {
+        workspaceRoot: ROOT,
+      }),
+    )
+
+    expect(first.viewer).toBe('new')
+    expect(withViewer.entries.get(ROOT)?.viewer).toBe('new')
+    expect(second.viewer).toBe('old')
+  })
+
+  it('加载更多时扩窗响应没带身份就沿用当前身份', async () => {
+    const store = memoryStore()
+    store.entries.set(
+      ROOT,
+      storeEntry({ nextCursor: 'cursor-2', total: 3, tickets: [ticket(5)] }),
+    )
+    const { tracker } = pagedTracker(
+      new Map([['cursor-2', page([ticket(4)], { total: 3, viewer: null })]]),
+    )
+    const snapshots = service(tracker, store)
+    await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT })
+
+    const snapshot = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotLoadMore, { workspaceRoot: ROOT }),
+    )
+
+    expect(snapshot.viewer).toBe('cnzgray')
+    expect(snapshot.tickets.find((item) => item.ref === '#4')?.assignees).toEqual([])
+  })
+
+  it('加载更多时扩窗响应带了新身份就更新', async () => {
+    const store = memoryStore()
+    store.entries.set(
+      ROOT,
+      storeEntry({ nextCursor: 'cursor-2', total: 3, tickets: [ticket(5)] }),
+    )
+    const { tracker } = pagedTracker(
+      new Map([['cursor-2', page([ticket(4)], { total: 3, viewer: 'other' })]]),
+    )
+    const snapshots = service(tracker, store)
+    await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT })
+
+    const snapshot = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotLoadMore, { workspaceRoot: ROOT }),
+    )
+
+    expect(snapshot.viewer).toBe('other')
   })
 })

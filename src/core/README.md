@@ -14,7 +14,10 @@
   写侧的分配人补丁仍是登录名数组；
 - `author.ts` 是远端用户的唯一解析入口：`readAuthor` / `readAuthors` 按各后端字段名取值，
   登录名为空时整条用户按 null 处理（不从列表里消失），头像只放行 http(s) 绝对地址，
-  实例内相对路径按后端给出的基准补全；列表与详情共用同一份规则；
+  实例内相对路径按后端给出的基准补全；列表与详情共用同一份规则。`readLogins` 用同样的容错口径
+  只取登录名，供列表快照的分配人使用（不读展示名与头像）；
+- `snapshot-store.ts` 是本地快照库的条目模型（格式版本 3）：保存当前用户 `viewer` 与每张票的
+  分配人登录名 `assignees`；版本不符、字段缺失或类型不对时整份作废，由宿主自动全量重拉；
 - `ticket-detail.ts` 只做纯计算与字段校验：目标集合与当前集合的差异（`diffSets` / `resolveTargetSet` /
   `planSetChange` / `isEmptyDiff`），以及三个远端后端共用的详情字段读取（`readRequiredString`、
   `readNameList`、`sortCommentsByTime`、`requireTicketNumber`、`invalidDetail`）；

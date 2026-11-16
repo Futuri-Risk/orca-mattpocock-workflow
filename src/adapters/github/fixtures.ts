@@ -16,6 +16,7 @@ const AUTHOR = {
 
 const RECORDED_ISSUES = {
   data: {
+    viewer: { login: 'cnzgray' },
     repository: {
       issues: {
         totalCount: 30,
@@ -29,6 +30,7 @@ const RECORDED_ISSUES = {
             updatedAt: '2026-11-12T14:11:38Z',
             labels: { nodes: [{ name: 'enhancement' }, { name: 'ready-for-agent' }] },
             author: AUTHOR,
+            assignees: { nodes: [{ login: 'cnzgray' }] },
             issueDependenciesSummary: { blockedBy: 0 },
           },
           {
@@ -39,6 +41,7 @@ const RECORDED_ISSUES = {
             updatedAt: '2026-11-12T14:14:19Z',
             labels: { nodes: [{ name: 'enhancement' }, { name: 'ready-for-agent' }] },
             author: AUTHOR,
+            assignees: { nodes: [{ login: 'alice' }, { login: 'bob' }] },
             issueDependenciesSummary: { blockedBy: 1 },
           },
           {
@@ -84,6 +87,7 @@ export const GH_ISSUES_OUTPUT = JSON.stringify(RECORDED_ISSUES, null, 2)
 export const GH_ISSUES_PAGED_OUTPUT = JSON.stringify(
   {
     data: {
+      viewer: { login: 'cnzgray' },
       repository: {
         issues: {
           totalCount: 30,
@@ -128,6 +132,7 @@ export const GH_ISSUES_PAGED_OUTPUT = JSON.stringify(
 export const GH_CHANGES_OUTPUT = JSON.stringify(
   {
     data: {
+      viewer: { login: 'cnzgray' },
       repository: {
         repositoryTotal: { totalCount: 30 },
         issues: {
@@ -166,6 +171,7 @@ export const GH_CHANGES_OUTPUT = JSON.stringify(
 /** 增量查询被单页上限截断的录制输出：`hasNextPage` 为真。 */
 export const GH_TRUNCATED_CHANGES_OUTPUT = JSON.stringify({
   data: {
+    viewer: { login: 'cnzgray' },
     repository: {
       repositoryTotal: { totalCount: 30 },
       issues: {

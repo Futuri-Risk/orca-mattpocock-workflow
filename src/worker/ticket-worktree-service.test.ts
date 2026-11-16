@@ -111,6 +111,7 @@ function resolver(
         loaded: 1,
         total: 1,
         tickets: [],
+        viewer: null,
       }),
       fetchDetail: async () => ({
         ...detailOf(detail),

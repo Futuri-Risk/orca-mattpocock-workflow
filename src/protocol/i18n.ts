@@ -110,6 +110,14 @@ const ZH_CN = {
   'tickets.filter.closed': '已关闭',
   'tickets.filter.blocked': '阻塞',
   'tickets.filter.ready': '可接',
+  'tickets.people.group': '我的工单筛选',
+  'tickets.people.assigned': '分配给我',
+  'tickets.people.assignedHint': '只显示分配给我的工单；数字按当前状态筛选统计',
+  'tickets.people.created': '我创建的',
+  'tickets.people.createdHint': '只显示我创建的工单；数字按当前状态筛选统计',
+  'tickets.people.clear': '清除',
+  'tickets.people.viewer': '@{login}',
+  'tickets.people.viewerHint': '人员筛选按当前登录用户 @{login} 匹配',
   'tickets.sort.status': '状态',
   'tickets.sort.updated': '更新',
   'tickets.sort.created': '创建',
@@ -641,6 +649,16 @@ const EN = {
   'tickets.filter.closed': 'Closed',
   'tickets.filter.blocked': 'Blocked',
   'tickets.filter.ready': 'Ready',
+  'tickets.people.group': 'My ticket filters',
+  'tickets.people.assigned': 'Assigned to me',
+  'tickets.people.assignedHint':
+    'Show only tickets assigned to me; counts follow the status filter',
+  'tickets.people.created': 'Created by me',
+  'tickets.people.createdHint':
+    'Show only tickets I created; counts follow the status filter',
+  'tickets.people.clear': 'Clear',
+  'tickets.people.viewer': '@{login}',
+  'tickets.people.viewerHint': 'People filters match the current login @{login}',
   'tickets.sort.status': 'Status',
   'tickets.sort.updated': 'Updated',
   'tickets.sort.created': 'Created',
@@ -1110,6 +1128,8 @@ export interface MessageParams {
   'language.autoEffective': { readonly language: string }
   'tickets.loadedTotal': { readonly loaded: number; readonly total: number }
   'tickets.loadMoreRemaining': { readonly count: number }
+  'tickets.people.viewer': { readonly login: string }
+  'tickets.people.viewerHint': { readonly login: string }
   'tickets.ageTitle': { readonly created: string; readonly updated: string }
   'time.minutesAgo': { readonly n: number }
   'time.hoursAgo': { readonly n: number }

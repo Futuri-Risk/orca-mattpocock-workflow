@@ -2,7 +2,7 @@
  * 解析 `gh api graphql` 的工单输出。输入是录制或真实的 JSON 文本，
  * 不在这里发起任何请求。
  */
-import { readAuthor, readAuthors, type AuthorFields } from '../../core/author.ts'
+import { readAuthor, readAuthors, readLogin, readLogins, type AuthorFields } from '../../core/author.ts'
 import { isRecord } from '../../core/json.ts'
 import {
   invalidDetail,
@@ -35,6 +35,8 @@ const AUTHOR_FIELDS: AuthorFields = {
 export interface ParsedIssues {
   readonly total: number
   readonly tickets: readonly Ticket[]
+  /** 当前登录用户的登录名；响应里没有时为 null。 */
+  readonly viewer: string | null
   /** 还有下一页时给出的游标；缺省表示这一份已经覆盖全部。 */
   readonly nextCursor?: string
 }
@@ -49,6 +51,8 @@ export interface ParsedChanges {
   readonly truncated: boolean
   /** 仓库总票数；后端给不出时缺席，宿主沿用上次的总数。 */
   readonly total?: number
+  /** 当前登录用户的登录名；响应里没有时为 null。 */
+  readonly viewer: string | null
 }
 
 /**
@@ -72,7 +76,10 @@ export function parseIssueGraphql(output: string): ParsedIssues {
   }
 
   const nextCursor = readNextCursor(issues)
-  return nextCursor === undefined ? { total, tickets } : { total, tickets, nextCursor }
+  const viewer = readViewer(payload)
+  return nextCursor === undefined
+    ? { total, tickets, viewer }
+    : { total, tickets, viewer, nextCursor }
 }
 
 /**
@@ -98,6 +105,7 @@ export function parseIssueChangesGraphql(output: string): ParsedChanges {
   return {
     tickets,
     truncated: readHasNextPage(issues),
+    viewer: readViewer(payload),
     ...(total === undefined ? {} : { total }),
   }
 }
@@ -164,7 +172,6 @@ function readRepositoryTotal(repository: Record<string, unknown>): number | unde
 
 function parseIssueNode(value: unknown, index: number): Ticket {
   if (!isRecord(value)) throw invalid(`第 ${String(index + 1)} 张票不是对象`)
-
   const number = value.number
   if (typeof number !== 'number' || !Number.isInteger(number) || number <= 0) {
     throw invalid(`第 ${String(index + 1)} 张票的编号不合法`)
@@ -181,11 +188,23 @@ function parseIssueNode(value: unknown, index: number): Ticket {
     state,
     labels: readLabels(value.labels),
     author: readAuthor(value.author, AUTHOR_FIELDS),
+    assignees: readAssigneeLogins(value.assignees),
     createdAt: readString(value.createdAt, `第 ${String(number)} 张票的创建时间`),
     updatedAt: readString(value.updatedAt, `第 ${String(number)} 张票的更新时间`),
     openBlockers: readOpenBlockers(value.issueDependenciesSummary),
     ...(closedAt === undefined ? {} : { closedAt }),
   }
+}
+
+/**
+ * 列表里分配人的连接（`{ nodes: [...] }`）只带登录名。
+ * 缺字段或形状不对时按空数组处理，与创建人的容错口径一致。
+ * @param value - GraphQL 返回的 assignees 连接。
+ * @returns 登录名数组。
+ */
+function readAssigneeLogins(value: unknown): readonly string[] {
+  if (!isRecord(value)) return []
+  return readLogins(value.nodes, AUTHOR_FIELDS)
 }
 
 function readRepository(payload: unknown): Record<string, unknown> {
@@ -197,6 +216,19 @@ function readRepository(payload: unknown): Record<string, unknown> {
     throw new TrackerError('fetch-failed', 'GitHub 上找不到这个仓库，或当前账号没有访问权限。')
   }
   return repository
+}
+
+/**
+ * 当前登录用户：GraphQL 根字段 `viewer.login`。
+ * 缺失或形状不对时按没有身份处理，不让身份查询影响整张列表。
+ * @param payload - 已解析的 GraphQL 响应。
+ * @returns 登录名，或 null。
+ */
+function readViewer(payload: unknown): string | null {
+  if (!isRecord(payload)) return null
+  const data = payload.data
+  if (!isRecord(data)) return null
+  return readLogin(data.viewer, 'login')
 }
 
 function readIssues(repository: Record<string, unknown>): Record<string, unknown> {

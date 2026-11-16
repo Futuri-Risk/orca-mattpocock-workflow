@@ -39,11 +39,12 @@ import { readGitlabOptions } from './options.ts'
 import {
   hasNativeBlockingLinks,
   parseBlockedByCounts,
+  parseCurrentUsername,
   parseIssuesPage,
   parseNativeBlockers,
   type ParsedIssue,
 } from './parse.ts'
-import { mapGlabError, projectEndpoint, readProjectAddress } from './shared.ts'
+import { callGlabApi, mapGlabError, projectEndpoint, readProjectAddress } from './shared.ts'
 
 /** GitLab 后端依赖。 */
 export interface GitlabTrackerDeps {
@@ -102,6 +103,8 @@ export function createGitlabTracker(deps: GitlabTrackerDeps): Tracker {
   return {
     async fetchSnapshot(workspaceRoot: string): Promise<TrackerSnapshot> {
       const project = await readProjectAddress(deps.run, workspaceRoot)
+      // 身份与列表并行发出：身份失败只丢筛选行，不拖慢也不打挂列表。
+      const viewer = readCurrentViewer(deps, workspaceRoot)
       const issues = await readIssues(deps, workspaceRoot, project.path, pageSize)
       const states = new Map<number, TicketState>()
       for (const issue of issues) {
@@ -118,6 +121,7 @@ export function createGitlabTracker(deps: GitlabTrackerDeps): Tracker {
         loaded: tickets.length,
         total: tickets.length,
         tickets,
+        viewer: await viewer,
       }
     },
 
@@ -227,6 +231,7 @@ async function readGitlabChanges(
   }
 
   const project = await readProjectAddress(deps.run, workspaceRoot)
+  const viewer = readCurrentViewer(deps, workspaceRoot)
   const { issues, truncated } = await readChangedIssues(
     deps,
     workspaceRoot,
@@ -235,10 +240,31 @@ async function readGitlabChanges(
     new Date(since).toISOString(),
   )
 
+  const login = await viewer
   return {
     // 增量只负责取回变更过的票，阻塞判定由宿主在合并后统一处理。
     tickets: issues.map((issue) => issue.ticket),
     truncated,
+    // 身份查询失败时省略，宿主沿用基准数据里的身份。
+    ...(login === null ? {} : { viewer: login }),
+  }
+}
+
+/**
+ * 读取当前登录名。身份是列表的附属信息：命令失败或输出不可识别时返回 null，
+ * 不把整张列表当成失败。
+ * @param deps - 命令执行器。
+ * @param workspaceRoot - 工作区根目录。
+ * @returns 登录名，或 null。
+ */
+async function readCurrentViewer(
+  deps: GitlabTrackerDeps,
+  workspaceRoot: string,
+): Promise<string | null> {
+  try {
+    return parseCurrentUsername(await callGlabApi(deps.run, workspaceRoot, 'user'))
+  } catch {
+    return null
   }
 }
 

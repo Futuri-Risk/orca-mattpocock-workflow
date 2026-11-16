@@ -128,6 +128,7 @@ describe('本地 Markdown 工单后端', () => {
       state: 'closed',
       labels: ['resolved'],
       author: null,
+      assignees: [],
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-02T00:00:00.000Z',
       openBlockers: 0,
@@ -145,6 +146,7 @@ describe('本地 Markdown 工单后端', () => {
       loaded: 0,
       total: 0,
       tickets: [],
+      viewer: null,
     })
   })
 

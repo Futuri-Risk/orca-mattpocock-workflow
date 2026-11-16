@@ -12,7 +12,7 @@ import { isRecord } from './json.ts'
 import type { Ticket, TicketAuthor, TicketState } from './ticket.ts'
 
 /** 本地快照库的格式版本。版本不符的条目一律按没有缓存处理。 */
-export const SNAPSHOT_STORE_VERSION = 2
+export const SNAPSHOT_STORE_VERSION = 3
 
 /** 缓存文件里存的后端类型。 */
 const BACKENDS: readonly BackendKind[] = ['github', 'gitlab', 'gitea', 'markdown']
@@ -41,6 +41,8 @@ export interface SnapshotStoreEntry {
   readonly repositoryHost: string | null
   /** 拉取时刻（毫秒时间戳），也是下一次增量的窗口起点。 */
   readonly fetchedAt: number
+  /** 拉取时的当前登录用户；本地 Markdown 与识别失败时为 null。 */
+  readonly viewer: string | null
   /** 当时加载到的票数。 */
   readonly loaded: number
   /** 当时的仓库总票数。 */
@@ -66,6 +68,7 @@ export function serializeSnapshotStoreEntry(entry: SnapshotStoreEntry): string {
     repositoryKey: entry.repositoryKey,
     repositoryHost: entry.repositoryHost,
     fetchedAt: entry.fetchedAt,
+    viewer: entry.viewer,
     loaded: entry.loaded,
     total: entry.total,
     ...(entry.nextCursor === undefined ? {} : { nextCursor: entry.nextCursor }),
@@ -122,6 +125,11 @@ function readEntry(value: unknown): SnapshotStoreEntry | undefined {
   const repositoryHost = value.repositoryHost
   if (repositoryHost !== null && typeof repositoryHost !== 'string') return undefined
 
+  // 当前用户是人员筛选的前提：字段缺失或类型不对时整份作废，不把旧数据当无身份。
+  const viewer = value.viewer
+  if (viewer !== null && typeof viewer !== 'string') return undefined
+  if (typeof viewer === 'string' && viewer.length === 0) return undefined
+
   const nextCursor = value.nextCursor
   if (nextCursor !== undefined && (typeof nextCursor !== 'string' || nextCursor.length === 0)) {
     return undefined
@@ -139,6 +147,7 @@ function readEntry(value: unknown): SnapshotStoreEntry | undefined {
     repositoryKey,
     repositoryHost: repositoryHost ?? null,
     fetchedAt,
+    viewer,
     loaded,
     total,
     ...(nextCursor === undefined ? {} : { nextCursor }),
@@ -188,6 +197,9 @@ function readTicket(value: unknown): Ticket | undefined {
   const author = readAuthor(value.author)
   if (author === undefined) return undefined
 
+  const assignees = readStringArray(value.assignees)
+  if (assignees === undefined) return undefined
+
   const closedAt = value.closedAt
   if (closedAt !== undefined && typeof closedAt !== 'string') return undefined
 
@@ -202,6 +214,7 @@ function readTicket(value: unknown): Ticket | undefined {
       state,
       labels,
       author,
+      assignees,
       createdAt,
       updatedAt,
       openBlockers,
@@ -217,6 +230,7 @@ function readTicket(value: unknown): Ticket | undefined {
     state,
     labels,
     author,
+    assignees,
     createdAt,
     updatedAt,
     openBlockers,

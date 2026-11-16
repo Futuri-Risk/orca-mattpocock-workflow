@@ -30,6 +30,11 @@ export interface Ticket {
   readonly labels: readonly string[]
   /** 创建人；本地 Markdown 没有创建人，为 null。 */
   readonly author: TicketAuthor | null
+  /**
+   * 分配人的远端登录名；后端没有分配人概念时为空数组。
+   * 列表只需要判断「是不是我」，不存展示名与头像。
+   */
+  readonly assignees: readonly string[]
   readonly createdAt: string
   readonly updatedAt: string
   /**
@@ -63,6 +68,8 @@ export interface TrackerSnapshot {
   readonly loaded: number
   readonly total: number
   readonly tickets: readonly Ticket[]
+  /** 当前登录用户的远端登录名；识别不出时（本地 Markdown）为 null。 */
+  readonly viewer: string | null
   /**
    * 还有下一页时给出的后端游标；缺省表示这份快照已经覆盖全部。
    * 宿主按它请求下一段，界面据此决定要不要显示「加载更多」。
@@ -81,6 +88,11 @@ export interface TrackerChanges {
   readonly truncated: boolean
   /** 变更查询返回的仓库总票数；给出时用它更新总数，没有则沿用上次的。 */
   readonly total?: number
+  /**
+   * 增量刷新时顺带刷新的当前登录用户；省略表示这次没查，沿用上一次。
+   * 与快照上的 null（查过但没有身份）区分开。
+   */
+  readonly viewer?: string | null
 }
 
 /**

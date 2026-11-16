@@ -151,6 +151,8 @@ function describeListContract(fixture: TrackerContractFixture): void {
     expect(snapshot.total).toBe(fixture.expected.total)
     expect(snapshot.loaded).toBe(snapshot.tickets.length)
     expect(snapshot.tickets.map((ticket) => ticket.ref)).toEqual(fixture.expected.refs)
+    // 当前用户要么是可展示的登录名，要么明确为 null；不用 undefined 混过去。
+    expect(snapshot.viewer === null || snapshot.viewer.length > 0).toBe(true)
   })
 
   it('使用注入的时钟作为快照时间', async () => {
@@ -179,6 +181,12 @@ function describeListContract(fixture: TrackerContractFixture): void {
       expect(['open', 'closed']).toContain(ticket.state)
       expect(Array.isArray(ticket.labels)).toBe(true)
       expect(ticket.openBlockers).toBeGreaterThanOrEqual(0)
+      // 分配人只存登录名：字段缺失按空数组，条目必须是非空登录名。
+      expect(Array.isArray(ticket.assignees)).toBe(true)
+      for (const login of ticket.assignees) {
+        expect(typeof login).toBe('string')
+        expect(login.length).toBeGreaterThan(0)
+      }
     }
   })
 
@@ -253,6 +261,11 @@ function describeChangesContract(fixture: TrackerContractFixture): void {
     // 引用按字典序比较：增量只覆盖变更过的票，顺序由后端决定。
     const refs = (observed?.tickets ?? []).map((ticket) => ticket.ref).sort()
     expect(refs).toEqual([...changes.expected.refs].sort())
+    // 增量可以顺带刷新身份；省略表示沿用上一次，给了就必须是可展示的登录名或 null。
+    const viewer = observed?.viewer
+    expect(
+      viewer === undefined || viewer === null || (typeof viewer === 'string' && viewer.length > 0),
+    ).toBe(true)
   })
 }
 

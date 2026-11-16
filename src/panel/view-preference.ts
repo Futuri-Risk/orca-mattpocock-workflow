@@ -1,5 +1,5 @@
 /**
- * 视图偏好：按仓库记住筛选、排序键与方向。
+ * 视图偏好：按仓库记住筛选、排序键、方向与两个人员开关。
  *
  * 存在 Orca 的插件私有存储里：一个键放一份 JSON 字符串，里面是「偏好键 → 偏好」的映射，
  * 最多保留 50 个条目。存储不可用或数据损坏时静默退回默认视图，不影响面板其余功能。
@@ -13,23 +13,27 @@ import type { WorkspaceSnapshot } from '../protocol/tracker.ts'
 import { readFrame } from './host.ts'
 import {
   defaultSortDirection,
+  type PeopleFilter,
+  type PersonFilterKey,
   type SortDirection,
   type TicketFilter,
   type TicketSortKey,
 } from './ticket-view.ts'
 
 /** 面板的一份视图偏好。 */
-export interface ViewPreference {
+export interface ViewPreference extends PeopleFilter {
   readonly filter: TicketFilter
   readonly sortKey: TicketSortKey
   readonly direction: SortDirection
 }
 
-/** 没有存档时使用的视图：只看未关闭工单，可接的排在前面。 */
+/** 没有存档时使用的视图：只看未关闭工单，可接的排在前面，不按人员过滤。 */
 export const DEFAULT_VIEW: ViewPreference = {
   filter: 'open',
   sortKey: 'status',
   direction: 'asc',
+  assignedToMe: false,
+  createdByMe: false,
 }
 
 /** 插件私有存储的最小形状。 */
@@ -48,7 +52,7 @@ const STORAGE_VERSION = 1
 const MAX_ENTRIES = 50
 
 /** 一个工作区存下来的偏好。 */
-interface StoredEntry {
+interface StoredEntry extends PeopleFilter {
   readonly filter: TicketFilter
   readonly sortKey: TicketSortKey
   readonly direction: SortDirection
@@ -126,6 +130,9 @@ export async function readViewPreference(
     filter: isFilter(stored.filter) ? stored.filter : DEFAULT_VIEW.filter,
     sortKey: isSortKey(stored.sortKey) ? stored.sortKey : DEFAULT_VIEW.sortKey,
     direction: isDirection(stored.direction) ? stored.direction : DEFAULT_VIEW.direction,
+    // 旧记录没有这两个字段时按 false 读；非法值在 toEntry 里已逐字段回落。
+    assignedToMe: stored.assignedToMe,
+    createdByMe: stored.createdByMe,
   }
 }
 
@@ -151,6 +158,8 @@ export function writeViewPreference(
       filter: preference.filter,
       sortKey: preference.sortKey,
       direction: preference.direction,
+      assignedToMe: preference.assignedToMe,
+      createdByMe: preference.createdByMe,
       savedAt: now(),
     }
     const map: PreferenceMap = { version: STORAGE_VERSION, entries: evictOldest(next) }
@@ -199,7 +208,14 @@ function toEntry(value: unknown): StoredEntry | null {
   if (!('sortKey' in value) || !isSortKey(value.sortKey)) return null
   if (!('direction' in value) || !isDirection(value.direction)) return null
   const savedAt = 'savedAt' in value && typeof value.savedAt === 'number' ? value.savedAt : 0
-  return { filter: value.filter, sortKey: value.sortKey, direction: value.direction, savedAt }
+  return {
+    filter: value.filter,
+    sortKey: value.sortKey,
+    direction: value.direction,
+    assignedToMe: 'assignedToMe' in value && value.assignedToMe === true,
+    createdByMe: 'createdByMe' in value && value.createdByMe === true,
+    savedAt,
+  }
 }
 
 /** 只按保存时间淘汰最旧的条目；存档损坏的条目视为最旧。 */
@@ -233,11 +249,15 @@ function isDirection(value: unknown): value is SortDirection {
   return typeof value === 'string' && Object.hasOwn(DIRECTIONS, value)
 }
 
-/** 视图偏好的当前值与两个修改入口。 */
+/** 视图偏好的当前值与修改入口。 */
 export interface ViewPreferenceControls {
   readonly preference: ViewPreference
   readonly setFilter: (filter: TicketFilter) => void
   readonly toggleSort: (key: TicketSortKey) => void
+  /** 切换一个人员开关；另一个开关不受影响。 */
+  readonly togglePerson: (key: PersonFilterKey) => void
+  /** 一键关掉两个人员开关；状态筛选与排序不动。 */
+  readonly clearPeople: () => void
 }
 
 /**
@@ -297,6 +317,12 @@ export function useViewPreference(
         return
       }
       apply({ ...preference, sortKey: key, direction: defaultSortDirection(key) })
+    },
+    togglePerson: (key) => {
+      apply({ ...preference, [key]: !preference[key] })
+    },
+    clearPeople: () => {
+      apply({ ...preference, assignedToMe: false, createdByMe: false })
     },
   }
 }

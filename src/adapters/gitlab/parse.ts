@@ -2,7 +2,7 @@
  * 解析 `glab api` 的工单、链接探测与批量阻塞计数输出。输入是录制或真实的
  * JSON 文本，这里不发起任何请求，也不执行任何命令。
  */
-import { readAuthor, type AuthorFields } from '../../core/author.ts'
+import { readAuthor, readLogin, readLogins, type AuthorFields } from '../../core/author.ts'
 import { isRecord } from '../../core/json.ts'
 import type { NativeBlockers } from '../../core/blocked-by.ts'
 import type { Ticket, TicketState } from '../../core/ticket.ts'
@@ -160,6 +160,7 @@ function parseIssue(value: unknown, index: number): ParsedIssue {
       state,
       labels: readLabels(value.labels),
       author: readAuthor(value.author, GITLAB_AUTHOR_FIELDS),
+      assignees: readLogins(value.assignees, GITLAB_AUTHOR_FIELDS),
       createdAt: readString(value.created_at, `第 ${String(iid)} 张票的创建时间`),
       updatedAt: readString(value.updated_at, `第 ${String(iid)} 张票的更新时间`),
       openBlockers: 0,
@@ -224,6 +225,23 @@ function parseJson(output: string): unknown {
   } catch (error) {
     throw new TrackerError('fetch-failed', 'GitLab 返回的不是有效 JSON。', { cause: error })
   }
+}
+
+/**
+ * 从 `glab api user` 的响应里读当前登录名。
+ * 身份查询是列表的附属信息：输出损坏、不是对象或缺少 username 时按没有身份处理，
+ * 不让一次身份查询把整张列表打挂。
+ * @param output - `glab api user` 的标准输出。
+ * @returns 登录名，或 null。
+ */
+export function parseCurrentUsername(output: string): string | null {
+  let payload: unknown
+  try {
+    payload = JSON.parse(output)
+  } catch {
+    return null
+  }
+  return readLogin(payload, 'username')
 }
 
 /**

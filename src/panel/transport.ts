@@ -303,7 +303,12 @@ function isWorkspaceSnapshot(value: unknown): value is WorkspaceSnapshot {
   if (!('total' in value) || typeof value.total !== 'number') return false
   if (!('hasMore' in value) || typeof value.hasMore !== 'boolean') return false
   if (!('tickets' in value) || !Array.isArray(value.tickets)) return false
-  if (!value.tickets.every(hasSkillAction)) return false
+  if (!value.tickets.every(hasTicketFields)) return false
+  // 当前用户与分配人决定人员筛选能否成立：缺字段按版本错配处理，不静默降级。
+  if (!('viewer' in value)) return false
+  if (value.viewer !== null && (typeof value.viewer !== 'string' || value.viewer.length === 0)) {
+    return false
+  }
   if (!('metrics' in value) || typeof value.metrics !== 'object' || value.metrics === null) {
     return false
   }
@@ -385,10 +390,12 @@ function isSnapshotCacheInfo(value: unknown): value is SnapshotCacheInfo {
   return true
 }
 
-function hasSkillAction(value: unknown): boolean {
+function hasTicketFields(value: unknown): boolean {
   if (typeof value !== 'object' || value === null) return false
   if (!('skillAction' in value) || !isSkillAction(value.skillAction)) return false
-  return 'skillActionReason' in value && isActionReason(value.skillActionReason)
+  if (!('skillActionReason' in value) || !isActionReason(value.skillActionReason)) return false
+  if (!('assignees' in value) || !Array.isArray(value.assignees)) return false
+  return value.assignees.every((login) => typeof login === 'string' && login.length > 0)
 }
 
 function isSkillAction(value: unknown): value is TicketSkillAction {

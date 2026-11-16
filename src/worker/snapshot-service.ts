@@ -388,7 +388,15 @@ async function refreshSnapshot(
 
   try {
     const raw = await tracker.fetchSnapshot(target.workspaceRoot)
-    return await publish(deps, cache, target, resolved, raw, startedAt, 'full')
+    return await publish(
+      deps,
+      cache,
+      target,
+      resolved,
+      withViewerFallback(raw, base?.viewer),
+      startedAt,
+      'full',
+    )
   } catch (error) {
     return await keepOldSnapshot(deps, cache, target, mapError(error), startedAt)
   }
@@ -450,6 +458,8 @@ async function mergeIncremental(
     loaded: merged.length,
     total: changes.total ?? base.total,
     tickets: merged,
+    // 增量没查身份时沿用基准数据里的；查了但没识别出来则按 null 记。
+    viewer: changes.viewer === undefined ? base.viewer : changes.viewer,
     // 游标仍指向已加载窗口之后的第一张；窗口大小由已加载数表达。
     ...(nextCursor === undefined ? {} : { nextCursor }),
   }
@@ -549,9 +559,26 @@ async function appendPage(
     loaded: merged.length,
     total: page.total,
     tickets: merged,
+    // 扩窗响应没带身份时沿用当前已知身份，不因为翻页把筛选行清掉。
+    viewer: withViewerFallback(page, entry.raw.viewer).viewer,
     ...(nextCursor === undefined ? {} : { nextCursor }),
   }
   return await publish(deps, cache, target, resolved, raw, startedAt, 'more')
+}
+
+/**
+ * 全量或扩窗响应没有识别出身份时，沿用同一仓库上一次已知的身份。
+ * 一次身份查询抖动不该让人员筛选整行消失；没有已知身份时保持 null。
+ * @param raw - 本次拉取的列表。
+ * @param previous - 上一次已知的当前用户；没有时为 null / undefined。
+ * @returns 带身份回退的列表。
+ */
+function withViewerFallback(
+  raw: TrackerSnapshot,
+  previous: string | null | undefined,
+): TrackerSnapshot {
+  if (raw.viewer !== null || previous === null || previous === undefined) return raw
+  return { ...raw, viewer: previous }
 }
 
 /**
@@ -810,6 +837,7 @@ function buildSnapshot(
     repository: raw.repository,
     repositoryHost,
     fetchedAt: raw.fetchedAt,
+    viewer: raw.viewer,
     loaded: tickets.length,
     total: raw.total,
     hasMore: raw.nextCursor !== undefined,
@@ -827,6 +855,7 @@ function buildSnapshot(
       status: ticket.status,
       labels: ticket.labels,
       author: ticket.author,
+      assignees: ticket.assignees,
       skillAction: ticket.skillAction,
       skillActionReason: ticket.skillActionReason,
       createdAt: ticket.createdAt,

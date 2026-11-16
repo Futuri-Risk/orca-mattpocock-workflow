@@ -48,10 +48,12 @@ const ISSUE_NODES = `nodes {
         closedAt
         labels(first: 50) { nodes { name } }
         author { ${GITHUB_USER_FIELDS} }
+        assignees(first: 10) { nodes { login } }
         issueDependenciesSummary { blockedBy }
       }`
 
 const ISSUE_QUERY = `query ($owner: String!, $name: String!, $limit: Int!, $after: String) {
+  viewer { login }
   repository(owner: $owner, name: $name) {
     issues(first: $limit, after: $after, orderBy: { field: UPDATED_AT, direction: DESC }) {
       totalCount
@@ -70,6 +72,7 @@ const ISSUE_QUERY = `query ($owner: String!, $name: String!, $limit: Int!, $afte
  * 「这次变更了多少张票」，不能当仓库总数用。
  */
 const CHANGES_QUERY = `query ($owner: String!, $name: String!, $limit: Int!, $since: DateTime!) {
+  viewer { login }
   repository(owner: $owner, name: $name) {
     repositoryTotal: issues(first: 1) { totalCount }
     issues(first: $limit, orderBy: { field: UPDATED_AT, direction: DESC }, filterBy: { since: $since }) {
@@ -99,6 +102,7 @@ export function createGithubTracker(deps: GithubTrackerDeps): Tracker {
         loaded: tickets.tickets.length,
         total: tickets.total,
         tickets: tickets.tickets,
+        viewer: tickets.viewer,
         // 还有下一页时给出游标；这份快照只覆盖到这一页。
         ...(nextCursor === undefined ? {} : { nextCursor }),
       }
@@ -111,6 +115,7 @@ export function createGithubTracker(deps: GithubTrackerDeps): Tracker {
       return {
         tickets: changes.tickets,
         truncated: changes.truncated,
+        viewer: changes.viewer,
         ...(changes.total === undefined ? {} : { total: changes.total }),
       }
     },

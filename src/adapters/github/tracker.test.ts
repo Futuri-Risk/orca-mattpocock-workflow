@@ -74,6 +74,37 @@ describe('GitHub 工单后端', () => {
     expect(seen).toContain('limit=42')
   })
 
+  it('列表快照带当前用户与分配人，不额外发请求', async () => {
+    const { runner, calls } = recordedRunner({})
+    const tracker = createGithubTracker({ run: runner, now: () => NOW })
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.viewer).toBe('cnzgray')
+    expect(snapshot.tickets.find((ticket) => ticket.number === 16)?.assignees).toEqual([
+      'alice',
+      'bob',
+    ])
+    expect(calls.map((call) => call[0])).toEqual(['git', 'gh'])
+  })
+
+  it('同一次 GraphQL 查询里取 viewer 与 assignees', async () => {
+    const seen: string[] = []
+    const { runner } = recordedRunner({
+      gh: (args) => {
+        seen.push(...args)
+        return GH_ISSUES_OUTPUT
+      },
+    })
+    const tracker = createGithubTracker({ run: runner, now: () => NOW })
+
+    await tracker.fetchSnapshot('/workspace')
+
+    const query = seen.find((value) => value.startsWith('query='))
+    expect(query).toContain('viewer { login }')
+    expect(query).toContain('assignees(first: 10)')
+  })
+
   it('上限超过 GraphQL 的 100 时收窄到 100', async () => {
     const seen: string[] = []
     const { runner } = recordedRunner({
@@ -225,6 +256,9 @@ describe('GitHub 工单增量', () => {
     expect(query).toContain('filterBy: { since: $since }')
     expect(query).toContain('orderBy: { field: UPDATED_AT, direction: DESC }')
     expect(query).toContain('pageInfo { hasNextPage }')
+    // 增量与全量共用同一份节点字段，并在同一次查询里刷新当前用户。
+    expect(query).toContain('viewer { login }')
+    expect(query).toContain('assignees(first: 10)')
     expect(ghCall).toContain(`since=${new Date(SINCE).toISOString()}`)
   })
 

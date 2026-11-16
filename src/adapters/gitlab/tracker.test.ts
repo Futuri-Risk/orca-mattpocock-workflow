@@ -17,6 +17,7 @@ import {
   GITLAB_LINKS,
   GITLAB_NOTES,
   GITLAB_REMOTES_OUTPUT,
+  GITLAB_USER_OUTPUT,
   gitlabAuthor,
   gitlabIssue,
   issuesJson,
@@ -34,6 +35,8 @@ interface RunnerOptions {
   readonly changes?: (page: number) => string
   readonly links?: (iid: number) => string
   readonly graphql?: () => string
+  /** `glab api user` 的响应；默认返回录制里的当前用户。 */
+  readonly user?: () => string
 }
 
 interface RecordedRunner {
@@ -57,6 +60,13 @@ function recordedRunner(options: RunnerOptions = {}): RecordedRunner {
     }
 
     const endpoint = args[1] ?? ''
+    if (endpoint === 'user') {
+      return Promise.resolve({
+        stdout: (options.user ?? (() => GITLAB_USER_OUTPUT))(),
+        stderr: '',
+      })
+    }
+
     if (endpoint === 'graphql') {
       graphqlCalls.push(args.join(' '))
       return Promise.resolve({
@@ -148,6 +158,39 @@ describe('GitLab 工单后端', () => {
       ['#16', 16, 'open'],
       ['#9', 9, 'closed'],
     ])
+  })
+
+  it('列表快照带当前用户，身份查询走 glab api user', async () => {
+    const { tracker, calls } = trackerWith()
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.viewer).toBe('cnzgray')
+    const endpoints = calls.filter((call) => call[0] === 'glab').map((call) => call[2])
+    expect(endpoints).toContain('user')
+  })
+
+  it('身份查询失败时列表仍然成功，当前用户为 null', async () => {
+    const { tracker } = trackerWith({
+      user: () => {
+        throw new CommandError('failed', 'glab 退出码 1', 'HTTP 502: Bad Gateway', 1)
+      },
+    })
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.viewer).toBeNull()
+    expect(snapshot.tickets).toHaveLength(3)
+  })
+
+  it('列表快照带分配人的登录名', async () => {
+    const { tracker } = trackerWith({
+      issues: () => issuesJson([gitlabIssue({ iid: 15, title: '有分配人', assignees: ['alice'] })]),
+    })
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.tickets[0]?.assignees).toEqual(['alice'])
   })
 
   it('超过一页时按页循环到短页为止', async () => {
@@ -338,6 +381,9 @@ describe('GitLab 工单后端', () => {
       expect(endpoint).not.toContain('merge_requests')
       if (endpoint === 'graphql') {
         expect(call.slice(3).join(' ')).not.toContain('merge_requests')
+      } else if (endpoint === 'user') {
+        // 当前用户查询：人员筛选需要知道「我是谁」，不碰工单数据。
+        continue
       } else {
         expect(endpoint).toMatch(/\/issues(?:\?|\/)/)
       }
@@ -400,7 +446,11 @@ describe('GitLab 工单增量', () => {
 
     await tracker.fetchChanges?.('/workspace', SINCE)
 
-    const endpoint = calls.find((call) => call[0] === 'glab')?.[2] ?? ''
+    const endpoint =
+      calls
+        .filter((call) => call[0] === 'glab')
+        .map((call) => call[2] ?? '')
+        .find((value) => value.includes('updated_after')) ?? ''
     expect(endpoint).toContain('state=all')
     expect(endpoint).toContain(`updated_after=${new Date(SINCE).toISOString()}`)
     expect(endpoint).toContain('order_by=updated_at')
@@ -418,6 +468,26 @@ describe('GitLab 工单增量', () => {
     // 阻塞判定由宿主在合并后统一处理，增量保持原始票字段。
     expect(changes?.tickets[0]?.openBlockers).toBe(0)
     expect(changes?.tickets[0]?.blockedBy).toEqual([])
+  })
+
+  it('增量也刷新当前用户', async () => {
+    const { tracker } = trackerWith()
+
+    const changes = await tracker.fetchChanges?.('/workspace', SINCE)
+
+    expect(changes?.viewer).toBe('cnzgray')
+  })
+
+  it('增量身份查询失败时省略当前用户，交给宿主沿用基准', async () => {
+    const { tracker } = trackerWith({
+      user: () => {
+        throw new CommandError('failed', 'glab 退出码 1', 'HTTP 502: Bad Gateway', 1)
+      },
+    })
+
+    const changes = await tracker.fetchChanges?.('/workspace', SINCE)
+
+    expect(changes?.viewer).toBeUndefined()
   })
 
   it('增量按页读到短页为止', async () => {

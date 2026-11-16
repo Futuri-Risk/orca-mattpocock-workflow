@@ -33,6 +33,7 @@ describe('GraphQL 工单解析', () => {
         displayName: 'Cnzgray',
         avatarUrl: 'https://avatars.githubusercontent.com/u/1234?v=4',
       },
+      assignees: ['cnzgray'],
       createdAt: '2026-11-12T14:11:22Z',
       updatedAt: '2026-11-12T14:11:38Z',
       openBlockers: 0,
@@ -225,6 +226,89 @@ describe('GraphQL 详情解析', () => {
 
     expect(core.assignees).toEqual([ghAuthor('alice')])
     expect(core).not.toHaveProperty('comments')
+  })
+})
+
+describe('GraphQL 人员信息解析', () => {
+  it('同一次响应里读出当前用户与每张票的分配人登录名', () => {
+    const parsed = parseIssueGraphql(GH_ISSUES_OUTPUT)
+
+    expect(parsed.viewer).toBe('cnzgray')
+    expect(parsed.tickets.find((ticket) => ticket.number === 15)?.assignees).toEqual(['cnzgray'])
+    expect(parsed.tickets.find((ticket) => ticket.number === 16)?.assignees).toEqual([
+      'alice',
+      'bob',
+    ])
+  })
+
+  it('缺少 viewer 时按没有身份处理，列表仍然可用', () => {
+    const output = JSON.stringify({
+      data: {
+        repository: {
+          issues: {
+            totalCount: 1,
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [
+              {
+                number: 1,
+                title: '没有身份',
+                state: 'OPEN',
+                createdAt: '2026-01-01T00:00:00Z',
+                updatedAt: '2026-01-01T00:00:00Z',
+                labels: { nodes: [] },
+              },
+            ],
+          },
+        },
+      },
+    })
+
+    const parsed = parseIssueGraphql(output)
+
+    expect(parsed.viewer).toBeNull()
+    expect(parsed.tickets).toHaveLength(1)
+  })
+
+  it('缺少 assignees 或条目形状不对时跳过该条目，按空数组处理', () => {
+    const output = JSON.stringify({
+      data: {
+        viewer: { login: 'cnzgray' },
+        repository: {
+          issues: {
+            totalCount: 2,
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [
+              {
+                number: 1,
+                title: '没有分配人',
+                state: 'OPEN',
+                createdAt: '2026-01-01T00:00:00Z',
+                updatedAt: '2026-01-01T00:00:00Z',
+                labels: { nodes: [] },
+              },
+              {
+                number: 2,
+                title: '脏分配人',
+                state: 'OPEN',
+                createdAt: '2026-01-01T00:00:00Z',
+                updatedAt: '2026-01-01T00:00:00Z',
+                labels: { nodes: [] },
+                assignees: { nodes: [null, { login: '' }, { login: 'carol' }] },
+              },
+            ],
+          },
+        },
+      },
+    })
+
+    const parsed = parseIssueGraphql(output)
+
+    expect(parsed.tickets[0]?.assignees).toEqual([])
+    expect(parsed.tickets[1]?.assignees).toEqual(['carol'])
+  })
+
+  it('增量响应也带当前用户', () => {
+    expect(parseIssueChangesGraphql(GH_CHANGES_OUTPUT).viewer).toBe('cnzgray')
   })
 })
 

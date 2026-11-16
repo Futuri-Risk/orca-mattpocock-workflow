@@ -4,7 +4,7 @@
  *
  * 这里不发起任何请求，也不执行任何命令。
  */
-import { readAuthor, type AuthorFields } from '../../core/author.ts'
+import { readAuthor, readLogin, readLogins, type AuthorFields } from '../../core/author.ts'
 import { isRecord } from '../../core/json.ts'
 import type { Ticket, TicketState } from '../../core/ticket.ts'
 import { TrackerError } from '../../core/tracker-error.ts'
@@ -131,6 +131,7 @@ function parseIssue(value: unknown, index: number, avatarBaseUrl?: string): Pars
       state,
       labels: readLabels(value.labels),
       author: readAuthor(value.user, GITEA_AUTHOR_FIELDS, avatarBaseUrl),
+      assignees: readLogins(value.assignees, GITEA_AUTHOR_FIELDS),
       createdAt: readString(value.created_at, `第 ${String(number)} 张票的创建时间`),
       updatedAt: readString(value.updated_at, `第 ${String(number)} 张票的更新时间`),
       openBlockers: 0,
@@ -185,6 +186,23 @@ function parseJson(body: string): unknown {
   } catch (error) {
     throw new TrackerError('fetch-failed', 'Gitea 返回的不是有效 JSON。', { cause: error })
   }
+}
+
+/**
+ * 从 `tea api /user` 的响应里读当前登录名。
+ * 身份查询是列表的附属信息：输出损坏、不是对象或缺少 login 时按没有身份处理，
+ * 不让一次身份查询把整张列表打挂。
+ * @param body - `/user` 的响应体。
+ * @returns 登录名，或 null。
+ */
+export function parseCurrentLogin(body: string): string | null {
+  let payload: unknown
+  try {
+    payload = JSON.parse(body)
+  } catch {
+    return null
+  }
+  return readLogin(payload, 'login')
 }
 
 function invalid(message: string): TrackerError {

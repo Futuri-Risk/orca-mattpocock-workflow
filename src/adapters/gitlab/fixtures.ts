@@ -8,6 +8,13 @@ export const GITLAB_REMOTES_OUTPUT = [
   'origin\tgit@gitlab.com:cnzgray/platform/dsh-workflow.git (push)',
 ].join('\n')
 
+/** 录制里的当前登录用户：`glab api user` 的响应。 */
+export const GITLAB_USER_OUTPUT = JSON.stringify({
+  username: 'cnzgray',
+  name: 'Cnzgray',
+  id: 1,
+})
+
 /** 录制里的 GitLab 用户：头像地址按固定 id 推导，期望值可以按用户名推导。 */
 const GITLAB_USER_IDS: Readonly<Record<string, number>> = {
   dave: 4,
@@ -61,6 +68,7 @@ export function gitlabIssue(overrides: {
   readonly updatedAt?: string
   readonly closedAt?: string
   readonly author?: Record<string, unknown> | null
+  readonly assignees?: readonly string[]
 }): Record<string, unknown> {
   return {
     iid: overrides.iid,
@@ -76,6 +84,7 @@ export function gitlabIssue(overrides: {
             avatar_url: 'https://gitlab.com/uploads/-/system/user/avatar/1/avatar.png',
           }
         : overrides.author,
+    assignees: (overrides.assignees ?? []).map((username) => gitlabUser({ username })),
     created_at: overrides.createdAt ?? '2026-11-12T14:11:22Z',
     updated_at: overrides.updatedAt ?? '2026-11-12T14:11:38Z',
     closed_at: overrides.closedAt ?? null,

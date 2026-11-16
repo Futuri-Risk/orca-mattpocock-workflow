@@ -179,6 +179,7 @@ export async function writeStored(
     repositoryKey: repositoryKey(resolved.kind, resolved.address),
     repositoryHost: resolved.kind === 'markdown' ? null : (resolved.address?.host ?? null),
     fetchedAt: raw.fetchedAt,
+    viewer: raw.viewer,
     loaded: raw.tickets.length,
     total: raw.total,
     ...(raw.nextCursor === undefined ? {} : { nextCursor: raw.nextCursor }),
@@ -221,6 +222,7 @@ export function buildStoredSnapshot(
     repository: raw.repository,
     repositoryHost: stored.repositoryHost,
     fetchedAt: raw.fetchedAt,
+    viewer: raw.viewer,
     loaded: tickets.length,
     total: raw.total,
     hasMore: raw.nextCursor !== undefined,
@@ -238,6 +240,7 @@ export function buildStoredSnapshot(
       status: ticket.status,
       labels: ticket.labels,
       author: ticket.author,
+      assignees: ticket.assignees,
       skillAction: ticket.skillAction,
       skillActionReason: ticket.skillActionReason,
       createdAt: ticket.createdAt,
@@ -361,6 +364,7 @@ function rawOf(stored: SnapshotStoreEntry): TrackerSnapshot {
     loaded: stored.tickets.length,
     total: stored.total,
     tickets: stored.tickets,
+    viewer: stored.viewer,
     ...(stored.nextCursor === undefined ? {} : { nextCursor: stored.nextCursor }),
   }
 }

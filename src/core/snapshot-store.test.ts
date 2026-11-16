@@ -17,6 +17,7 @@ function entry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreEntry 
     repositoryKey: 'github@github.com/cnzgray/repo',
     repositoryHost: 'github.com',
     fetchedAt: 1_000,
+    viewer: 'cnzgray',
     loaded: 1,
     total: 1,
     tickets: [
@@ -27,6 +28,7 @@ function entry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreEntry 
         state: 'open',
         labels: ['ready-for-agent'],
         author: { login: 'cnzgray', displayName: null, avatarUrl: null },
+        assignees: ['cnzgray'],
         createdAt: '2026-01-01T00:00:00Z',
         updatedAt: '2026-01-01T00:00:00Z',
         openBlockers: 0,
@@ -113,5 +115,51 @@ describe('本地快照库条目', () => {
     const parsed = parseSnapshotStoreEntry(JSON.stringify(legacy))
 
     expect(parsed?.tickets[0]?.author?.avatarUrl).toBeNull()
+  })
+
+  it('当前用户为 null 的条目合法', () => {
+    const original = entry({ viewer: null })
+
+    const parsed = parseSnapshotStoreEntry(serializeSnapshotStoreEntry(original))
+
+    expect(parsed?.viewer).toBeNull()
+  })
+
+  it('缺少当前用户时整份作废，不把旧数据当成无身份', () => {
+    const raw = JSON.stringify({ ...entry(), viewer: undefined })
+
+    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  })
+
+  it('当前用户类型不对时整份作废', () => {
+    const raw = JSON.stringify({ ...entry(), viewer: 42 })
+
+    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  })
+
+  it('分配人不是字符串数组时整份作废', () => {
+    const old = entry()
+    const raw = JSON.stringify({
+      ...old,
+      tickets: [{ ...old.tickets[0], assignees: ['alice', 42] }],
+    })
+
+    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  })
+
+  it('缺少分配人时整份作废，旧缓存自动重拉', () => {
+    const old = entry()
+    const raw = JSON.stringify({
+      ...old,
+      tickets: [{ ...old.tickets[0], assignees: undefined }],
+    })
+
+    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  })
+
+  it('上一版（版本 2）的条目读不出来', () => {
+    const raw = JSON.stringify({ ...entry(), version: 2 })
+
+    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
   })
 })

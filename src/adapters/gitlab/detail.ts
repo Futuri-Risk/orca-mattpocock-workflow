@@ -30,7 +30,7 @@ import type {
   TicketState,
 } from '../../core/ticket.ts'
 import { CommandError, TrackerError } from '../../core/tracker-error.ts'
-import { GITLAB_AUTHOR_FIELDS } from './parse.ts'
+import { GITLAB_AUTHOR_FIELDS, parseCurrentUsername } from './parse.ts'
 import {
   callGlab,
   callGlabApi,
@@ -253,12 +253,8 @@ async function readNotes(
 }
 
 async function readCurrentUsername(run: CommandRunner, workspaceRoot: string): Promise<string> {
-  const payload = parseJson(await callGlabApi(run, workspaceRoot, 'user'))
-  if (!isRecord(payload)) throw invalidDetail('当前用户不是对象')
-  const username = payload.username
-  if (typeof username !== 'string' || username.length === 0) {
-    throw invalidDetail('当前用户缺少 username')
-  }
+  const username = parseCurrentUsername(await callGlabApi(run, workspaceRoot, 'user'))
+  if (username === null) throw invalidDetail('当前用户缺少 username')
   return username
 }
 

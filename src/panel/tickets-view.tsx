@@ -16,7 +16,7 @@ import type { MessageId } from '../protocol/i18n.ts'
 import { backendLabel } from './backend-label.ts'
 import { ErrorBanner } from './error-banner.tsx'
 import { useMessages } from './i18n.ts'
-import { FolderIcon, PlusIcon, RefreshIcon } from './icons.tsx'
+import { FolderIcon, PeopleIcon, PlusIcon, RefreshIcon } from './icons.tsx'
 import type { PromptCopy } from './injection.ts'
 import { newBugPrompt, newFeaturePrompt } from './prompts.ts'
 import { PromptCopyArea } from './prompt-copy.tsx'
@@ -49,6 +49,13 @@ import {
   STAT_STYLE,
   STAT_VALUE_STYLE,
   FILTER_SEGMENTED_STYLE,
+  PEOPLE_CHIP_ACTIVE_STYLE,
+  PEOPLE_CHIP_STYLE,
+  PEOPLE_CLEAR_STYLE,
+  PEOPLE_COUNT_ACTIVE_STYLE,
+  PEOPLE_COUNT_STYLE,
+  PEOPLE_ROW_STYLE,
+  PEOPLE_VIEWER_STYLE,
   SORT_DIRECTION_STYLE,
   SORT_GROUP_STYLE,
   SORT_SELECT_STYLE,
@@ -56,8 +63,10 @@ import {
 } from './task-panel-styles.ts'
 import {
   countTickets,
-  filterTickets,
-  sortTickets,
+  viewTickets,
+  type PeopleCounts,
+  type PeopleFilter,
+  type PersonFilterKey,
   type SortDirection,
   type TicketCounts,
   type TicketFilter,
@@ -116,17 +125,23 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
   const clock = props.now ?? Date.now
   const { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore } =
     useSnapshotRequest(props.client, props.workspaceRoot, props.refreshToken ?? 0)
-  const { preference, setFilter, toggleSort } = useViewPreference(props.workspaceRoot, snapshot)
+  const { preference, setFilter, toggleSort, togglePerson, clearPeople } = useViewPreference(
+    props.workspaceRoot,
+    snapshot,
+  )
   const nowValue = useNow(clock)
   const actions = useTicketActions(props.workspaceRoot, props.copy)
 
   const tickets = snapshot?.tickets ?? []
   const counts = countTickets(tickets)
-  const visible = sortTickets(
-    filterTickets(tickets, preference.filter),
-    preference.sortKey,
-    preference.direction,
-  )
+  const view = viewTickets(tickets, {
+    filter: preference.filter,
+    sortKey: preference.sortKey,
+    direction: preference.direction,
+    viewer: snapshot?.viewer ?? null,
+    people: preference,
+  })
+  const visible = view.visible
   const busy = phase === 'loading' || phase === 'refreshing' || appending
 
   const focused = useFocusedTicket(props.focusRef, props.onFocusHandled, props.workspaceRoot)
@@ -163,6 +178,14 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             direction={preference.direction}
             onFilter={setFilter}
             onSort={toggleSort}
+          />
+          {/* 认不出当前用户时整行不出现：不放永远点不出结果的按钮。 */}
+          <PeopleFilterRow
+            viewer={snapshot.viewer}
+            people={preference}
+            counts={view.counts}
+            onToggle={togglePerson}
+            onClear={clearPeople}
           />
           <TicketRows
             snapshot={snapshot}
@@ -598,6 +621,107 @@ function Chip(props: {
     >
       {props.label}
       {props.suffix ?? ''}
+    </button>
+  )
+}
+
+/**
+ * 人员筛选行：两个独立的人员开关、可选的「清除」与行尾的当前身份。
+ * 只在知道当前用户时渲染；整行是一个带名称的按钮组。
+ */
+export function PeopleFilterRow(props: {
+  readonly viewer: string | null
+  readonly people: PeopleFilter
+  readonly counts: PeopleCounts
+  readonly onToggle: (key: PersonFilterKey) => void
+  readonly onClear: () => void
+}): React.ReactElement | null {
+  const viewer = props.viewer
+  // 认不出当前用户时整行不出现：不放永远点不出结果的按钮。
+  if (viewer === null) return null
+  const t = useMessages()
+  const anyActive = props.people.assignedToMe || props.people.createdByMe
+  const viewerHint = t('tickets.people.viewerHint', { login: viewer })
+
+  return (
+    <div
+      role="group"
+      aria-label={t('tickets.people.group')}
+      data-testid="people-filter"
+      style={PEOPLE_ROW_STYLE}
+    >
+      <span aria-hidden="true" style={{ color: COLORS.tertiary, display: 'inline-flex' }}>
+        <PeopleIcon />
+      </span>
+      <PersonChip
+        testId="people-assigned"
+        label={t('tickets.people.assigned')}
+        title={t('tickets.people.assignedHint')}
+        count={props.counts.assignedToMe}
+        active={props.people.assignedToMe}
+        onClick={() => {
+          props.onToggle('assignedToMe')
+        }}
+      />
+      <PersonChip
+        testId="people-created"
+        label={t('tickets.people.created')}
+        title={t('tickets.people.createdHint')}
+        count={props.counts.createdByMe}
+        active={props.people.createdByMe}
+        onClick={() => {
+          props.onToggle('createdByMe')
+        }}
+      />
+      {anyActive ? (
+        <button
+          type="button"
+          data-testid="people-clear"
+          data-hover="link"
+          onClick={props.onClear}
+          style={PEOPLE_CLEAR_STYLE}
+        >
+          {t('tickets.people.clear')}
+        </button>
+      ) : null}
+      <span data-testid="people-viewer" title={viewerHint} style={PEOPLE_VIEWER_STYLE}>
+        {t('tickets.people.viewer', { login: viewer })}
+      </span>
+    </div>
+  )
+}
+
+/**
+ * 一个人员开关：文字与计数都在按钮内容里，读屏能读出「分配给我 3」；
+ * 选中态同时用描边、底色与字重表达，不只靠颜色。
+ */
+function PersonChip(props: {
+  readonly testId: string
+  readonly label: string
+  readonly title: string
+  readonly count: number
+  readonly active: boolean
+  readonly onClick: () => void
+}): React.ReactElement {
+  return (
+    <button
+      type="button"
+      data-testid={props.testId}
+      data-hover="person"
+      aria-pressed={props.active}
+      title={props.title}
+      onClick={props.onClick}
+      style={{ ...PEOPLE_CHIP_STYLE, ...(props.active ? PEOPLE_CHIP_ACTIVE_STYLE : undefined) }}
+    >
+      {props.label}
+      <span
+        style={{
+          ...PEOPLE_COUNT_STYLE,
+          ...(props.active ? PEOPLE_COUNT_ACTIVE_STYLE : undefined),
+        }}
+      >
+        {props.count}
+      </span>
     </button>
   )
 }

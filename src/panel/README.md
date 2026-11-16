@@ -20,8 +20,12 @@ Orca 右侧栏里的 MattWorkflow 面板（`ui: "html"`，独立 frame 里跑的
   面板只把提示词复制到剪贴板。`clipboard.ts` 先试剪贴板 API；面板 iframe 没有
   `clipboard-write` 权限策略时会拒绝，此时退回隐藏 textarea + `execCommand('copy')`。
   两条路都失败才给出只读、已全选的文本框由用户手动 ⌘C。
-- `view-preference.ts`：按工作区记住筛选与排序，存在 Orca 的插件私有存储里（一份 JSON 映射，
-  最多 50 个工作区条目）。
+- `view-preference.ts`：按仓库记住筛选、排序与两个人员开关（分配给我 / 我创建的），存在 Orca 的
+  插件私有存储里（一份 JSON 映射，最多 50 个条目；同一仓库的多个 worktree 共用一份）。
+- `ticket-view.ts`：列表的展示逻辑。状态过滤 → 人员过滤 → 排序在这里组合一次，
+  人员计数也在这里算；界面只渲染结果，不重复判定。
+- `tickets-view.tsx`：列表视图。状态分段控件下方的人员筛选行只在快照带当前用户时渲染，
+  两个胶囊开关带计数，任一开关打开时出现「清除」，行尾显示 `@登录名`。
 - `capabilities.ts`：面板侧能力诊断（面板桥、剪贴板、worker 可达），与环境检查里
   worker 侧的能力合并显示。
 - `i18n.ts`：界面语言。解析 `language` 设置（`auto` / `zh-CN` / `en`）与宿主 BCP-47 语言，

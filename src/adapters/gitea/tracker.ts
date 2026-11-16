@@ -23,7 +23,7 @@ import { TrackerError } from '../../core/tracker-error.ts'
 import { deleteGiteaTicket, readGiteaDeletePermission } from './delete.ts'
 import { applyGiteaChanges, readGiteaDetail } from './detail.ts'
 import { readGiteaOptions } from './options.ts'
-import { parseDependencies, parseIssuesPage, type ParsedIssue } from './parse.ts'
+import { parseCurrentLogin, parseDependencies, parseIssuesPage, type ParsedIssue } from './parse.ts'
 import { callGiteaApi, ensureSuccess, readRepository, type GiteaRepository } from './shared.ts'
 
 /** Gitea 后端依赖。 */
@@ -56,6 +56,8 @@ export function createGiteaTracker(deps: GiteaTrackerDeps): Tracker {
   return {
     async fetchSnapshot(workspaceRoot: string): Promise<TrackerSnapshot> {
       const repository = await readRepository(deps.run, workspaceRoot)
+      // 身份与列表并行发出：身份失败只丢筛选行，不拖慢也不打挂列表。
+      const viewer = readCurrentViewer(deps, workspaceRoot)
       const issues = await readIssues(deps, workspaceRoot, repository, pageSize)
       const states = new Map<number, TicketState>()
       for (const issue of issues.items) {
@@ -86,6 +88,7 @@ export function createGiteaTracker(deps: GiteaTrackerDeps): Tracker {
         loaded: tickets.length,
         total: Math.max(issues.total ?? tickets.length, tickets.length),
         tickets,
+        viewer: await viewer,
       }
     },
 
@@ -124,6 +127,7 @@ async function readGiteaChanges(
   }
 
   const repository = await readRepository(deps.run, workspaceRoot)
+  const viewer = readCurrentViewer(deps, workspaceRoot)
   const issues = await readIssues(deps, workspaceRoot, repository, pageSize, since)
 
   const states = new Map<number, TicketState>()
@@ -151,7 +155,32 @@ async function readGiteaChanges(
     }),
   }))
 
-  return { tickets, truncated: issues.truncated }
+  const login = await viewer
+  return {
+    tickets,
+    truncated: issues.truncated,
+    // 身份查询失败时省略，宿主沿用基准数据里的身份。
+    ...(login === null ? {} : { viewer: login }),
+  }
+}
+
+/**
+ * 读取当前登录名。身份是列表的附属信息：命令失败或响应不可识别时返回 null，
+ * 不把整张列表当成失败。
+ * @param deps - 命令执行器。
+ * @param workspaceRoot - 工作区根目录。
+ * @returns 登录名，或 null。
+ */
+async function readCurrentViewer(
+  deps: GiteaTrackerDeps,
+  workspaceRoot: string,
+): Promise<string | null> {
+  try {
+    const response = await callGiteaApi(deps.run, workspaceRoot, '/user')
+    return parseCurrentLogin(response.body)
+  } catch {
+    return null
+  }
 }
 
 /**

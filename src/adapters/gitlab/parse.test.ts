@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
+import { GITLAB_USER_OUTPUT, gitlabIssue } from './fixtures.ts'
 import {
   encodeProjectPath,
   hasNativeBlockingLinks,
   parseBlockedByCounts,
+  parseCurrentUsername,
   parseIssuesPage,
   parseNativeBlockers,
 } from './parse.ts'
@@ -41,6 +43,7 @@ describe('GitLab 工单解析', () => {
           displayName: 'Cnzgray',
           avatarUrl: 'https://gitlab.com/uploads/-/system/user/avatar/1/avatar.png',
         },
+        assignees: [],
         createdAt: '2026-11-12T14:11:22Z',
         updatedAt: '2026-11-21T14:11:38Z',
         openBlockers: 0,
@@ -193,5 +196,46 @@ describe('GitLab 批量阻塞计数解析', () => {
     })
 
     expect(() => parseBlockedByCounts(output)).toThrow(/blockedByCount/)
+  })
+})
+
+describe('GitLab 人员信息解析', () => {
+  it('列表响应的 assignees[].username 变成登录名数组', () => {
+    const parsed = parseIssuesPage(
+      JSON.stringify([
+        gitlabIssue({
+          iid: 15,
+          title: '右侧栏任务面板 MVP',
+          assignees: ['cnzgray', 'alice'],
+        }),
+      ]),
+    )
+
+    expect(parsed[0]?.ticket.assignees).toEqual(['cnzgray', 'alice'])
+  })
+
+  it('分配人字段缺失或条目形状不对时跳过，按空数组处理', () => {
+    const output = JSON.stringify([
+      gitlabIssue({ iid: 15, title: '没有分配人' }),
+      {
+        ...gitlabIssue({ iid: 16, title: '脏分配人' }),
+        assignees: [null, { username: '' }, { username: 'carol' }],
+      },
+    ])
+
+    const parsed = parseIssuesPage(output)
+
+    expect(parsed[0]?.ticket.assignees).toEqual([])
+    expect(parsed[1]?.ticket.assignees).toEqual(['carol'])
+  })
+
+  it('当前用户取 glab api user 的 username', () => {
+    expect(parseCurrentUsername(GITLAB_USER_OUTPUT)).toBe('cnzgray')
+  })
+
+  it('当前用户输出损坏、不是对象或缺少 username 时为 null', () => {
+    expect(parseCurrentUsername('not json')).toBeNull()
+    expect(parseCurrentUsername('[]')).toBeNull()
+    expect(parseCurrentUsername('{"username":""}')).toBeNull()
   })
 })

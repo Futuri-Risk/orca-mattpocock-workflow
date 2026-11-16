@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { giteaIssue, includeHeaders } from './fixtures.ts'
-import { parseApiResponse, parseDependencies, parseIssuesPage } from './parse.ts'
+import { GITEA_USER_OUTPUT, giteaIssue, includeHeaders } from './fixtures.ts'
+import {
+  parseApiResponse,
+  parseCurrentLogin,
+  parseDependencies,
+  parseIssuesPage,
+} from './parse.ts'
 
 describe('Gitea API 响应解析', () => {
   it('从标准错误里读出状态码与总条数', () => {
@@ -55,6 +60,7 @@ describe('Gitea 工单解析', () => {
             displayName: 'Cnzgray',
             avatarUrl: 'https://gitea.example.com/avatars/1',
           },
+          assignees: [],
           createdAt: '2026-11-12T14:11:22Z',
           updatedAt: '2026-11-21T14:11:38Z',
           openBlockers: 0,
@@ -124,5 +130,46 @@ describe('Gitea 工单解析', () => {
 
   it('依赖列表不是数组时返回数据格式错误', () => {
     expect(() => parseDependencies('{"message":"Not Found"}')).toThrow(/依赖/)
+  })
+})
+
+describe('Gitea 人员信息解析', () => {
+  it('列表响应的 assignees[].login 变成登录名数组', () => {
+    const parsed = parseIssuesPage(
+      JSON.stringify([
+        giteaIssue({
+          number: 15,
+          title: '右侧栏任务面板 MVP',
+          assignees: ['cnzgray', 'alice'],
+        }),
+      ]),
+    )
+
+    expect(parsed[0]?.ticket.assignees).toEqual(['cnzgray', 'alice'])
+  })
+
+  it('分配人字段缺失或条目形状不对时跳过，按空数组处理', () => {
+    const output = JSON.stringify([
+      giteaIssue({ number: 15, title: '没有分配人' }),
+      {
+        ...giteaIssue({ number: 16, title: '脏分配人' }),
+        assignees: [null, { login: '' }, { login: 'carol' }],
+      },
+    ])
+
+    const parsed = parseIssuesPage(output)
+
+    expect(parsed[0]?.ticket.assignees).toEqual([])
+    expect(parsed[1]?.ticket.assignees).toEqual(['carol'])
+  })
+
+  it('当前用户取 tea api /user 的 login', () => {
+    expect(parseCurrentLogin(GITEA_USER_OUTPUT.stdout)).toBe('cnzgray')
+  })
+
+  it('当前用户输出损坏、不是对象或缺少 login 时为 null', () => {
+    expect(parseCurrentLogin('not json')).toBeNull()
+    expect(parseCurrentLogin('[]')).toBeNull()
+    expect(parseCurrentLogin('{"login":""}')).toBeNull()
   })
 })

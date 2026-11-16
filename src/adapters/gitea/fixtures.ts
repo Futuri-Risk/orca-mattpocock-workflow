@@ -107,6 +107,7 @@ export function giteaIssue(overrides: {
   readonly closedAt?: string
   readonly pullRequest?: boolean
   readonly user?: Record<string, unknown> | null
+  readonly assignees?: readonly string[]
 }): Record<string, unknown> {
   const issue: Record<string, unknown> = {
     id: overrides.number,
@@ -122,6 +123,7 @@ export function giteaIssue(overrides: {
       overrides.user === undefined
         ? { login: 'cnzgray', full_name: 'Cnzgray', avatar_url: '/avatars/1' }
         : overrides.user,
+    assignees: (overrides.assignees ?? []).map((login) => giteaUser({ login })),
     body: overrides.body ?? '',
     created_at: overrides.createdAt ?? '2026-11-12T14:11:22Z',
     updated_at: overrides.updatedAt ?? '2026-11-12T14:11:38Z',
@@ -294,3 +296,6 @@ export const GITEA_ASSIGNEES_OUTPUT = apiCall([
 
 /** `/repos/:owner/:repo` 的录制输出：当前用户是仓库管理员。 */
 export const GITEA_REPO_PERMISSION_OUTPUT = apiCall({ permissions: { admin: true } })
+
+/** `tea api /user` 的录制输出：当前登录用户。 */
+export const GITEA_USER_OUTPUT = apiCall({ login: 'cnzgray' })

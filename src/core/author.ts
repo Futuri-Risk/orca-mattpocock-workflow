@@ -16,6 +16,19 @@ export interface AuthorFields {
 }
 
 /**
+ * 从后端返回的用户对象里读一个登录名字段。
+ * 登录名去首尾空白；字段缺失、不是字符串或为空时返回 null。
+ * 各后端的字段名不同（`login` / `username`），规则只在这里实现一次。
+ * @param value - 后端返回的用户对象。
+ * @param field - 登录名字段名。
+ * @returns 非空登录名，或 null。
+ */
+export function readLogin(value: unknown, field: string): string | null {
+  if (!isRecord(value)) return null
+  return readText(value[field])
+}
+
+/**
  * 从后端返回的用户对象里读创建人。
  * @param value - 后端返回的用户对象。
  * @param fields - 该后端使用的字段名。
@@ -29,7 +42,7 @@ export function readAuthor(
 ): TicketAuthor | null {
   if (!isRecord(value)) return null
 
-  const login = readText(value[fields.login])
+  const login = readLogin(value, fields.login)
   if (login === null) return null
 
   return {
@@ -59,6 +72,23 @@ export function readAuthors(
     if (author !== null) authors.push(author)
   }
   return authors
+}
+
+/**
+ * 从后端返回的用户数组里读出登录名，跳过识别不出来的元素。
+ * 列表快照只存登录名，不读展示名与头像。
+ * @param value - 后端返回的用户数组。
+ * @param fields - 该后端使用的字段名。
+ * @returns 登录名，保持输入顺序；字段缺失或形状不对时是空数组。
+ */
+export function readLogins(value: unknown, fields: AuthorFields): readonly string[] {
+  if (!Array.isArray(value)) return []
+  const logins: string[] = []
+  for (const entry of value) {
+    const login = readLogin(entry, fields.login)
+    if (login !== null) logins.push(login)
+  }
+  return logins
 }
 
 /**

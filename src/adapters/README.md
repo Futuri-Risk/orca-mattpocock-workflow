@@ -26,6 +26,11 @@
   宿主用 `snapshot.loadMore` 按游标追加；GitLab、Gitea 与本地 Markdown 一次取全，没有 `nextCursor`。
   增量刷新保留已追加的窗口与游标（合并结果不裁剪）；「全量刷新」或「只加载了一部分却没有游标」的
   旧缓存才回到第一页。
+- 列表里的人员信息：每张票带分配人登录名（`assignees`），快照带当前登录用户（`viewer`）。
+  GitHub 在同一次 GraphQL 查询里取 `viewer.login` 与 `assignees(first: 10)`；GitLab / Gitea 的
+  列表响应自带分配人，另发一次 `glab api user` / `tea api /user` 查身份，与列表并行发出。
+  身份查询失败只让 `viewer` 为 null，不影响列表；本地 Markdown 的 `viewer` 为 null、分配人为空数组。
+  分配人只存登录名，不读展示名与头像。
 - 详情只在打开详情时请求，不进入列表快照；创建人、评论作者与分配人都是结构化用户
   （登录名 / 展示名 / 头像地址），与列表的创建人同源同形：GitHub 的 `author.login` + `avatarUrl`、
   GitLab 的 `username` + `avatar_url`、Gitea 的 `login` + `avatar_url`（相对地址按实例基准补全）；

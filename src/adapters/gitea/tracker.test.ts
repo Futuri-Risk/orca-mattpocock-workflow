@@ -13,6 +13,7 @@ import {
   GITEA_LABEL_PAGES,
   GITEA_REMOTES_OUTPUT,
   GITEA_REPO_PERMISSION_OUTPUT,
+  GITEA_USER_OUTPUT,
   apiCall,
   failedApiCall,
   giteaAuthor,
@@ -33,6 +34,8 @@ interface RunnerOptions {
   /** 带 `since` 的增量查询用这一组输出。 */
   readonly changes?: (page: number) => RecordedApiCall
   readonly dependencies?: (index: number) => RecordedApiCall
+  /** `tea api /user` 的响应；默认返回录制里的当前用户。 */
+  readonly user?: () => RecordedApiCall
 }
 
 interface RecordedRunner {
@@ -54,6 +57,11 @@ function recordedRunner(options: RunnerOptions = {}): RecordedRunner {
     }
 
     const endpoint = args[2] ?? ''
+    if (endpoint === '/user') {
+      const recorded = (options.user ?? (() => GITEA_USER_OUTPUT))()
+      return Promise.resolve({ stdout: recorded.stdout, stderr: recorded.stderr })
+    }
+
     const dependency = /\/issues\/(\d+)\/dependencies/.exec(endpoint)
     if (dependency !== null) {
       const index = Number.parseInt(dependency[1] ?? '', 10)
@@ -103,6 +111,40 @@ describe('Gitea 工单后端', () => {
       ['#16', 16, 'open'],
       ['#9', 9, 'closed'],
     ])
+  })
+
+  it('列表快照带当前用户与分配人', async () => {
+    const { tracker } = trackerWith()
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.viewer).toBe('cnzgray')
+    expect(snapshot.tickets[0]?.assignees).toEqual([])
+  })
+
+  it('身份查询失败时列表仍然成功，当前用户为 null', async () => {
+    const { tracker } = trackerWith({
+      user: () => {
+        throw new CommandError('failed', 'tea 退出码 1', 'HTTP 502: Bad Gateway', 1)
+      },
+    })
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.viewer).toBeNull()
+    expect(snapshot.tickets).toHaveLength(3)
+  })
+
+  it('列表响应的分配人登录名进入快照', async () => {
+    const { tracker } = trackerWith({
+      issues: () =>
+        apiCall([giteaIssue({ number: 15, title: '有分配人', assignees: ['alice', 'bob'] })], 1),
+      dependencies: () => apiCall([]),
+    })
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.tickets[0]?.assignees).toEqual(['alice', 'bob'])
   })
 
   it('自建实例的头像按远端协议与端口补成绝对地址', async () => {
@@ -226,6 +268,8 @@ describe('Gitea 工单后端', () => {
     expect(endpoints.length).toBeGreaterThan(0)
     for (const endpoint of endpoints) {
       expect(endpoint).not.toContain('/pulls')
+      // 当前用户查询是人员筛选的前提，不属于工单数据。
+      if (endpoint === '/user') continue
       expect(endpoint).toContain('/issues')
     }
   })
@@ -289,7 +333,11 @@ describe('Gitea 工单增量', () => {
 
     await tracker.fetchChanges?.('/workspace', SINCE)
 
-    const endpoint = calls.find((call) => call[0] === 'tea')?.[3] ?? ''
+    const endpoint =
+      calls
+        .filter((call) => call[0] === 'tea')
+        .map((call) => call[3] ?? '')
+        .find((value) => value.includes('since=')) ?? ''
     expect(endpoint).toContain('state=all')
     expect(endpoint).toContain('type=issues')
     expect(endpoint).toContain(`since=${new Date(SINCE).toISOString()}`)
@@ -305,6 +353,26 @@ describe('Gitea 工单增量', () => {
     // Gitea 没有单独的阻塞补齐能力，增量里要自己补齐，
     // 否则合并后这张票会显示成没有阻塞。
     expect(changes?.tickets[0]?.openBlockers).toBe(1)
+  })
+
+  it('增量也刷新当前用户', async () => {
+    const { tracker } = trackerWith()
+
+    const changes = await tracker.fetchChanges?.('/workspace', SINCE)
+
+    expect(changes?.viewer).toBe('cnzgray')
+  })
+
+  it('增量身份查询失败时省略当前用户，交给宿主沿用基准', async () => {
+    const { tracker } = trackerWith({
+      user: () => {
+        throw new CommandError('failed', 'tea 退出码 1', 'HTTP 502: Bad Gateway', 1)
+      },
+    })
+
+    const changes = await tracker.fetchChanges?.('/workspace', SINCE)
+
+    expect(changes?.viewer).toBeUndefined()
   })
 
   it('翻到页数上限还没拿完时标记为截断', async () => {

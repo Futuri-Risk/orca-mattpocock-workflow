@@ -338,6 +338,78 @@ export const SORT_DIRECTION_STYLE: CSSProperties = {
   lineHeight: '20px',
 }
 
+/**
+ * 人员筛选行：比状态分段更轻的一行，只在知道当前用户时出现。
+ * 横向可换行，不横向滚动、不挤压排序控件。
+ */
+export const PEOPLE_ROW_STYLE: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: 6,
+  padding: '0 12px 6px',
+  minWidth: 0,
+}
+
+/** 人员开关：细描边胶囊，不使用状态分段的槽底色与选中抬起的白底。 */
+export const PEOPLE_CHIP_STYLE: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 4,
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: 999,
+  color: COLORS.secondary,
+  padding: '1px 9px',
+  cursor: 'pointer',
+  font: 'inherit',
+  fontSize: 11,
+  lineHeight: '18px',
+  whiteSpace: 'nowrap',
+}
+
+/** 人员开关的选中态：强调色文字、45% 描边、10% 浅底与字重 500。 */
+export const PEOPLE_CHIP_ACTIVE_STYLE: CSSProperties = {
+  color: COLORS.accent,
+  borderColor: `color-mix(in srgb, ${COLORS.accent} 45%, transparent)`,
+  background: `color-mix(in srgb, ${COLORS.accent} 10%, transparent)`,
+  fontWeight: 500,
+}
+
+/** 人员开关上的计数：等宽数字，未选中时用三级文字色。 */
+export const PEOPLE_COUNT_STYLE: CSSProperties = {
+  fontVariantNumeric: 'tabular-nums',
+  color: COLORS.tertiary,
+}
+
+/** 选中时计数跟随强调色。 */
+export const PEOPLE_COUNT_ACTIVE_STYLE: CSSProperties = {
+  color: COLORS.accent,
+}
+
+/** 「清除」：11px 三级文字按钮，只在任一人员开关打开时出现。 */
+export const PEOPLE_CLEAR_STYLE: CSSProperties = {
+  border: 'none',
+  background: 'transparent',
+  color: COLORS.tertiary,
+  padding: 0,
+  cursor: 'pointer',
+  font: 'inherit',
+  fontSize: 11,
+  lineHeight: '18px',
+}
+
+/** 行尾身份：`@登录名` 过长时省略号截断，完整值放在 title 里。 */
+export const PEOPLE_VIEWER_STYLE: CSSProperties = {
+  marginLeft: 'auto',
+  color: COLORS.tertiary,
+  fontSize: 11,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  minWidth: 0,
+  maxWidth: '100%',
+}
+
 export const LOADED_STYLE: CSSProperties = {
   padding: '0 12px 6px',
   color: COLORS.tertiary,
@@ -611,6 +683,7 @@ export const PANEL_SHEET = `
 [data-mattwf-panel] [data-hover="action"]:not(:disabled):active { border-color: color-mix(in srgb, currentColor 65%, transparent); background: color-mix(in srgb, currentColor 28%, transparent); }
 [data-mattwf-panel] [data-hover="action"][data-copied="true"]:not(:disabled) { border-color: color-mix(in srgb, currentColor 55%, transparent); background: color-mix(in srgb, currentColor 20%, transparent); }
 [data-mattwf-panel] [data-hover="action"]:disabled { border-color: ${COLORS.border}; background: transparent; }
+[data-mattwf-panel] [data-hover="person"]:not(:disabled):hover { background: color-mix(in srgb, currentColor 8%, transparent); }
 [data-mattwf-panel] [data-hover="link"]:hover { text-decoration: underline; }
 [data-mattwf-panel] a:focus { outline: none; }
 [data-mattwf-panel] a:focus-visible { outline: 2px solid ${COLORS.accent}; outline-offset: 1px; border-radius: 2px; }

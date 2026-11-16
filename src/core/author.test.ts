@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { normalizeAvatarUrl, readAuthor, readAuthors } from './author.ts'
+import { normalizeAvatarUrl, readAuthor, readAuthors, readLogin, readLogins } from './author.ts'
 
 const FIELDS = { login: 'login', displayName: 'name', avatarUrl: 'avatarUrl' } as const
 
@@ -66,6 +66,30 @@ describe('创建人解析', () => {
   it('不是数组的用户集合按空列表处理', () => {
     expect(readAuthors(null, FIELDS)).toEqual([])
     expect(readAuthors({ login: 'alice' }, FIELDS)).toEqual([])
+  })
+
+  it('分配人只取登录名，跳过识别不出来的元素', () => {
+    const logins = readLogins(
+      [
+        { login: 'alice', name: 'Alice' },
+        null,
+        { name: '没有登录名' },
+        { login: '   ' },
+        { login: 'bob' },
+      ],
+      FIELDS,
+    )
+
+    expect(logins).toEqual(['alice', 'bob'])
+    expect(readLogins(undefined, FIELDS)).toEqual([])
+    expect(readLogins({ nodes: [{ login: 'alice' }] }, FIELDS)).toEqual([])
+  })
+
+  it('登录名字段按后端字段名读取，去空白并拒绝非字符串', () => {
+    expect(readLogin({ username: ' cnzgray ' }, 'username')).toBe('cnzgray')
+    expect(readLogin({ login: 'cnzgray' }, 'username')).toBeNull()
+    expect(readLogin({ login: 42 }, 'login')).toBeNull()
+    expect(readLogin(null, 'login')).toBeNull()
   })
 
   it('非 http(s) 地址按无头像处理', () => {

@@ -28,7 +28,7 @@ import type {
   TicketState,
 } from '../../core/ticket.ts'
 import { TrackerError } from '../../core/tracker-error.ts'
-import { GITEA_AUTHOR_FIELDS, type ApiResponse } from './parse.ts'
+import { GITEA_AUTHOR_FIELDS, parseCurrentLogin, type ApiResponse } from './parse.ts'
 import {
   callGiteaApi,
   callTea,
@@ -182,12 +182,8 @@ async function readComments(
 async function readCurrentLogin(run: CommandRunner, workspaceRoot: string): Promise<string> {
   const response = await callGiteaApi(run, workspaceRoot, '/user')
   ensureDetailSuccess(response, '读取 Gitea 当前用户')
-  const payload = parseJson(response.body)
-  if (!isRecord(payload)) throw invalidDetail('当前用户不是对象')
-  const login = payload.login
-  if (typeof login !== 'string' || login.length === 0) {
-    throw invalidDetail('当前用户缺少 login')
-  }
+  const login = parseCurrentLogin(response.body)
+  if (login === null) throw invalidDetail('当前用户缺少 login')
   return login
 }
 
