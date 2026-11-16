@@ -70,9 +70,10 @@ same `WorkspaceSnapshot`:
 
 - Ticket level: verdict (`status`, `category`), close time (`closedAt`, only when available),
   blocking references (`blockedBy`, only when available; GitHub list queries have no dependency
-  edges), assignee logins (`assignees`, an empty array when unassigned) and the parent reference
+  edges), assignee logins (`assignees`, an empty array when unassigned), the parent reference
   (`parent`, only when available; a cross-repository parent is `owner/name#number`, a GitLab epic is
-  `&iid`).
+  `&iid`) and the page URL (`url`, only when the backend provides it; local Markdown has no remote
+  link);
 - Snapshot level: repository identity, backend, instance host, fetch time, loaded and total counts,
   whether blockers are final, the signed-in user (`viewer`, null when it cannot be identified; the
   people filter relies on it to know who "me" is), and the hierarchy capability source (`hierarchy`:

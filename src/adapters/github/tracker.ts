@@ -43,6 +43,7 @@ const ISSUE_NODES = `nodes {
         number
         title
         state
+        url
         createdAt
         updatedAt
         closedAt

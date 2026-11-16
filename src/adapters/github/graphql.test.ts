@@ -40,6 +40,21 @@ describe('GraphQL 工单解析', () => {
     })
   })
 
+  it('列表解析工单链接，字段缺失时省略', () => {
+    const payload = JSON.parse(GH_ISSUES_OUTPUT) as {
+      data: { repository: { issues: { nodes: Record<string, unknown>[] } } }
+    }
+    const url = 'https://github.com/cnzgray/dsh-mattpocock-workflow/issues/15'
+    const node = payload.data.repository.issues.nodes[0]
+    if (node === undefined) throw new Error('录制快照缺少第一张票')
+    node.url = url
+
+    const parsed = parseIssueGraphql(JSON.stringify(payload))
+
+    expect(parsed.tickets[0]?.url).toBe(url)
+    expect(parseIssueGraphql(GH_ISSUES_OUTPUT).tickets[0]?.url).toBeUndefined()
+  })
+
   it('把阻塞汇总映射成未关闭阻塞数', () => {
     const parsed = parseIssueGraphql(GH_ISSUES_OUTPUT)
 

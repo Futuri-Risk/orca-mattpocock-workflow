@@ -6,6 +6,7 @@
  */
 import { readAuthor, readLogin, readLogins, type AuthorFields } from '../../core/author.ts'
 import { isRecord } from '../../core/json.ts'
+import { readOptionalString } from '../../core/ticket-detail.ts'
 import type { Ticket, TicketState } from '../../core/ticket.ts'
 import { TrackerError } from '../../core/tracker-error.ts'
 
@@ -122,6 +123,7 @@ function parseIssue(value: unknown, index: number, avatarBaseUrl?: string): Pars
   const title = readString(value.title, `第 ${String(number)} 张票的标题`)
   const state = readState(value.state, number)
   const closedAt = readClosedAt(value.closed_at, number)
+  const url = readOptionalString(value.html_url)
 
   return {
     ticket: {
@@ -137,6 +139,7 @@ function parseIssue(value: unknown, index: number, avatarBaseUrl?: string): Pars
       openBlockers: 0,
       blockedBy: [],
       ...(closedAt === undefined ? {} : { closedAt }),
+      ...(url === null ? {} : { url }),
     },
     body: typeof value.body === 'string' ? value.body : '',
   }

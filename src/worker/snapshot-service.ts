@@ -381,7 +381,13 @@ async function refreshSnapshot(
   const extendable =
     base === undefined || base.nextCursor !== undefined || base.total <= base.tickets.length
 
-  if (base !== undefined && !full && extendable && tracker.fetchChanges !== undefined) {
+  if (
+    base !== undefined &&
+    !full &&
+    extendable &&
+    tracker.fetchChanges !== undefined &&
+    !needsUrlBackfill(resolved, base)
+  ) {
     const merged = await mergeIncremental(deps, cache, target, resolved, base, startedAt)
     if (merged !== undefined) return merged
   }
@@ -400,6 +406,21 @@ async function refreshSnapshot(
   } catch (error) {
     return await keepOldSnapshot(deps, cache, target, mapError(error), startedAt)
   }
+}
+
+/**
+ * 旧缓存没有工单链接：远端后端必须全量重拉一次。
+ *
+ * 增量查询只返回窗口内变更过的票，未变更的票会原样沿用基准对象；
+ * 只走增量的话，旧缓存里缺链接的票永远补不上。全量重拉一次即可让所有票
+ * 与后端字段集对齐。本地 Markdown 本来就没有远端链接，不触发全量。
+ * @param resolved - 解析出的后端。
+ * @param base - 库里的基准数据。
+ * @returns 是否需要为了补齐链接而全量重拉。
+ */
+function needsUrlBackfill(resolved: ResolvedBackend, base: StoredHit['entry']): boolean {
+  if (resolved.kind === 'markdown') return false
+  return base.tickets.some((ticket) => ticket.url === undefined)
 }
 
 /**
@@ -872,6 +893,7 @@ function buildSnapshot(
       ...(ticket.closedAt === undefined ? {} : { closedAt: ticket.closedAt }),
       ...(ticket.blockedBy === undefined ? {} : { blockedBy: ticket.blockedBy }),
       ...(ticket.parent === undefined ? {} : { parent: ticket.parent }),
+      ...(ticket.url === undefined ? {} : { url: ticket.url }),
     })),
   }
 }

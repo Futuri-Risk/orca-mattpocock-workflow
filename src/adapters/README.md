@@ -78,9 +78,10 @@ They share repository detection, command execution and error mapping in `shared.
   (GitHub uses `@me`; GitLab / Gitea query `/user` first).
 - Local Markdown references must be `.scratch/<feature>/issues/<name>.md`; paths outside that shape
   are refused.
-- Optional fields: fill `closedAt` when a close time is available, and `blockedBy` (a reference set,
-  open or closed) when blocking dependency edges are available. GitHub list queries only provide the
-  number of open blockers, so a whole ticket omits `blockedBy`; local Markdown has no close time.
+- Optional fields: fill `closedAt` when a close time is available, `blockedBy` (a reference set,
+  open or closed) when blocking dependency edges are available, and `url` with the backend's own
+  ticket page address. GitHub list queries only provide the number of open blockers, so a whole
+  ticket omits `blockedBy`; local Markdown has no close time and no remote URL.
 
 - Adapters may depend only on `core`; backends never depend on each other (a convention, not a
   tool-enforced rule).

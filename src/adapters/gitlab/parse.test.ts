@@ -55,6 +55,24 @@ describe('GitLab 工单解析', () => {
     })
   })
 
+  it('把 web_url 解析成工单链接，缺失时省略', () => {
+    const url = 'https://gitlab.example.com/group/sub/project/-/issues/15'
+    const base = {
+      iid: 15,
+      title: '带链接的票',
+      state: 'opened',
+      created_at: '2026-11-12T14:11:22Z',
+      updated_at: '2026-11-12T14:11:38Z',
+    }
+
+    const [linked] = parseIssuesPage(JSON.stringify([{ ...base, web_url: url }]))
+    const [plain] = parseIssuesPage(JSON.stringify([base]))
+
+    expect(linked?.ticket.url).toBe(url)
+    expect(plain?.ticket.url).toBeUndefined()
+    expect('url' in (plain?.ticket ?? {})).toBe(false)
+  })
+
   it('记录列表里是否带 blocking_issues_count 能力字段', () => {
     const output = JSON.stringify([
       {

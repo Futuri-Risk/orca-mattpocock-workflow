@@ -103,6 +103,8 @@ describe('GitHub 工单后端', () => {
     const query = seen.find((value) => value.startsWith('query='))
     expect(query).toContain('viewer { login }')
     expect(query).toContain('assignees(first: 10)')
+    // 列表节点必须带原生链接，否则编号复制入口永远拿不到地址。
+    expect(query).toMatch(/url\s+createdAt/)
   })
 
   it('上限超过 GraphQL 的 100 时收窄到 100', async () => {

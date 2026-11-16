@@ -45,8 +45,17 @@ function ticket(number: number, overrides: Partial<Ticket> = {}): Ticket {
     createdAt: '2026-11-01T00:00:00Z',
     updatedAt: `2026-11-${String(Math.min(number, 28)).padStart(2, '0')}T00:00:00Z`,
     openBlockers: 0,
+    // 当前远端后端的列表响应都带页面地址；旧缓存另用 unlinkedTicket 造。
+    url: `https://github.com/cnzgray/repo/issues/${String(number)}`,
     ...overrides,
   }
+}
+
+/** 升级前缓存里的票：没有 url 字段。 */
+function unlinkedTicket(number: number): Ticket {
+  const copy = { ...ticket(number) }
+  delete copy.url
+  return copy
 }
 
 function page(
@@ -418,6 +427,54 @@ describe('快照分页持久化', () => {
     expect(cached.source).toBe('cache')
     expect(cached.hierarchy).toBe('native')
     expect(cached.tickets.find((item) => item.ref === '#5')?.parent).toBe('#4')
+  })
+
+  it('工单链接透传到快照，并随缓存进出', async () => {
+    const store = memoryStore()
+    const url = 'https://github.com/cnzgray/repo/issues/5'
+    const online = service(
+      pagedTracker(new Map([['', page([ticket(5, { url })])]])).tracker,
+      store,
+    )
+
+    const live = resultOf(
+      await online.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+
+    expect(live.tickets.find((item) => item.ref === '#5')?.url).toBe(url)
+    expect(store.entries.get(ROOT)?.tickets.find((item) => item.ref === '#5')?.url).toBe(url)
+
+    const offline = service(
+      {
+        fetchSnapshot: () => Promise.reject(new TrackerError('fetch-failed', '离线')),
+      },
+      store,
+    )
+    const cached = resultOf(
+      await offline.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+
+    expect(cached.source).toBe('cache')
+    expect(cached.tickets.find((item) => item.ref === '#5')?.url).toBe(url)
+  })
+
+  it('旧缓存缺工单链接时退回全量重拉，未变更的票也补齐', async () => {
+    const store = memoryStore()
+    store.entries.set(ROOT, storeEntry({ loaded: 1, total: 1, tickets: [unlinkedTicket(5)] }))
+    const url = 'https://github.com/cnzgray/repo/issues/5'
+    const { tracker, calls, changeCalls } = pagedTracker(
+      new Map([['', page([ticket(5, { url })], { total: 1 })]]),
+      () => ({ tickets: [], truncated: false, hierarchy: 'native' }),
+    )
+
+    const snapshot = resultOf(
+      await service(tracker, store).handle(RPC_METHODS.snapshotRefresh, { workspaceRoot: ROOT }),
+    )
+
+    expect(changeCalls).toEqual([])
+    expect(calls).toEqual([undefined])
+    expect(snapshot.tickets.find((item) => item.ref === '#5')?.url).toBe(url)
+    expect(store.entries.get(ROOT)?.tickets.find((item) => item.ref === '#5')?.url).toBe(url)
   })
 
   it('增量父子能力与库里不一致时退回全量重拉', async () => {

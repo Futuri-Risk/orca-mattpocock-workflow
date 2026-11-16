@@ -395,6 +395,8 @@ function hasTicketFields(value: unknown): boolean {
   if (!('skillAction' in value) || !isSkillAction(value.skillAction)) return false
   if (!('skillActionReason' in value) || !isActionReason(value.skillActionReason)) return false
   if (!('assignees' in value) || !Array.isArray(value.assignees)) return false
+  // 链接是可选字段：旧 worker 不给也能用，但给了就必须是非空字符串。
+  if ('url' in value && (typeof value.url !== 'string' || value.url.length === 0)) return false
   return value.assignees.every((login) => typeof login === 'string' && login.length > 0)
 }
 

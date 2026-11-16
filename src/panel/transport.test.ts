@@ -91,4 +91,22 @@ describe('快照响应校验', () => {
 
     expect(response).toMatchObject({ ok: false, error: { code: 'fetch-failed' } })
   })
+
+  it('接受带工单链接的快照，也接受没有链接的旧快照', async () => {
+    const url = 'https://github.com/o/r/issues/1'
+
+    const linked = await clientFor(snapshot({ tickets: [ticket({ url })] })).get('/ws')
+    const legacy = await clientFor(snapshot()).get('/ws')
+
+    expect(linked.ok).toBe(true)
+    expect(legacy.ok).toBe(true)
+  })
+
+  it('工单链接不是非空字符串时拒绝', async () => {
+    const response = await clientFor(
+      snapshot({ tickets: [ticket({ url: '' })] }),
+    ).get('/ws')
+
+    expect(response).toMatchObject({ ok: false, error: { code: 'fetch-failed' } })
+  })
 })

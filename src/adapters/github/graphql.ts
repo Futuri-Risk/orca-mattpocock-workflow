@@ -183,6 +183,7 @@ function parseIssueNode(value: unknown, index: number, repository: string | unde
   const state = readState(value.state, number)
   const closedAt = readClosedAt(value.closedAt, number)
   const parent = readParent(value.parent, repository)
+  const url = readOptionalString(value.url)
 
   return {
     ref: `#${String(number)}`,
@@ -197,6 +198,7 @@ function parseIssueNode(value: unknown, index: number, repository: string | unde
     openBlockers: readOpenBlockers(value.issueDependenciesSummary),
     ...(closedAt === undefined ? {} : { closedAt }),
     ...(parent === undefined ? {} : { parent }),
+    ...(url === null ? {} : { url }),
   }
 }
 

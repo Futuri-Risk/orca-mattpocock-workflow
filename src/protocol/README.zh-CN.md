@@ -52,8 +52,9 @@ worktree 另有两个错误码：`orca-missing`（找不到 Orca 命令行，属
 `WorkspaceSnapshot`：
 
 - 工单级：判定结果（`status`、`category`）、关闭时间（`closedAt`，能给才给）、阻塞引用（`blockedBy`，
-  能给才给；GitHub 列表查询没有依赖边）、分配人登录名（`assignees`，没有分配人时为空数组）与父级引用
-  （`parent`，能给才给；跨仓库父票是 `owner/name#编号`，GitLab epic 是 `&iid`）；
+  能给才给；GitHub 列表查询没有依赖边）、分配人登录名（`assignees`，没有分配人时为空数组）、父级引用
+  （`parent`，能给才给；跨仓库父票是 `owner/name#编号`，GitLab epic 是 `&iid`）与页面地址
+  （`url`，后端给才给；本地 Markdown 没有远端链接）；
 - 快照级：仓库标识、后端、实例主机、拉取时间、已加载数与总数、阻塞是否定稿、当前登录用户
   （`viewer`，识别不出时为 null；人员筛选靠它判断「我」是谁），以及父子能力来源
   （`hierarchy`：`native` / `convention` / `none`）。`none` 时面板禁用父子布局并说明，

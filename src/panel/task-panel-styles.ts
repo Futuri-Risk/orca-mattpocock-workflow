@@ -470,8 +470,8 @@ export const CARD_FOCUSED_STYLE: CSSProperties = {
 }
 
 /**
- * 行按钮：单列。编号是标题的行内前缀，标题折行时回到卡片左缘，
- * 元信息也从左缘起排，不再为编号单独留一整列。
+ * 行内容：单列。编号与标题在同一行，标题折行时回到编号右侧；元信息也从左缘起排，
+ * 不再为编号单独留一整列。打开详情由整张卡片负责，编号另可成为复制按钮。
  */
 export const CARD_STYLE: CSSProperties = {
   display: 'grid',
@@ -490,7 +490,6 @@ export const CARD_STYLE: CSSProperties = {
 }
 /** 编号：标题前的行内前缀，弱化成辅助色，不加粗。 */
 export const NUMBER_BADGE_STYLE: CSSProperties = {
-  marginRight: 6,
   color: COLORS.tertiary,
   fontSize: 12,
   // 编号在标题的 500 字重里，单独压回常规字重。
@@ -500,11 +499,49 @@ export const NUMBER_BADGE_STYLE: CSSProperties = {
   whiteSpace: 'nowrap',
 }
 
+/**
+ * 编号作为复制入口时的按钮复位：保留徽标外观，去掉按钮默认的边框与底色。
+ * 间距由标题行的 gap 统一给出，编号本身不再带外边距。
+ */
+export const REF_COPY_BUTTON_STYLE: CSSProperties = {
+  ...NUMBER_BADGE_STYLE,
+  // 默认仍是辅助色；悬停时由样式表把自定义属性换成强调色，读出链接感。
+  color: `var(--mwf-ref-copy-color, ${COLORS.tertiary})`,
+  flex: 'none',
+  padding: 0,
+  border: 'none',
+  borderRadius: 4,
+  background: 'transparent',
+  fontFamily: 'inherit',
+  textAlign: 'left',
+  textUnderlineOffset: 2,
+  cursor: 'copy',
+}
+
+/** 标题行：编号与标题按钮同一基线，编号是行首小字，长标题从编号右侧折行。 */
 export const CARD_TITLE_STYLE: CSSProperties = {
+  display: 'flex',
+  alignItems: 'baseline',
+  columnGap: 6,
   minWidth: 0,
   fontWeight: 500,
   lineHeight: '20px',
   overflowWrap: 'anywhere',
+}
+
+/** 标题按钮：只承载标题文字；打开详情仍由整张卡片负责。 */
+export const CARD_TITLE_BUTTON_STYLE: CSSProperties = {
+  flex: '1 1 auto',
+  minWidth: 0,
+  padding: 0,
+  border: 'none',
+  background: 'transparent',
+  color: 'inherit',
+  font: 'inherit',
+  fontWeight: 'inherit',
+  textAlign: 'left',
+  overflowWrap: 'anywhere',
+  cursor: 'pointer',
 }
 
 /** 行内状态：圆点 + 文字，不加描边，避免和右侧按钮抢视线。 */
@@ -695,6 +732,7 @@ export const PANEL_SHEET = `
 [data-mattwf-panel] [data-hover="action"]:disabled { border-color: ${COLORS.border}; background: transparent; }
 [data-mattwf-panel] [data-hover="person"]:not(:disabled):hover { background: color-mix(in srgb, currentColor 8%, transparent); }
 [data-mattwf-panel] [data-hover="link"]:hover { text-decoration: underline; }
+[data-mattwf-panel] [data-hover="ref"]:not(:disabled):hover { --mwf-ref-copy-color: ${COLORS.accent}; text-decoration: underline; text-underline-offset: 2px; }
 [data-mattwf-panel] a:focus { outline: none; }
 [data-mattwf-panel] a:focus-visible { outline: 2px solid ${COLORS.accent}; outline-offset: 1px; border-radius: 2px; }
 ${MARKDOWN_SHEET}

@@ -55,6 +55,10 @@ The MattWorkflow panel in Orca's right sidebar (`ui: "html"`, a React app runnin
 - `ticket-list.tsx`: list rows. The tree layout adds the collapse button, indentation, child count and
   parent-reference badge; the flat layout shows no hierarchy decoration. Collapse state lives for the
   session, is cleared when switching workspaces, and survives refreshes, filtering and sorting.
+  A number with a remote link is its own copy button: clicking it writes the clipboard without
+  opening the detail and briefly shows "Copied"; when the clipboard is unavailable the row explains
+  why and offers a read-only address. Without a link the number stays plain text and clicking it
+  still opens the detail; clicking the title always opens the detail.
 - `capabilities.ts`: panel-side capability diagnostics (panel bridge, clipboard, worker
   reachability), merged for display with the worker-side capabilities in the environment check.
 - `i18n.ts`: UI language. Resolves the `language` setting (`auto` / `zh-CN` / `en`) and the host's

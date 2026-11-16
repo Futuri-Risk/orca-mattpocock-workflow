@@ -31,6 +31,11 @@ function ticket(ref: string, parent?: string): TicketSnapshot {
   }
 }
 
+/** 带远端链接的票：编号在列表里变成复制按钮。 */
+function linkedTicket(ref: string, url: string): TicketSnapshot {
+  return { ...ticket(ref), url }
+}
+
 function render(
   tickets: readonly TicketSnapshot[],
   layout: TicketLayout,
@@ -153,5 +158,31 @@ describe('工单列表布局渲染', () => {
     expect(markup).toContain(`data-testid="empty"`)
     expect(markup).toContain(ZH['tickets.emptyRepo'])
     expect(count(markup, 'data-testid="ticket-row"')).toBe(0)
+  })
+
+  it('有链接时编号是独立按钮，标题按钮里不再含编号徽标', () => {
+    const url = 'https://github.com/o/r/issues/1'
+
+    for (const layout of ['flat', 'hierarchy'] as const) {
+      const markup = render([linkedTicket('#1', url)], layout)
+
+      expect(markup).toMatch(/<button[^>]*data-testid="ticket-ref"[^>]*data-ref="#1"/)
+      expect(markup).toContain('data-hover="ref"')
+      expect(markup).toContain(`aria-label="${ZH['tickets.refCopyLabel'].replace('{ref}', '#1')}"`)
+      expect(markup).toContain(`title="${ZH['tickets.refCopyHint'].replace('{url}', url)}"`)
+
+      const titleButton = markup.match(
+        /<button[^>]*data-testid="ticket-row"[^>]*>(.*?)<\/button>/su,
+      )
+      expect(titleButton?.[1] ?? '').not.toContain('ticket-ref')
+      expect(titleButton?.[1] ?? '').toContain('票 #1')
+    }
+  })
+
+  it('没有链接时编号退回普通文字，不是按钮', () => {
+    const markup = render([ticket('#1')], 'flat')
+
+    expect(markup).toContain('<span data-testid="ticket-ref"')
+    expect(markup).not.toMatch(/<button[^>]*data-testid="ticket-ref"/)
   })
 })

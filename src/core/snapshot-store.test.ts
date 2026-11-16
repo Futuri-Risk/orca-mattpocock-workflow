@@ -70,6 +70,31 @@ describe('本地快照库条目', () => {
     expect(restored?.tickets[0]?.parent).toBe('.scratch/login/issues/01-token.md')
   })
 
+  it('工单链接随条目保存；旧条目的缺失字段按没有链接处理', () => {
+    const original = entry()
+    const url = 'https://github.com/cnzgray/repo/issues/1'
+    const withUrl = {
+      ...original,
+      tickets: [{ ...original.tickets[0]!, url }],
+    }
+
+    const restored = parseSnapshotStoreEntry(serializeSnapshotStoreEntry(withUrl))
+    const legacy = parseSnapshotStoreEntry(serializeSnapshotStoreEntry(original))
+
+    expect(restored?.tickets[0]?.url).toBe(url)
+    expect(legacy?.tickets[0]?.url).toBeUndefined()
+  })
+
+  it('工单链接不是非空字符串时整份作废', () => {
+    const original = entry()
+    const raw = JSON.stringify({
+      ...original,
+      tickets: [{ ...original.tickets[0], url: 42 }],
+    })
+
+    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  })
+
   it('父子能力不是已知枚举时整份作废', () => {
     const raw = JSON.stringify({ ...entry(), hierarchy: 'guess' })
 

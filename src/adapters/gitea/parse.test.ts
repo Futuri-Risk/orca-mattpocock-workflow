@@ -71,6 +71,18 @@ describe('Gitea 工单解析', () => {
     ])
   })
 
+  it('把 html_url 解析成工单链接，缺失时省略', () => {
+    const url = 'https://gitea.example.com/cnzgray/repo/issues/15'
+    const base = giteaIssue({ number: 15, title: '带链接的票' })
+
+    const [linked] = parseIssuesPage(JSON.stringify([{ ...base, html_url: url }]))
+    const [plain] = parseIssuesPage(JSON.stringify([base]))
+
+    expect(linked?.ticket.url).toBe(url)
+    expect(plain?.ticket.url).toBeUndefined()
+    expect('url' in (plain?.ticket ?? {})).toBe(false)
+  })
+
   it('实例内的相对头像补成绝对地址，绝对地址原样保留', () => {
     const parsed = parseIssuesPage(
       JSON.stringify([

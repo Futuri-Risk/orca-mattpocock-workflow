@@ -139,6 +139,26 @@ Code: the `parent` field in `src/core/ticket.ts` / `src/protocol/tracker.ts`. In
 _Avoid_: calling a parent reference a "parent object" or "parent snapshot" — it is only a reference;
 parent information is still looked up from the current list.
 
+## Ticket link
+
+The page URL of a remote ticket on its code-hosting service, supplied verbatim by the backend:
+GitHub takes the GraphQL `url`, GitLab takes `web_url`, and Gitea takes `html_url`. The panel never
+assembles the address from host and project path — a self-hosted instance may live under a subpath,
+and a guessed URL would not open. The link travels with the list snapshot and the local snapshot
+store; old cached tickets without the field are treated as having no link and fill in after a
+refresh. Local Markdown has no remote link.
+
+Clicking a ticket number in the list copies the ticket link; the number in the detail header still
+opens the browser, with a separate "Copy link" button next to it. The snapshot fields are
+`Ticket.url` / `TicketSnapshot.url`, both optional.
+
+Code: `src/adapters/github/tracker.ts` (GraphQL node fields), `src/adapters/gitlab/parse.ts` and
+`src/adapters/gitea/parse.ts` (list parsing), `src/panel/ticket-list.tsx` (the copy entry point).
+Introduced in #17.
+
+_Avoid_: calling the number text (`#15`) a ticket link — it is a reference and does not open
+anything; also avoid having the panel build URLs itself.
+
 ## Publish tree
 
 The set of files in the commit a version tag points at: the bytes Orca installs and the catalog sees.

@@ -31,7 +31,7 @@
 - `markdown.ts` 里的 `parseMarkdownDetail` 把本地工单文件切成标题、正文与评论段落；
   `parseMarkdownTickets` 同时解析 `Parent:` 行：只看 `## Comments` 之前，取第一个数字，
   只认同 feature 下的另一张工单；缺失、自引用与跨 feature 都按无父级处理；
-- `snapshot-store.ts` 的条目格式版本升到 3，保存快照级的 `hierarchy` 与工单级的 `parent`；
+- `snapshot-store.ts` 的条目格式版本升到 3，保存快照级的 `hierarchy` 与工单级的 `parent`、`url`；
   版本不符或枚举非法时整份作废，避免把缺父子字段的旧缓存当成完整的树；
 - `worktree.ts` 推导 worktree 的分支名、工作区名与注释（工作区名与分支名同值），按 Orca 的 URL 路由表判定工单链接能否挂载
   （自建 Gitea / GitHub 的 `/issues/<n>` 不挂，链接补进注释），拼装 Orca 命令行参数，并解析它的 JSON 输出；

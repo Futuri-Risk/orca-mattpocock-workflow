@@ -218,6 +218,10 @@ function readTicket(value: unknown): Ticket | undefined {
   const parent = value.parent
   if (parent !== undefined && (typeof parent !== 'string' || parent.length === 0)) return undefined
 
+  // 旧快照没有链接字段：按「这张票没有链接」处理，整份缓存仍然可用。
+  const url = value.url
+  if (url !== undefined && (typeof url !== 'string' || url.length === 0)) return undefined
+
   const blockedBy = value.blockedBy
   if (blockedBy !== undefined) {
     const refs = readStringArray(blockedBy)
@@ -236,6 +240,7 @@ function readTicket(value: unknown): Ticket | undefined {
       ...(closedAt === undefined ? {} : { closedAt }),
       blockedBy: refs,
       ...(parent === undefined ? {} : { parent }),
+      ...(url === undefined ? {} : { url }),
     }
   }
 
@@ -252,6 +257,7 @@ function readTicket(value: unknown): Ticket | undefined {
     openBlockers,
     ...(closedAt === undefined ? {} : { closedAt }),
     ...(parent === undefined ? {} : { parent }),
+    ...(url === undefined ? {} : { url }),
   }
 }
 

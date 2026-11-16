@@ -17,9 +17,11 @@ The interaction is designed around the capabilities Orca plugins actually expose
   layout indents child tickets under their parent, and a parent row can collapse its whole subtree and
   shows its visible child count. When a parent is filtered out or not loaded yet, the child moves to
   the top level and shows a parent-reference badge. Every ticket gets skill-action
-  badges; "Copy prompt" puts gestures such as `/implement #40` on the clipboard. A remote ticket that
-  can be started also gets a "Create worktree" action that creates an Orca-managed worktree in one
-  click.
+  badges; "Copy prompt" puts gestures such as `/implement #40` on the clipboard. Clicking a ticket
+  number copies that ticket's page URL on the code-hosting service (local Markdown has no remote
+  link, so its number stays plain text); clicking the title still opens the detail. A remote ticket
+  that can be started also gets a "Create worktree" action that creates an Orca-managed worktree in
+  one click.
 - **Overview**: pressure at a glance (size / blocking / staleness), key numbers, status and category
   composition, and the tickets to look at first.
 - **Detail**: timeline, fields and native blocking relations for one ticket. The header can refresh
@@ -101,6 +103,13 @@ ticket's assignees. Its format version is now 3; entries of older versions are t
 so the first open after upgrading does one full refetch. When the identity lookup fails
 transiently, the last known identity for the same repository is kept, so one hiccup does not make
 the people-filter row disappear.
+
+Remote backends also include each ticket's page URL in the list snapshot: GitHub takes the GraphQL
+`url`, GitLab takes `web_url`, and Gitea takes `html_url`. The backend supplies it verbatim so the
+panel never assembles addresses itself (self-hosted instances under a subpath stay correct). Clicking
+a ticket number in the list copies that URL; clicking the title still opens the detail. Local Markdown
+has no remote link, so its number stays plain text and behaves as before. Old cached tickets without
+the link field are treated as having no link and fill in after a refresh.
 
 Parent-child relations are taken according to backend capability and are used only for list layout;
 they do not change verdicts, statistics or write operations:

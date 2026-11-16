@@ -241,6 +241,11 @@ export interface TicketSnapshot {
    * 跨仓库父票带 `owner/name#编号`，GitLab epic 带 `&iid`。省略表示顶层。
    */
   readonly parent?: string
+  /**
+   * 代码托管服务上的工单页面地址，由后端原样提供；本地 Markdown 与旧缓存没有。
+   * 列表的编号在它存在时才变成复制入口，面板不自己拼地址。
+   */
+  readonly url?: string
 }
 
 /** 一个工作区的工单快照。 */

@@ -251,6 +251,7 @@ export function buildStoredSnapshot(
       ...(ticket.closedAt === undefined ? {} : { closedAt: ticket.closedAt }),
       ...(ticket.blockedBy === undefined ? {} : { blockedBy: ticket.blockedBy }),
       ...(ticket.parent === undefined ? {} : { parent: ticket.parent }),
+      ...(ticket.url === undefined ? {} : { url: ticket.url }),
     })),
   }
 }

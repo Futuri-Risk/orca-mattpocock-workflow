@@ -1,6 +1,7 @@
 /**
  * 工单列表。每行左边是编号与标题，标题下一行是状态与分类；右边是技能按钮，
- * 不可开工时换成原因徽标。点击整行打开这张票的详情，不复制提示词；复制只走技能按钮。
+ * 不可开工时换成原因徽标。点击整行或标题打开这张票的详情，不复制提示词；
+ * 编号在有远端链接时是独立的复制入口，点击只写剪贴板；提示词复制仍只走技能按钮。
  */
 import * as React from 'react'
 
@@ -23,11 +24,14 @@ import {
   CARD_FOCUSED_STYLE,
   CARD_ROW_STYLE,
   CARD_STYLE,
+  CARD_TITLE_BUTTON_STYLE,
   CARD_TITLE_STYLE,
   CATEGORY_BADGES,
+  COLORS,
   EMPTY_STYLE,
   LIST_STYLE,
   NUMBER_BADGE_STYLE,
+  REF_COPY_BUTTON_STYLE,
   STATUS_BADGES,
   STATUS_DOT_STYLE,
 } from './task-panel-styles.ts'
@@ -41,6 +45,9 @@ import {
   PARENT_BADGE_STYLE,
   ROW_AGE_STYLE,
 } from './ticket-row-styles.ts'
+import { CopyFailure, type CopyState } from './ticket-detail-fields.tsx'
+import { useCopyLink } from './ticket-detail-hooks.ts'
+import { VISUALLY_HIDDEN_STYLE } from './ticket-detail-styles.ts'
 import { UserAvatar } from './user-avatar.tsx'
 import type { TicketLayout, TicketTreeRow } from './ticket-tree.ts'
 import {
@@ -147,6 +154,7 @@ function TicketRow(props: {
   const { ticket } = props.row
   const t = useMessages()
   const display = refDisplay(ticket)
+  const link = useCopyLink(ticket.url ?? null)
   const worktree = useWorktreeCreate(props.client, props.workspaceRoot, ticket)
   const availability = worktreeAvailability(ticket, props.backend, props.workspaceRoot, t)
   const hierarchy = props.layout === 'hierarchy'
@@ -177,23 +185,27 @@ function TicketRow(props: {
                 props.onToggleCollapse(ticket.ref)
               }}
             />
-            <RowButton
+            <RowContent
               ticket={ticket}
               display={display}
               focused={props.focused}
               now={props.now}
               row={props.row}
               hierarchy={hierarchy}
+              copy={link.copy}
+              onCopy={link.onCopy}
             />
           </div>
         ) : (
-          <RowButton
+          <RowContent
             ticket={ticket}
             display={display}
             focused={props.focused}
             now={props.now}
             row={props.row}
             hierarchy={hierarchy}
+            copy={link.copy}
+            onCopy={link.onCopy}
           />
         )}
         <div style={ACTION_COLUMN_STYLE}>
@@ -217,39 +229,110 @@ function TicketRow(props: {
         onOpenEnvCheck={props.onOpenEnvCheck}
         compact
       />
+      <CopyFailure
+        copy={link.copy}
+        url={ticket.url ?? null}
+        errorTestId="ticket-copy-error"
+        inputTestId="ticket-link"
+      />
     </div>
   )
 }
 
-/** 行按钮：编号 + 标题与元信息；点击冒泡到卡片打开详情。 */
-function RowButton(props: {
+/** 行内容：编号与标题各是独立按钮，下面是元信息；点击冒泡到卡片打开详情。 */
+function RowContent(props: {
   readonly ticket: TicketSnapshot
   readonly display: { readonly text: string; readonly full?: string }
   readonly focused: boolean
   readonly now: number
   readonly row: TicketTreeRow
   readonly hierarchy: boolean
+  readonly copy: CopyState
+  readonly onCopy: () => void
 }): React.ReactElement {
   return (
-    <button
-      type="button"
-      data-testid="ticket-row"
-      data-ref={props.ticket.ref}
-      data-focused={props.focused ? 'true' : undefined}
-      style={CARD_STYLE}
-    >
+    <div style={CARD_STYLE}>
       <span style={CARD_TITLE_STYLE}>
-        <span
-          data-testid="ticket-ref"
-          style={NUMBER_BADGE_STYLE}
-          {...(props.display.full === undefined ? {} : { title: props.display.full })}
+        <TicketRef
+          ticket={props.ticket}
+          display={props.display}
+          copy={props.copy}
+          onCopy={props.onCopy}
+        />
+        <button
+          type="button"
+          data-testid="ticket-row"
+          data-ref={props.ticket.ref}
+          data-focused={props.focused ? 'true' : undefined}
+          style={CARD_TITLE_BUTTON_STYLE}
         >
-          {props.display.text}
-        </span>
-        {props.ticket.title}
+          {props.ticket.title}
+        </button>
       </span>
       <MetaRow ticket={props.ticket} now={props.now} row={props.row} hierarchy={props.hierarchy} />
-    </button>
+    </div>
+  )
+}
+
+/**
+ * 编号：有远端链接时是复制按钮，点击只复制链接、不打开详情；没有链接时退回普通文字，
+ * 点击继续冒泡到卡片打开详情。复制成功后按钮文字短暂变成「已复制」，隐藏的
+ * `role="status"` 同时播报结果，两秒后由 `useCopyLink` 复原。
+ */
+function TicketRef(props: {
+  readonly ticket: TicketSnapshot
+  readonly display: { readonly text: string; readonly full?: string }
+  readonly copy: CopyState
+  readonly onCopy: () => void
+}): React.ReactElement {
+  const t = useMessages()
+  const url = props.ticket.url
+
+  if (url === undefined) {
+    return (
+      <span
+        data-testid="ticket-ref"
+        style={NUMBER_BADGE_STYLE}
+        {...(props.display.full === undefined ? {} : { title: props.display.full })}
+      >
+        {props.display.text}
+      </span>
+    )
+  }
+
+  const copied = props.copy.status === 'copied'
+  return (
+    <>
+      <button
+        type="button"
+        data-testid="ticket-ref"
+        data-ref={props.ticket.ref}
+        // 复制成功时保持成功色，不在悬停时被链接色盖掉。
+        data-hover={copied ? undefined : 'ref'}
+        // 可见文字变成「已复制」时，可访问名称也必须包含它，避免 label-in-name 不一致。
+        aria-label={
+          copied
+            ? t('tickets.refCopiedNotice', { ref: props.ticket.ref })
+            : t('tickets.refCopyLabel', { ref: props.ticket.ref })
+        }
+        title={copied ? t('common.copied') : t('tickets.refCopyHint', { url })}
+        style={copied ? { ...REF_COPY_BUTTON_STYLE, color: COLORS.success } : REF_COPY_BUTTON_STYLE}
+        onClick={(event) => {
+          // 复制编号不是打开详情：点击只停在这里。
+          event.stopPropagation()
+          props.onCopy()
+        }}
+      >
+        {copied ? t('common.copied') : props.display.text}
+      </button>
+      {/*
+        live region 必须从挂载起就存在；与内容一起插入的 `role="status"` 通常不会被读屏播报。
+        复制结果只改文本，区域本身一直留在 DOM 里。
+      */}
+      <span role="status" data-testid="ticket-ref-copied" style={VISUALLY_HIDDEN_STYLE}>
+        {copied ? t('tickets.refCopiedNotice', { ref: props.ticket.ref }) : ''}
+      </span>
+    </>
   )
 }
 

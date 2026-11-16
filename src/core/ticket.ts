@@ -67,6 +67,11 @@ export interface Ticket {
    * 省略表示这张票在顶层。父子关系只用于组织与展示，不参与判定。
    */
   readonly parent?: string
+  /**
+   * 代码托管服务上的工单页面地址，由后端原样提供。
+   * 本地 Markdown 与旧缓存没有这个字段；省略表示这张票没有可复制的远端链接。
+   */
+  readonly url?: string
 }
 
 /**

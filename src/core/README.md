@@ -27,9 +27,9 @@ Ticket details:
   but reads logins only, for the assignees in list snapshots (no display names or avatars).
 - `snapshot-store.ts` is the entry model of the local snapshot store (format version 3): it keeps the
   signed-in user `viewer`, each ticket's assignee logins `assignees`, the snapshot-level `hierarchy`
-  and the ticket-level `parent`. A version mismatch, a missing or mistyped field, or an invalid enum
-  voids the whole entry and the host refetches everything, so an old cache without hierarchy fields
-  is never taken as a complete tree.
+  and the ticket-level `parent` and `url`. A version mismatch, a missing or mistyped field, or an
+  invalid enum voids the whole entry and the host refetches everything, so an old cache without
+  hierarchy fields is never taken as a complete tree.
 - `ticket-detail.ts` only performs pure computation and field validation: set differences
   (`diffSets` / `resolveTargetSet` / `planSetChange` / `isEmptyDiff`) and detail-field readers shared
   by the three remote backends (`readRequiredString`, `readNameList`, `sortCommentsByTime`,

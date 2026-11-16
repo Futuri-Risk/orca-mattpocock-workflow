@@ -123,6 +123,9 @@ export function HeaderActions(
 export function CopyFailure(props: {
   readonly copy: CopyState
   readonly url: string | null
+  /** 失败区与地址框的测试 id；列表行复用同一组件时区分两处入口。 */
+  readonly errorTestId?: string
+  readonly inputTestId?: string
 }): React.ReactElement | null {
   const t = useMessages()
   const { copy, url } = props
@@ -130,12 +133,12 @@ export function CopyFailure(props: {
   return (
     <div
       role="alert"
-      data-testid="copy-error"
+      data-testid={props.errorTestId ?? 'copy-error'}
       style={{ ...DETAIL_ERROR_STYLE, ...DETAIL_STACK_STYLE }}
     >
       {copy.message}
       <input
-        data-testid="detail-link"
+        data-testid={props.inputTestId ?? 'detail-link'}
         aria-label={t('detail.linkLabel')}
         readOnly
         value={url}

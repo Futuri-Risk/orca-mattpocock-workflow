@@ -145,6 +145,9 @@ const ZH_CN = {
   'tickets.sort.number': '编号',
   'tickets.sort.title': '标题',
   'tickets.ageTitle': '创建：{created}；更新：{updated}',
+  'tickets.refCopyLabel': '复制工单链接 {ref}',
+  'tickets.refCopyHint': '复制工单链接：{url}',
+  'tickets.refCopiedNotice': '已复制工单链接 {ref}。',
 
   // ── 概览 ────────────────────────────────────────────────────────────────
   'overview.loadedTickets': '已加载 {loaded} / 共 {total} 张',
@@ -714,6 +717,9 @@ const EN = {
   'tickets.sort.number': 'Number',
   'tickets.sort.title': 'Title',
   'tickets.ageTitle': 'Created: {created}; updated: {updated}',
+  'tickets.refCopyLabel': 'Copy link to {ref}',
+  'tickets.refCopyHint': 'Copy link: {url}',
+  'tickets.refCopiedNotice': 'Copied ticket link {ref}.',
   'overview.loadedTickets': 'Loaded {loaded} of {total}',
   'overview.noTicketsLoaded': 'No tickets loaded',
   'overview.section.flow': 'Flow',
@@ -1186,6 +1192,9 @@ export interface MessageParams {
   'tickets.people.viewer': { readonly login: string }
   'tickets.people.viewerHint': { readonly login: string }
   'tickets.ageTitle': { readonly created: string; readonly updated: string }
+  'tickets.refCopyLabel': { readonly ref: string }
+  'tickets.refCopyHint': { readonly url: string }
+  'tickets.refCopiedNotice': { readonly ref: string }
   'time.minutesAgo': { readonly n: number }
   'time.hoursAgo': { readonly n: number }
   'time.daysAgo': { readonly n: number }

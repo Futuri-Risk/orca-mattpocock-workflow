@@ -5,6 +5,7 @@
 import { readAuthor, readLogin, readLogins, type AuthorFields } from '../../core/author.ts'
 import { isRecord } from '../../core/json.ts'
 import type { NativeBlockers } from '../../core/blocked-by.ts'
+import { readOptionalString } from '../../core/ticket-detail.ts'
 import type { Ticket, TicketState } from '../../core/ticket.ts'
 import { TrackerError } from '../../core/tracker-error.ts'
 
@@ -226,6 +227,7 @@ function parseIssue(value: unknown, index: number): ParsedIssue {
   const title = readString(value.title, `第 ${String(iid)} 张票的标题`)
   const state = readState(value.state, iid)
   const closedAt = readClosedAt(value.closed_at, iid)
+  const url = readOptionalString(value.web_url)
 
   return {
     ticket: {
@@ -241,6 +243,7 @@ function parseIssue(value: unknown, index: number): ParsedIssue {
       openBlockers: 0,
       blockedBy: [],
       ...(closedAt === undefined ? {} : { closedAt }),
+      ...(url === null ? {} : { url }),
     },
     description: typeof value.description === 'string' ? value.description : '',
     hasBlockingIssuesCount: Object.hasOwn(value, 'blocking_issues_count'),
