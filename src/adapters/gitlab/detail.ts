@@ -20,6 +20,7 @@ import {
   sortCommentsByTime,
 } from '../../core/ticket-detail.ts'
 import type {
+  BinaryCommandRunner,
   CommandRunner,
   TicketAuthor,
   TicketComment,
@@ -30,13 +31,24 @@ import type {
 } from '../../core/ticket.ts'
 import { CommandError, TrackerError } from '../../core/tracker-error.ts'
 import { GITLAB_AUTHOR_FIELDS } from './parse.ts'
-import { callGlab, callGlabApi, projectEndpoint, readProjectPath } from './shared.ts'
+import {
+  callGlab,
+  callGlabApi,
+  projectEndpoint,
+  readProjectAddress,
+  readProjectPath,
+} from './shared.ts'
+import { createUploadInliner, type UploadInliner } from './uploads.ts'
 
 const NOT_FOUND = /404 Not Found|404 page not found|Not Found/i
 
 /** 详情读取与变更共用的依赖。 */
 export interface GitlabDetailDeps {
   readonly run: CommandRunner
+  /**
+   * 取上传附件字节的执行器；省略时不内联图片（测试与旧调用点保持原行为）。
+   */
+  readonly runBinary?: BinaryCommandRunner | undefined
   /** notes 接口的分页大小；与列表共用同一个配置。 */
   readonly pageSize: number
 }
@@ -68,9 +80,19 @@ export async function readGitlabDetail(
   reference: TicketReference,
 ): Promise<TicketDetail> {
   const iid = requireTicketNumber(reference)
-  const project = await readProjectPath(deps.run, workspaceRoot)
-  const issue = await readIssue(deps, workspaceRoot, project, iid)
-  const comments = await readNotes(deps, workspaceRoot, project, iid)
+  const address = await readProjectAddress(deps.run, workspaceRoot)
+  const issue = await readIssue(deps, workspaceRoot, address.path, iid)
+  const comments = await readNotes(deps, workspaceRoot, address.path, iid)
+  // 取图只在宿主侧发生：地址必须能由当前项目的路径、实例源与 uploads 规则推导出来。
+  const inliner =
+    deps.runBinary === undefined
+      ? null
+      : createUploadInliner({
+          run: deps.runBinary,
+          workspaceRoot,
+          instanceUrl: instanceBaseUrl(issue.url, address.host, address.path),
+          project: address.path,
+        })
 
   return {
     ref: reference.ref,
@@ -78,14 +100,60 @@ export async function readGitlabDetail(
     title: issue.title,
     state: issue.state,
     author: issue.author,
-    body: issue.body,
+    body: inliner === null ? issue.body : await inliner.inline(issue.body),
     labels: issue.labels,
     assignees: issue.assignees,
-    comments,
+    comments: inliner === null ? comments : await inlineComments(inliner, comments),
     url: issue.url,
     createdAt: issue.createdAt,
     updatedAt: issue.updatedAt,
   }
+}
+
+/**
+ * 逐条评论内联图片。按顺序处理，累计字节上限才与文档顺序一致、可测试。
+ * @param inliner - 正文与评论共用的内联器。
+ * @param comments - 已解析的评论。
+ * @returns 图片已内联或已降级的评论。
+ */
+async function inlineComments(
+  inliner: UploadInliner,
+  comments: readonly TicketComment[],
+): Promise<readonly TicketComment[]> {
+  const out: TicketComment[] = []
+  for (const comment of comments) {
+    out.push({ ...comment, body: await inliner.inline(comment.body) })
+  }
+  return out
+}
+
+/**
+ * 取实例根地址：优先用 gitlab 返回的 `web_url`，保留端口与子路径安装的前缀；
+ * 否则按远端主机推导。
+ * @param url - 工单的 `web_url`。
+ * @param host - 远端解析出的主机名。
+ * @param project - 当前项目完整路径，用来从 `web_url` 里截出实例前缀。
+ * @returns 形如 `https://gitlab.example.com:8443/gitlab` 的根地址。
+ */
+function instanceBaseUrl(url: string | null, host: string, project: string): string {
+  if (url !== null) {
+    try {
+      const parsed = new URL(url)
+      if (
+        (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
+        parsed.username === '' &&
+        parsed.password === ''
+      ) {
+        const marker = `/${project}/`
+        const index = parsed.pathname.indexOf(marker)
+        const prefix = index < 0 ? '' : parsed.pathname.slice(0, index)
+        return `${parsed.origin}${prefix}`
+      }
+    } catch {
+      // web_url 不合法时退回按远端主机推导。
+    }
+  }
+  return `https://${host}`
 }
 
 /**

@@ -12,17 +12,23 @@ import * as React from 'react'
 import { MARKDOWN_ATTRIBUTE } from './task-panel-styles.ts'
 
 /**
- * 行内标记：代码、粗体、斜体、删除线、链接与自动链接。链接的地址允许一层括号。
+ * 行内标记：图片、代码、粗体、斜体、删除线、链接与自动链接。链接的地址允许一层括号。
  * 每次调用都新建正则：行内解析会递归（粗体里还能有代码），
  * 共用同一个带 lastIndex 的正则会从头再匹配，陷入死循环。
  * @returns 新的行内匹配正则。
  */
 function inlinePattern(): RegExp {
-  return /(`[^`]+`)|(\*\*[^*]+\*\*)|(__[^_]+__)|(\*[^*\n]+\*)|(_[^_\n]+_)|(~~[^~]+~~)|(\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))*\))|(<https?:\/\/[^>\s]+>)/g
+  return /(!\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))*\))|(`[^`]+`)|(\*\*[^*]+\*\*)|(__[^_]+__)|(\*[^*\n]+\*)|(_[^_\n]+_)|(~~[^~]+~~)|(\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))*\))|(<https?:\/\/[^>\s]+>)/g
 }
 
 /** 只放行这些协议的地址。 */
 const SAFE_PROTOCOL = /^(https?:|mailto:)/i
+
+/**
+ * 宿主内联出来的位图 data URL。只认适配器会生成的几种位图与 base64 形态，
+ * SVG 等可执行内容不进 `img`。
+ */
+const INLINE_IMAGE = /^data:image\/(?:png|jpeg|gif|webp|bmp);base64,[A-Za-z0-9+/]+={0,2}$/
 
 /**
  * 渲染一段 Markdown；元素样式由面板样式表按 `data-markdown` 统一提供。
@@ -32,8 +38,17 @@ const SAFE_PROTOCOL = /^(https?:|mailto:)/i
 export function MarkdownBody(props: {
   readonly source: string
   readonly testId?: string
+  /**
+   * 是否把宿主内联好的位图 data URL 渲染成 `img`。
+   * 只有 GitLab 详情会内联附件，其它后端保持原有渲染。
+   */
+  readonly allowInlineImages?: boolean
 }): React.ReactElement {
-  const content = React.useMemo(() => renderMarkdown(props.source), [props.source])
+  const allowInlineImages = props.allowInlineImages === true
+  const content = React.useMemo(
+    () => renderMarkdown(props.source, allowInlineImages),
+    [props.source, allowInlineImages],
+  )
 
   return (
     <div data-testid={props.testId} {...{ [MARKDOWN_ATTRIBUTE]: '' }}>
@@ -43,7 +58,7 @@ export function MarkdownBody(props: {
 }
 
 /** 把原文渲染成块级元素。 */
-function renderMarkdown(source: string): React.ReactNode[] {
+function renderMarkdown(source: string, allowInlineImages: boolean): React.ReactNode[] {
   const lines = source.replace(/\r\n?/g, '\n').split('\n')
   const blocks: React.ReactNode[] = []
   let index = 0
@@ -82,7 +97,7 @@ function renderMarkdown(source: string): React.ReactNode[] {
         React.createElement(
           `h${String(level)}`,
           { key: `h-${String(index)}` },
-          renderInline(text),
+          renderInline(text, allowInlineImages),
         ),
       )
       index += 1
@@ -102,13 +117,15 @@ function renderMarkdown(source: string): React.ReactNode[] {
         index += 1
       }
       blocks.push(
-        <blockquote key={`quote-${String(index)}`}>{renderMarkdown(quoted.join('\n'))}</blockquote>,
+        <blockquote key={`quote-${String(index)}`}>
+          {renderMarkdown(quoted.join('\n'), allowInlineImages)}
+        </blockquote>,
       )
       continue
     }
 
     if (isTableRow(line) && isTableRow(lines[index + 1] ?? '')) {
-      const table = renderTable(lines, index)
+      const table = renderTable(lines, index, allowInlineImages)
       if (table !== null) {
         blocks.push(table.node)
         index = table.next
@@ -117,7 +134,7 @@ function renderMarkdown(source: string): React.ReactNode[] {
     }
 
     if (isListItem(line)) {
-      const list = renderList(lines, index)
+      const list = renderList(lines, index, allowInlineImages)
       blocks.push(list.node)
       index = list.next
       continue
@@ -131,7 +148,9 @@ function renderMarkdown(source: string): React.ReactNode[] {
       paragraph.push(current)
       index += 1
     }
-    blocks.push(<p key={`p-${String(index)}`}>{renderInline(paragraph.join('\n'))}</p>)
+    blocks.push(
+      <p key={`p-${String(index)}`}>{renderInline(paragraph.join('\n'), allowInlineImages)}</p>,
+    )
   }
 
   return blocks
@@ -141,6 +160,7 @@ function renderMarkdown(source: string): React.ReactNode[] {
 function renderTable(
   lines: readonly string[],
   start: number,
+  allowInlineImages: boolean,
 ): { readonly node: React.ReactNode; readonly next: number } | null {
   const header = splitRow(lines[start] ?? '')
   const divider = splitRow(lines[start + 1] ?? '')
@@ -160,7 +180,7 @@ function renderTable(
         <thead>
           <tr>
             {header.map((cell, cellIndex) => (
-              <th key={`th-${String(cellIndex)}`}>{renderInline(cell)}</th>
+              <th key={`th-${String(cellIndex)}`}>{renderInline(cell, allowInlineImages)}</th>
             ))}
           </tr>
         </thead>
@@ -168,7 +188,7 @@ function renderTable(
           {rows.map((row, rowIndex) => (
             <tr key={`tr-${String(rowIndex)}`}>
               {row.map((cell, cellIndex) => (
-                <td key={`td-${String(cellIndex)}`}>{renderInline(cell)}</td>
+                <td key={`td-${String(cellIndex)}`}>{renderInline(cell, allowInlineImages)}</td>
               ))}
             </tr>
           ))}
@@ -196,6 +216,7 @@ function splitRow(line: string): string[] {
 function renderList(
   lines: readonly string[],
   start: number,
+  allowInlineImages: boolean,
 ): { readonly node: React.ReactNode; readonly next: number } {
   const ordered = /^\s*\d+[.)]\s/.test(lines[start] ?? '')
   const items: string[] = []
@@ -219,7 +240,7 @@ function renderList(
 
   const children = items.map((item, itemIndex) => (
     <li key={`li-${String(itemIndex)}`}>
-      {item.trim().length === 0 ? null : renderInline(item)}
+      {item.trim().length === 0 ? null : renderInline(item, allowInlineImages)}
     </li>
   ))
 
@@ -234,7 +255,7 @@ function isListItem(line: string): boolean {
 }
 
 /** 行内标记：逐个匹配，未匹配的部分原样作为文本。 */
-function renderInline(text: string): React.ReactNode[] {
+function renderInline(text: string, allowInlineImages: boolean): React.ReactNode[] {
   const nodes: React.ReactNode[] = []
   let cursor = 0
   let key = 0
@@ -246,7 +267,7 @@ function renderInline(text: string): React.ReactNode[] {
       nodes.push(text.slice(cursor, match.index))
     }
     const token = match[0]
-    const node = renderToken(token, key)
+    const node = renderToken(token, key, allowInlineImages)
     if (node !== null) nodes.push(node)
     key += 1
     cursor = match.index + token.length
@@ -258,18 +279,45 @@ function renderInline(text: string): React.ReactNode[] {
 }
 
 /** 一个行内标记；不认识的按文本处理。 */
-function renderToken(token: string, key: number): React.ReactNode | null {
+function renderToken(
+  token: string,
+  key: number,
+  allowInlineImages: boolean,
+): React.ReactNode | null {
+  if (token.startsWith('![')) {
+    const parsed = /^!\[([^\]]*)\]\((.*)\)$/.exec(token)
+    if (parsed === null) return token
+    const alt = parsed[1] ?? ''
+    const src = (parsed[2] ?? '').trim()
+    if (allowInlineImages && INLINE_IMAGE.test(src)) {
+      return <img key={`i-${String(key)}`} src={src} alt={alt} />
+    }
+    // 旧行为：`!` 后面跟一个链接；地址不安全时只显示文字。
+    return (
+      <React.Fragment key={`i-${String(key)}`}>
+        !{isSafeUrl(src) ? <ExternalLink href={src}>{alt}</ExternalLink> : alt}
+      </React.Fragment>
+    )
+  }
   if (token.startsWith('`') && token.endsWith('`')) {
     return <code key={`i-${String(key)}`}>{token.slice(1, -1)}</code>
   }
   if (token.startsWith('**') || token.startsWith('__')) {
-    return <strong key={`i-${String(key)}`}>{renderInline(token.slice(2, -2))}</strong>
+    return (
+      <strong key={`i-${String(key)}`}>
+        {renderInline(token.slice(2, -2), allowInlineImages)}
+      </strong>
+    )
   }
   if (token.startsWith('~~')) {
-    return <del key={`i-${String(key)}`}>{renderInline(token.slice(2, -2))}</del>
+    return (
+      <del key={`i-${String(key)}`}>{renderInline(token.slice(2, -2), allowInlineImages)}</del>
+    )
   }
   if (token.startsWith('*') || token.startsWith('_')) {
-    return <em key={`i-${String(key)}`}>{renderInline(token.slice(1, -1))}</em>
+    return (
+      <em key={`i-${String(key)}`}>{renderInline(token.slice(1, -1), allowInlineImages)}</em>
+    )
   }
   if (token.startsWith('<')) {
     const url = token.slice(1, -1)

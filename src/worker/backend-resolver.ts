@@ -20,7 +20,7 @@ import {
   type BackendChoice,
 } from '../core/backend.ts'
 import { parseRemotes, pickRemoteAddress, type RepositoryAddress } from '../core/remote.ts'
-import type { CommandRunner, Tracker } from '../core/ticket.ts'
+import type { BinaryCommandRunner, CommandRunner, Tracker } from '../core/ticket.ts'
 import { CommandError, TrackerError, isCommandNotFound } from '../core/tracker-error.ts'
 import type { BackendKind } from '../protocol/backend.ts'
 import type { RepositoryScopeResolver } from './repository-scope.ts'
@@ -43,6 +43,11 @@ export type BackendResolver = (workspaceRoot: string) => Promise<ResolvedBackend
 /** 后端解析器依赖。 */
 export interface BackendResolverDeps {
   readonly run: CommandRunner
+  /**
+   * 取附件字节的二进制执行器；只给 GitLab 详情内联图片用。
+   * 省略时详情保持未内联的原文，测试可以按需注入。
+   */
+  readonly runBinary?: BinaryCommandRunner | undefined
   readonly now: () => number
   /** 本地 Markdown 的文件读取能力；正式代码默认用 `node:fs`。 */
   readonly files?: WorkspaceFiles
@@ -185,7 +190,12 @@ function createTracker(
     case 'github':
       return createGithubTracker({ run: deps.run, now: deps.now })
     case 'gitlab':
-      return createGitlabTracker({ run: deps.run, now: deps.now, blockerCapability })
+      return createGitlabTracker({
+        run: deps.run,
+        runBinary: deps.runBinary,
+        now: deps.now,
+        blockerCapability,
+      })
     case 'gitea':
       return createGiteaTracker({ run: deps.run, now: deps.now })
     case 'markdown':

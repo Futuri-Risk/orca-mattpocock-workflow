@@ -29,6 +29,8 @@ import { UserAvatar } from './user-avatar.tsx'
 export function Timeline(props: { readonly detail: TicketDetail }): React.ReactElement {
   const { detail } = props
   const count = detail.comments.length
+  // 只有 GitLab 适配器会把上传附件内联成 data URL；其它后端保持原有渲染。
+  const allowInlineImages = detail.backend === 'gitlab'
 
   return (
     <div style={TIMELINE_STYLE}>
@@ -47,7 +49,11 @@ export function Timeline(props: { readonly detail: TicketDetail }): React.ReactE
             这张工单没有正文。
           </div>
         ) : (
-          <MarkdownBody testId="detail-body" source={detail.body} />
+          <MarkdownBody
+            testId="detail-body"
+            source={detail.body}
+            allowInlineImages={allowInlineImages}
+          />
         )}
       </TimelineCard>
       <section data-testid="detail-comments" aria-label={`评论（${String(count)}）`}>
@@ -64,6 +70,7 @@ export function Timeline(props: { readonly detail: TicketDetail }): React.ReactE
               key={`${comment.author?.login ?? ''}:${comment.createdAt ?? ''}:${String(index)}`}
               comment={comment}
               ticketAuthor={detail.author}
+              allowInlineImages={allowInlineImages}
             />
           ))
         )}
@@ -75,6 +82,8 @@ export function Timeline(props: { readonly detail: TicketDetail }): React.ReactE
 function CommentCard(props: {
   readonly comment: TicketComment
   readonly ticketAuthor: TicketAuthor | null
+  /** 与正文一致：只有 GitLab 详情启用在正文里渲染内联图片。 */
+  readonly allowInlineImages: boolean
 }): React.ReactElement {
   const { comment } = props
   // 服务改了显示名时登录名不变：作者徽标只按登录名判定。
@@ -96,7 +105,10 @@ function CommentCard(props: {
         isTicketAuthor={isTicketAuthor}
         ariaLabel={`${comment.author === null ? '未署名' : authorName(comment.author)}的评论`}
       >
-        <MarkdownBody source={comment.body} />
+        <MarkdownBody
+          source={comment.body}
+          allowInlineImages={props.allowInlineImages}
+        />
       </TimelineCard>
     </>
   )

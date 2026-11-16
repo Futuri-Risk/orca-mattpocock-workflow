@@ -31,6 +31,10 @@
   GitLab 的 `username` + `avatar_url`、Gitea 的 `login` + `avatar_url`（相对地址按实例基准补全）；
   本地 Markdown 没有远端用户，创建人与评论作者为 null、分配人为空数组。
   GitHub 详情整条走 GraphQL，一次取全作者、分配人与评论作者的头像；变更前的当前值也只读一次。
+- GitLab 详情返回前会把正文与评论里的上传附件内联成 `data:image/`：只认当前项目
+  `/uploads/<secret>/<filename>` 的相对地址与同源同项目路径的绝对地址，用已登录的
+  `glab api projects/<id>/uploads/<secret>/<filename>` 取原始字节；取图失败、非位图或超过
+  大小上限时降级成指向 GitLab 原链接的普通链接。token 只留在 `glab` 进程里，不进协议字段。
 - 补全候选把标签颜色统一成小写 `#rrggbb`，重复的标签名 / 用户名只保留第一次出现的项；
 - 删除前宿主会再查一次权限；删除成功后不可撤销，编号不存在映射为 `ticket-not-found`；
 - 权限查询失败在宿主按“没有权限”处理，详情仍然正常返回，只把删除能力置为 false；
