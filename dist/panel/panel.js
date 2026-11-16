@@ -24071,6 +24071,9 @@
     "tickets.sort.number": "\u7F16\u53F7",
     "tickets.sort.title": "\u6807\u9898",
     "tickets.ageTitle": "\u521B\u5EFA\uFF1A{created}\uFF1B\u66F4\u65B0\uFF1A{updated}",
+    "tickets.refCopyLabel": "\u590D\u5236\u5DE5\u5355\u94FE\u63A5 {ref}",
+    "tickets.refCopyHint": "\u590D\u5236\u5DE5\u5355\u94FE\u63A5\uFF1A{url}",
+    "tickets.refCopiedNotice": "\u5DF2\u590D\u5236\u5DE5\u5355\u94FE\u63A5 {ref}\u3002",
     // ── 概览 ────────────────────────────────────────────────────────────────
     "overview.loadedTickets": "\u5DF2\u52A0\u8F7D {loaded} / \u5171 {total} \u5F20",
     "overview.noTicketsLoaded": "\u672A\u8BFB\u53D6\u5230\u5DE5\u5355",
@@ -24293,6 +24296,9 @@
     "detail.updatedAt": "\u66F4\u65B0\u4E8E {time}",
     "detail.commentCount": "{n} \u6761\u8BC4\u8BBA",
     "detail.loadFailed": "\u8BFB\u53D6\u5DE5\u5355\u8BE6\u60C5\u5931\u8D25\u3002",
+    "detail.refresh": "\u5237\u65B0\u5DE5\u5355",
+    "detail.refreshing": "\u6B63\u5728\u5237\u65B0\u5DE5\u5355\u2026",
+    "detail.refreshFailed": "\u5237\u65B0\u5931\u8D25\uFF1A{detail}",
     "detail.close": "\u5173\u95ED\u5DE5\u5355",
     "detail.reopen": "\u91CD\u65B0\u6253\u5F00",
     "detail.copyLink": "\u590D\u5236\u94FE\u63A5",
@@ -24586,6 +24592,9 @@
     "tickets.sort.number": "Number",
     "tickets.sort.title": "Title",
     "tickets.ageTitle": "Created: {created}; updated: {updated}",
+    "tickets.refCopyLabel": "Copy link to {ref}",
+    "tickets.refCopyHint": "Copy link: {url}",
+    "tickets.refCopiedNotice": "Copied ticket link {ref}.",
     "overview.loadedTickets": "Loaded {loaded} of {total}",
     "overview.noTicketsLoaded": "No tickets loaded",
     "overview.section.flow": "Flow",
@@ -24801,6 +24810,9 @@
     "detail.updatedAt": "Updated {time}",
     "detail.commentCount": "{n} comments",
     "detail.loadFailed": "Failed to load ticket details.",
+    "detail.refresh": "Refresh ticket",
+    "detail.refreshing": "Refreshing ticket\u2026",
+    "detail.refreshFailed": "Refresh failed: {detail}",
     "detail.close": "Close ticket",
     "detail.reopen": "Reopen",
     "detail.copyLink": "Copy link",
@@ -25434,6 +25446,7 @@
     if (!("skillAction" in value) || !isSkillAction(value.skillAction)) return false;
     if (!("skillActionReason" in value) || !isActionReason(value.skillActionReason)) return false;
     if (!("assignees" in value) || !Array.isArray(value.assignees)) return false;
+    if ("url" in value && (typeof value.url !== "string" || value.url.length === 0)) return false;
     return value.assignees.every((login) => typeof login === "string" && login.length > 0);
   }
   function isSkillAction(value) {
@@ -25971,7 +25984,6 @@
     textAlign: "left"
   };
   var NUMBER_BADGE_STYLE = {
-    marginRight: 6,
     color: COLORS.tertiary,
     fontSize: 12,
     // 编号在标题的 500 字重里，单独压回常规字重。
@@ -25980,11 +25992,41 @@
     lineHeight: "20px",
     whiteSpace: "nowrap"
   };
+  var REF_COPY_BUTTON_STYLE = {
+    ...NUMBER_BADGE_STYLE,
+    // 默认仍是辅助色；悬停时由样式表把自定义属性换成强调色，读出链接感。
+    color: `var(--mwf-ref-copy-color, ${COLORS.tertiary})`,
+    flex: "none",
+    padding: 0,
+    border: "none",
+    borderRadius: 4,
+    background: "transparent",
+    fontFamily: "inherit",
+    textAlign: "left",
+    textUnderlineOffset: 2,
+    cursor: "copy"
+  };
   var CARD_TITLE_STYLE = {
+    display: "flex",
+    alignItems: "baseline",
+    columnGap: 6,
     minWidth: 0,
     fontWeight: 500,
     lineHeight: "20px",
     overflowWrap: "anywhere"
+  };
+  var CARD_TITLE_BUTTON_STYLE = {
+    flex: "1 1 auto",
+    minWidth: 0,
+    padding: 0,
+    border: "none",
+    background: "transparent",
+    color: "inherit",
+    font: "inherit",
+    fontWeight: "inherit",
+    textAlign: "left",
+    overflowWrap: "anywhere",
+    cursor: "pointer"
   };
   var STATUS_INLINE_STYLE = {
     display: "inline-flex",
@@ -26139,6 +26181,7 @@
 [data-mattwf-panel] [data-hover="action"]:disabled { border-color: ${COLORS.border}; background: transparent; }
 [data-mattwf-panel] [data-hover="person"]:not(:disabled):hover { background: color-mix(in srgb, currentColor 8%, transparent); }
 [data-mattwf-panel] [data-hover="link"]:hover { text-decoration: underline; }
+[data-mattwf-panel] [data-hover="ref"]:not(:disabled):hover { --mwf-ref-copy-color: ${COLORS.accent}; text-decoration: underline; text-underline-offset: 2px; }
 [data-mattwf-panel] a:focus { outline: none; }
 [data-mattwf-panel] a:focus-visible { outline: 2px solid ${COLORS.accent}; outline-offset: 1px; border-radius: 2px; }
 ${MARKDOWN_SHEET}
@@ -30998,6 +31041,7 @@ ${MARKDOWN_SHEET}
           children: next === "closed" ? t("detail.close") : t("detail.reopen")
         }
       ) : null,
+      props.afterState,
       detail.url === null ? null : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         "button",
         {
@@ -31022,14 +31066,14 @@ ${MARKDOWN_SHEET}
       "div",
       {
         role: "alert",
-        "data-testid": "copy-error",
+        "data-testid": props.errorTestId ?? "copy-error",
         style: { ...DETAIL_ERROR_STYLE, ...DETAIL_STACK_STYLE },
         children: [
           copy.message,
           /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
             "input",
             {
-              "data-testid": "detail-link",
+              "data-testid": props.inputTestId ?? "detail-link",
               "aria-label": t("detail.linkLabel"),
               readOnly: true,
               value: url,
@@ -31252,6 +31296,58 @@ ${MARKDOWN_SHEET}
       },
       replace: setDetail
     };
+  }
+  function refreshTicket(client2, target, hooks) {
+    const detail = client2.getDetail(target.workspaceRoot, target.ref, target.number).then((result) => {
+      if (!hooks.isCurrent()) return;
+      if (result.ok) hooks.onDetail(result.result);
+      else hooks.onError(result.error);
+    });
+    const snapshot = client2.refresh(target.workspaceRoot).then((result) => {
+      if (!hooks.isCurrent() || !result.ok) return;
+      hooks.onSnapshot(result.result);
+    });
+    return Promise.all([detail, snapshot]).then(() => void 0);
+  }
+  function useDetailRefresh(client2, target, onDetail, onSnapshot) {
+    const [refreshing, setRefreshing] = React19.useState(false);
+    const [error, setError] = React19.useState(null);
+    const running = React19.useRef(false);
+    const mounted = React19.useRef(true);
+    const key = `${target.workspaceRoot}
+${target.ref}
+${String(target.number)}`;
+    const latest = React19.useRef(key);
+    latest.current = key;
+    React19.useEffect(() => {
+      mounted.current = true;
+      return () => {
+        mounted.current = false;
+      };
+    }, []);
+    React19.useEffect(() => {
+      setError(null);
+    }, [key]);
+    const refresh = () => {
+      if (running.current) return;
+      running.current = true;
+      setRefreshing(true);
+      const started = key;
+      const isCurrent = () => mounted.current && latest.current === started;
+      void refreshTicket(client2, target, {
+        isCurrent,
+        onDetail: (detail) => {
+          setError(null);
+          onDetail(detail);
+        },
+        onSnapshot,
+        onError: setError
+      }).finally(() => {
+        running.current = false;
+        if (mounted.current) setRefreshing(false);
+      });
+    };
+    return { refreshing, error, refresh };
   }
   function useTicketMutation(client2, options) {
     const [busy, setBusy] = React19.useState(false);
@@ -32077,16 +32173,23 @@ ${MARKDOWN_SHEET}
     React24.useEffect(() => {
       setCurrentTicket(ticket);
     }, [ticket]);
+    const applySnapshot = (snapshot) => {
+      const next = snapshot.tickets.find((item) => item.ref === ref);
+      if (next !== void 0) setCurrentTicket(next);
+    };
     const mutation = useTicketMutation(client2, {
       workspaceRoot,
       ref,
       number,
       onUpdated: request.replace,
-      onSnapshot: (snapshot) => {
-        const next = snapshot.tickets.find((item) => item.ref === ref);
-        if (next !== void 0) setCurrentTicket(next);
-      }
+      onSnapshot: applySnapshot
     });
+    const refresh = useDetailRefresh(
+      client2,
+      { workspaceRoot, ref, number },
+      request.replace,
+      applySnapshot
+    );
     const deletion = useTicketDeletion(client2, {
       workspaceRoot,
       ref,
@@ -32098,7 +32201,7 @@ ${MARKDOWN_SHEET}
     const worktree = useWorktreeCreate(client2, workspaceRoot, currentTicket);
     const worktreeState = detail === null ? { visible: false, enabled: false, reason: null } : worktreeAvailability(currentTicket, detail.backend, workspaceRoot, t);
     const link = useCopyLink(detail?.url ?? null);
-    const busy = mutation.busy || deletion.deleting;
+    const busy = mutation.busy || deletion.deleting || refresh.refreshing;
     useEscapeKey(props.onBack);
     return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { "data-testid": "ticket-detail", style: DETAIL_ROOT_STYLE, children: [
       /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(DetailHeader, { refText: ref, detail, onBack: props.onBack, children: [
@@ -32125,11 +32228,20 @@ ${MARKDOWN_SHEET}
             busy,
             onApply: mutation.apply,
             copy: link.copy,
-            onCopy: link.onCopy
+            onCopy: link.onCopy,
+            afterState: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+              RefreshButton,
+              {
+                refreshing: refresh.refreshing,
+                disabled: mutation.busy || deletion.deleting || deletion.confirming,
+                onRefresh: refresh.refresh
+              }
+            )
           }
         ),
         detail?.capabilities.delete === true ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(MoreMenu, { onDelete: deletion.open }) : null
       ] }),
+      refresh.error === null ? null : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { role: "alert", "data-testid": "detail-refresh-error", style: ERROR_STYLE, children: t("detail.refreshFailed", { detail: errorText(refresh.error, t) }) }),
       detail !== null ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         DetailContent,
         {
@@ -32148,6 +32260,24 @@ ${MARKDOWN_SHEET}
         }
       ) : request.phase === "error" ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(LoadError, { error: request.error, onRetry: request.reload }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { "data-testid": "detail-loading", style: EMPTY_STYLE, children: t("detail.loading") })
     ] });
+  }
+  function RefreshButton(props) {
+    const t = useMessages();
+    const label = props.refreshing ? t("detail.refreshing") : t("detail.refresh");
+    return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+      "button",
+      {
+        type: "button",
+        "data-testid": "detail-refresh",
+        "data-hover": "soft",
+        disabled: props.disabled || props.refreshing,
+        "aria-label": label,
+        title: label,
+        onClick: props.onRefresh,
+        style: props.refreshing ? { ...HEADER_ICON_BUTTON_STYLE, opacity: 0.5 } : HEADER_ICON_BUTTON_STYLE,
+        children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(RefreshIcon, {})
+      }
+    );
   }
   function DetailHeader(props) {
     const t = useMessages();
@@ -32434,6 +32564,7 @@ ${MARKDOWN_SHEET}
     const { ticket } = props.row;
     const t = useMessages();
     const display = refDisplay(ticket);
+    const link = useCopyLink(ticket.url ?? null);
     const worktree = useWorktreeCreate(props.client, props.workspaceRoot, ticket);
     const availability = worktreeAvailability(ticket, props.backend, props.workspaceRoot, t);
     const hierarchy = props.layout === "hierarchy";
@@ -32467,25 +32598,29 @@ ${MARKDOWN_SHEET}
                     }
                   ),
                   /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
-                    RowButton,
+                    RowContent,
                     {
                       ticket,
                       display,
                       focused: props.focused,
                       now: props.now,
                       row: props.row,
-                      hierarchy
+                      hierarchy,
+                      copy: link.copy,
+                      onCopy: link.onCopy
                     }
                   )
                 ] }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
-                  RowButton,
+                  RowContent,
                   {
                     ticket,
                     display,
                     focused: props.focused,
                     now: props.now,
                     row: props.row,
-                    hierarchy
+                    hierarchy,
+                    copy: link.copy,
+                    onCopy: link.onCopy
                   }
                 ),
                 /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: ACTION_COLUMN_STYLE, children: [
@@ -32519,37 +32654,82 @@ ${MARKDOWN_SHEET}
               onOpenEnvCheck: props.onOpenEnvCheck,
               compact: true
             }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+            CopyFailure,
+            {
+              copy: link.copy,
+              url: ticket.url ?? null,
+              errorTestId: "ticket-copy-error",
+              inputTestId: "ticket-link"
+            }
           )
         ]
       }
     );
   }
-  function RowButton(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
-      "button",
-      {
-        type: "button",
-        "data-testid": "ticket-row",
-        "data-ref": props.ticket.ref,
-        "data-focused": props.focused ? "true" : void 0,
-        style: CARD_STYLE,
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: CARD_TITLE_STYLE, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
-              "span",
-              {
-                "data-testid": "ticket-ref",
-                style: NUMBER_BADGE_STYLE,
-                ...props.display.full === void 0 ? {} : { title: props.display.full },
-                children: props.display.text
-              }
-            ),
-            props.ticket.title
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(MetaRow, { ticket: props.ticket, now: props.now, row: props.row, hierarchy: props.hierarchy })
-        ]
-      }
-    );
+  function RowContent(props) {
+    return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: CARD_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: CARD_TITLE_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+          TicketRef,
+          {
+            ticket: props.ticket,
+            display: props.display,
+            copy: props.copy,
+            onCopy: props.onCopy
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+          "button",
+          {
+            type: "button",
+            "data-testid": "ticket-row",
+            "data-ref": props.ticket.ref,
+            "data-focused": props.focused ? "true" : void 0,
+            style: CARD_TITLE_BUTTON_STYLE,
+            children: props.ticket.title
+          }
+        )
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(MetaRow, { ticket: props.ticket, now: props.now, row: props.row, hierarchy: props.hierarchy })
+    ] });
+  }
+  function TicketRef(props) {
+    const t = useMessages();
+    const url = props.ticket.url;
+    if (url === void 0) {
+      return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+        "span",
+        {
+          "data-testid": "ticket-ref",
+          style: NUMBER_BADGE_STYLE,
+          ...props.display.full === void 0 ? {} : { title: props.display.full },
+          children: props.display.text
+        }
+      );
+    }
+    const copied = props.copy.status === "copied";
+    return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+        "button",
+        {
+          type: "button",
+          "data-testid": "ticket-ref",
+          "data-ref": props.ticket.ref,
+          "data-hover": copied ? void 0 : "ref",
+          "aria-label": copied ? t("tickets.refCopiedNotice", { ref: props.ticket.ref }) : t("tickets.refCopyLabel", { ref: props.ticket.ref }),
+          title: copied ? t("common.copied") : t("tickets.refCopyHint", { url }),
+          style: copied ? { ...REF_COPY_BUTTON_STYLE, color: COLORS.success } : REF_COPY_BUTTON_STYLE,
+          onClick: (event) => {
+            event.stopPropagation();
+            props.onCopy();
+          },
+          children: copied ? t("common.copied") : props.display.text
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { role: "status", "data-testid": "ticket-ref-copied", style: VISUALLY_HIDDEN_STYLE, children: copied ? t("tickets.refCopiedNotice", { ref: props.ticket.ref }) : "" })
+    ] });
   }
   function CollapseControl(props) {
     const t = useMessages();

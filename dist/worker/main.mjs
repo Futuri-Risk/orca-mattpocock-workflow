@@ -170,6 +170,8 @@ function readTicket(value) {
   if (closedAt !== void 0 && typeof closedAt !== "string") return void 0;
   const parent = value.parent;
   if (parent !== void 0 && (typeof parent !== "string" || parent.length === 0)) return void 0;
+  const url = value.url;
+  if (url !== void 0 && (typeof url !== "string" || url.length === 0)) return void 0;
   const blockedBy = value.blockedBy;
   if (blockedBy !== void 0) {
     const refs = readStringArray(blockedBy);
@@ -187,7 +189,8 @@ function readTicket(value) {
       openBlockers,
       ...closedAt === void 0 ? {} : { closedAt },
       blockedBy: refs,
-      ...parent === void 0 ? {} : { parent }
+      ...parent === void 0 ? {} : { parent },
+      ...url === void 0 ? {} : { url }
     };
   }
   return {
@@ -202,7 +205,8 @@ function readTicket(value) {
     updatedAt,
     openBlockers,
     ...closedAt === void 0 ? {} : { closedAt },
-    ...parent === void 0 ? {} : { parent }
+    ...parent === void 0 ? {} : { parent },
+    ...url === void 0 ? {} : { url }
   };
 }
 function readAuthor(value) {
@@ -689,6 +693,75 @@ function readText(value) {
   return text.length === 0 ? null : text;
 }
 
+// src/core/ticket-detail.ts
+function diffSets(current, target) {
+  const currentSet = new Set(current);
+  const targetSet = new Set(target);
+  return {
+    add: target.filter((value) => !currentSet.has(value)),
+    remove: current.filter((value) => !targetSet.has(value))
+  };
+}
+function resolveTargetSet(current, requested, self = null) {
+  const target = requested === void 0 ? [...current] : [...requested];
+  if (self !== null && !target.includes(self)) target.push(self);
+  return target;
+}
+function planSetChange(current, requested, self = null) {
+  return diffSets(current, resolveTargetSet(current, requested, self));
+}
+function isEmptyDiff(diff) {
+  return diff.add.length === 0 && diff.remove.length === 0;
+}
+function normalizeLabelColor(value) {
+  if (typeof value !== "string") return null;
+  const hex = value.trim().replace(/^#/, "");
+  return /^[0-9a-fA-F]{6}$/.test(hex) ? `#${hex.toLowerCase()}` : null;
+}
+function dedupeBy(items, key) {
+  const seen = /* @__PURE__ */ new Set();
+  const unique = [];
+  for (const item of items) {
+    const value = key(item);
+    if (seen.has(value)) continue;
+    seen.add(value);
+    unique.push(item);
+  }
+  return unique;
+}
+function readOptionalString(value) {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+function readRequiredString(value, field) {
+  if (typeof value !== "string" || value.length === 0) throw invalidDetail(`${field}\u4E0D\u662F\u975E\u7A7A\u5B57\u7B26\u4E32`);
+  return value;
+}
+function readNameList(value) {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (typeof entry === "string" && entry.length > 0) return [entry];
+    if (isRecord(entry)) {
+      const name = readOptionalString(entry.name);
+      if (name !== null) return [name];
+    }
+    return [];
+  });
+}
+function requireTicketNumber(reference) {
+  if (reference.number === null) {
+    throw new TrackerError("ticket-not-found", "\u5DE5\u5355\u7F3A\u5C11\u6570\u5B57\u7F16\u53F7\uFF0C\u65E0\u6CD5\u5B9A\u4F4D\u3002");
+  }
+  return reference.number;
+}
+function invalidDetail(message) {
+  return new TrackerError("fetch-failed", `\u5DE5\u5355\u8BE6\u60C5\u683C\u5F0F\u4E0D\u6B63\u786E\uFF1A${message}`);
+}
+function sortCommentsByTime(comments) {
+  return [...comments].sort(
+    (left, right) => (left.createdAt ?? "") < (right.createdAt ?? "") ? -1 : (left.createdAt ?? "") > (right.createdAt ?? "") ? 1 : 0
+  );
+}
+
 // src/adapters/gitea/parse.ts
 var GITEA_AUTHOR_FIELDS = {
   login: "login",
@@ -745,6 +818,7 @@ function parseIssue(value, index, avatarBaseUrl2) {
   const title = readString2(value.title, `\u7B2C ${String(number)} \u5F20\u7968\u7684\u6807\u9898`);
   const state = readState2(value.state, number);
   const closedAt = readClosedAt(value.closed_at, number);
+  const url = readOptionalString(value.html_url);
   return {
     ticket: {
       ref: `#${String(number)}`,
@@ -758,7 +832,8 @@ function parseIssue(value, index, avatarBaseUrl2) {
       updatedAt: readString2(value.updated_at, `\u7B2C ${String(number)} \u5F20\u7968\u7684\u66F4\u65B0\u65F6\u95F4`),
       openBlockers: 0,
       blockedBy: [],
-      ...closedAt === void 0 ? {} : { closedAt }
+      ...closedAt === void 0 ? {} : { closedAt },
+      ...url === null ? {} : { url }
     },
     body: typeof value.body === "string" ? value.body : ""
   };
@@ -1122,6 +1197,7 @@ function parseIssue2(value, index) {
   const title = readString3(value.title, `\u7B2C ${String(iid)} \u5F20\u7968\u7684\u6807\u9898`);
   const state = readState3(value.state, iid);
   const closedAt = readClosedAt2(value.closed_at, iid);
+  const url = readOptionalString(value.web_url);
   return {
     ticket: {
       ref: `#${String(iid)}`,
@@ -1135,7 +1211,8 @@ function parseIssue2(value, index) {
       updatedAt: readString3(value.updated_at, `\u7B2C ${String(iid)} \u5F20\u7968\u7684\u66F4\u65B0\u65F6\u95F4`),
       openBlockers: 0,
       blockedBy: [],
-      ...closedAt === void 0 ? {} : { closedAt }
+      ...closedAt === void 0 ? {} : { closedAt },
+      ...url === null ? {} : { url }
     },
     description: typeof value.description === "string" ? value.description : "",
     hasBlockingIssuesCount: Object.hasOwn(value, "blocking_issues_count")
@@ -1859,75 +1936,6 @@ async function mapWithConcurrency(items, limit, worker) {
     if (result === void 0) throw new Error("\u5E76\u53D1\u6620\u5C04\u6CA1\u6709\u8FD4\u56DE\u7ED3\u679C");
     return result;
   });
-}
-
-// src/core/ticket-detail.ts
-function diffSets(current, target) {
-  const currentSet = new Set(current);
-  const targetSet = new Set(target);
-  return {
-    add: target.filter((value) => !currentSet.has(value)),
-    remove: current.filter((value) => !targetSet.has(value))
-  };
-}
-function resolveTargetSet(current, requested, self = null) {
-  const target = requested === void 0 ? [...current] : [...requested];
-  if (self !== null && !target.includes(self)) target.push(self);
-  return target;
-}
-function planSetChange(current, requested, self = null) {
-  return diffSets(current, resolveTargetSet(current, requested, self));
-}
-function isEmptyDiff(diff) {
-  return diff.add.length === 0 && diff.remove.length === 0;
-}
-function normalizeLabelColor(value) {
-  if (typeof value !== "string") return null;
-  const hex = value.trim().replace(/^#/, "");
-  return /^[0-9a-fA-F]{6}$/.test(hex) ? `#${hex.toLowerCase()}` : null;
-}
-function dedupeBy(items, key) {
-  const seen = /* @__PURE__ */ new Set();
-  const unique = [];
-  for (const item of items) {
-    const value = key(item);
-    if (seen.has(value)) continue;
-    seen.add(value);
-    unique.push(item);
-  }
-  return unique;
-}
-function readOptionalString(value) {
-  return typeof value === "string" && value.length > 0 ? value : null;
-}
-function readRequiredString(value, field) {
-  if (typeof value !== "string" || value.length === 0) throw invalidDetail(`${field}\u4E0D\u662F\u975E\u7A7A\u5B57\u7B26\u4E32`);
-  return value;
-}
-function readNameList(value) {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((entry) => {
-    if (typeof entry === "string" && entry.length > 0) return [entry];
-    if (isRecord(entry)) {
-      const name = readOptionalString(entry.name);
-      if (name !== null) return [name];
-    }
-    return [];
-  });
-}
-function requireTicketNumber(reference) {
-  if (reference.number === null) {
-    throw new TrackerError("ticket-not-found", "\u5DE5\u5355\u7F3A\u5C11\u6570\u5B57\u7F16\u53F7\uFF0C\u65E0\u6CD5\u5B9A\u4F4D\u3002");
-  }
-  return reference.number;
-}
-function invalidDetail(message) {
-  return new TrackerError("fetch-failed", `\u5DE5\u5355\u8BE6\u60C5\u683C\u5F0F\u4E0D\u6B63\u786E\uFF1A${message}`);
-}
-function sortCommentsByTime(comments) {
-  return [...comments].sort(
-    (left, right) => (left.createdAt ?? "") < (right.createdAt ?? "") ? -1 : (left.createdAt ?? "") > (right.createdAt ?? "") ? 1 : 0
-  );
 }
 
 // src/adapters/gitea/shared.ts
@@ -2670,6 +2678,7 @@ function parseIssueNode(value, index, repository) {
   const state = readState5(value.state, number);
   const closedAt = readClosedAt3(value.closedAt, number);
   const parent = readParent(value.parent, repository);
+  const url = readOptionalString(value.url);
   return {
     ref: `#${String(number)}`,
     number,
@@ -2682,7 +2691,8 @@ function parseIssueNode(value, index, repository) {
     updatedAt: readString4(value.updatedAt, `\u7B2C ${String(number)} \u5F20\u7968\u7684\u66F4\u65B0\u65F6\u95F4`),
     openBlockers: readOpenBlockers(value.issueDependenciesSummary),
     ...closedAt === void 0 ? {} : { closedAt },
-    ...parent === void 0 ? {} : { parent }
+    ...parent === void 0 ? {} : { parent },
+    ...url === null ? {} : { url }
   };
 }
 function readAssigneeLogins(value) {
@@ -3084,6 +3094,7 @@ var ISSUE_NODES = `nodes {
         number
         title
         state
+        url
         createdAt
         updatedAt
         closedAt
@@ -6225,7 +6236,8 @@ function buildStoredSnapshot(deps, stored, state) {
       openBlockers: ticket.openBlockers,
       ...ticket.closedAt === void 0 ? {} : { closedAt: ticket.closedAt },
       ...ticket.blockedBy === void 0 ? {} : { blockedBy: ticket.blockedBy },
-      ...ticket.parent === void 0 ? {} : { parent: ticket.parent }
+      ...ticket.parent === void 0 ? {} : { parent: ticket.parent },
+      ...ticket.url === void 0 ? {} : { url: ticket.url }
     }))
   };
 }
@@ -6452,7 +6464,7 @@ async function refreshSnapshot(deps, cache, target, full) {
   const base = hit?.entry.repositoryKey === repositoryKey(resolved2.kind, resolved2.address) ? hit.entry : void 0;
   const tracker = resolved2.tracker;
   const extendable = base === void 0 || base.nextCursor !== void 0 || base.total <= base.tickets.length;
-  if (base !== void 0 && !full && extendable && tracker.fetchChanges !== void 0) {
+  if (base !== void 0 && !full && extendable && tracker.fetchChanges !== void 0 && !needsUrlBackfill(resolved2, base)) {
     const merged = await mergeIncremental(deps, cache, target, resolved2, base, startedAt);
     if (merged !== void 0) return merged;
   }
@@ -6470,6 +6482,10 @@ async function refreshSnapshot(deps, cache, target, full) {
   } catch (error) {
     return await keepOldSnapshot(deps, cache, target, mapError(error), startedAt);
   }
+}
+function needsUrlBackfill(resolved2, base) {
+  if (resolved2.kind === "markdown") return false;
+  return base.tickets.some((ticket) => ticket.url === void 0);
 }
 async function mergeIncremental(deps, cache, target, resolved2, base, startedAt) {
   const tracker = resolved2.tracker;
@@ -6754,7 +6770,8 @@ function buildSnapshot(kind, repositoryHost, raw, tickets, blockersFinalized, me
       openBlockers: ticket.openBlockers,
       ...ticket.closedAt === void 0 ? {} : { closedAt: ticket.closedAt },
       ...ticket.blockedBy === void 0 ? {} : { blockedBy: ticket.blockedBy },
-      ...ticket.parent === void 0 ? {} : { parent: ticket.parent }
+      ...ticket.parent === void 0 ? {} : { parent: ticket.parent },
+      ...ticket.url === void 0 ? {} : { url: ticket.url }
     }))
   };
 }
