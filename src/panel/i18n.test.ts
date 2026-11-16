@@ -40,6 +40,7 @@ function ticket(overrides: Partial<TicketSnapshot> = {}): TicketSnapshot {
     status: 'ready',
     labels: [],
     author: null,
+    assignees: [],
     skillAction: 'implement',
     skillActionReason: 'ready-for-agent',
     createdAt: '2026-01-01T00:00:00Z',
