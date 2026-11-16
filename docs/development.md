@@ -133,6 +133,36 @@ orca plugin types .             # 写 .orca/types/orca/*.d.ts 与 tsconfig.json
 本仓库没有把 `tsconfig.json` 指向这份类型：`src/worker/orca-types.ts` 是手写的最小接口集，
 只覆盖用到的宿主 API，改动面比跟随整份类型小。
 
+## 装成本机正式插件
+
+开发插件只适合边改边看；要像普通插件一样常驻 Orca，用文件夹安装：
+
+```bash
+pnpm build                     # dist/ 是清单指向的产物
+pnpm run pack:plugin                      # 产出 .orca/plugin-package（运行时文件副本）
+orca plugin dev unload .       # 先摘掉同 key 的开发插件，否则 key 冲突
+orca plugin install .orca/plugin-package
+```
+
+第一次装会打印授权清单与指纹，照抄它给的 `--approve` 命令重跑一次。装好后的 key 是
+`local.mattpocock-workflow`，来源是 `.orca/plugin-package` 这个文件夹，`orca plugin list`
+里不再标 `isDev`。
+
+不要直接 `orca plugin install .`：文件夹安装会复制整个目录，只跳过根目录的 `.git`，
+`node_modules` 里 pnpm 的符号链接会让安装失败（`symlink not allowed in plugin content`）。
+`.orca/plugin-package` 只放 `orca-plugin.json`、`README.md`、`dist/`、`skills/`，
+目录本来就在 `.gitignore` 里。
+
+日常更新：
+
+```bash
+pnpm build && pnpm run pack:plugin
+orca plugin update local.mattpocock-workflow
+```
+
+文件夹安装的 update 会重新复制这个目录；新增权限、命令、面板或换了版本时可能要求重新审批，
+命令会打印新指纹。插件私有数据在 `~/Library/Application Support/orca/plugins-data/` 下，按 key 存。
+
 ## 收尾
 
 ```bash

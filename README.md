@@ -102,6 +102,17 @@ orca plugin dev watch .   # 持续打印日志与重载；--shot ./shots --shot-
 清单指向 `dist/` 里的产物，`dist/` 不进版本库；克隆后 `pnpm install` 会自动构建一次，
 发布前确认 `pnpm build` 通过。
 
+装成本机正式插件（不再走 dev load）用文件夹安装：
+
+```bash
+pnpm build && pnpm run pack:plugin        # 产出 .orca/plugin-package
+orca plugin dev unload .
+orca plugin install .orca/plugin-package   # 首次按提示带 --approve <指纹>
+```
+
+仓库根不能直接装——`node_modules` 里的符号链接会被拒绝；细节与更新方式见
+[docs/development.md](docs/development.md#装成本机正式插件)。
+
 ## 已知限制
 
 - 提示词只能复制，不能直接写进会话：Orca 插件没有会话草稿接口。
