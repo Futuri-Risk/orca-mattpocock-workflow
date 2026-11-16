@@ -24,8 +24,8 @@ import {
   CARD_FOCUSED_STYLE,
   CARD_ROW_STYLE,
   CARD_STYLE,
-  CARD_TITLE_BUTTON_STYLE,
   CARD_TITLE_STYLE,
+  CARD_TITLE_TEXT_STYLE,
   CATEGORY_BADGES,
   COLORS,
   EMPTY_STYLE,
@@ -194,6 +194,9 @@ function TicketRow(props: {
               hierarchy={hierarchy}
               copy={link.copy}
               onCopy={link.onCopy}
+              onOpen={() => {
+                props.onPick(ticket)
+              }}
             />
           </div>
         ) : (
@@ -206,6 +209,9 @@ function TicketRow(props: {
             hierarchy={hierarchy}
             copy={link.copy}
             onCopy={link.onCopy}
+            onOpen={() => {
+              props.onPick(ticket)
+            }}
           />
         )}
         <div style={ACTION_COLUMN_STYLE}>
@@ -239,7 +245,7 @@ function TicketRow(props: {
   )
 }
 
-/** 行内容：编号与标题各是独立按钮，下面是元信息；点击冒泡到卡片打开详情。 */
+/** 行内容：编号与标题共处一行内流，下面是元信息；点击冒泡到卡片打开详情。 */
 function RowContent(props: {
   readonly ticket: TicketSnapshot
   readonly display: { readonly text: string; readonly full?: string }
@@ -249,6 +255,7 @@ function RowContent(props: {
   readonly hierarchy: boolean
   readonly copy: CopyState
   readonly onCopy: () => void
+  readonly onOpen: () => void
 }): React.ReactElement {
   return (
     <div style={CARD_STYLE}>
@@ -259,15 +266,22 @@ function RowContent(props: {
           copy={props.copy}
           onCopy={props.onCopy}
         />
-        <button
-          type="button"
+        <span
+          role="button"
+          tabIndex={0}
           data-testid="ticket-row"
           data-ref={props.ticket.ref}
           data-focused={props.focused ? 'true' : undefined}
-          style={CARD_TITLE_BUTTON_STYLE}
+          style={CARD_TITLE_TEXT_STYLE}
+          onKeyDown={(event) => {
+            // 标题不再是原生按钮：Enter / Space 自己接住，键盘仍然能打开详情。
+            if (event.key !== 'Enter' && event.key !== ' ') return
+            event.preventDefault()
+            props.onOpen()
+          }}
         >
           {props.ticket.title}
-        </button>
+        </span>
       </span>
       <MetaRow ticket={props.ticket} now={props.now} row={props.row} hierarchy={props.hierarchy} />
     </div>

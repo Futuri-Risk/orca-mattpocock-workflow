@@ -25984,6 +25984,8 @@
     textAlign: "left"
   };
   var NUMBER_BADGE_STYLE = {
+    float: "left",
+    marginRight: 6,
     color: COLORS.tertiary,
     fontSize: 12,
     // 编号在标题的 500 字重里，单独压回常规字重。
@@ -25996,7 +25998,6 @@
     ...NUMBER_BADGE_STYLE,
     // 默认仍是辅助色；悬停时由样式表把自定义属性换成强调色，读出链接感。
     color: `var(--mwf-ref-copy-color, ${COLORS.tertiary})`,
-    flex: "none",
     padding: 0,
     border: "none",
     borderRadius: 4,
@@ -26007,24 +26008,15 @@
     cursor: "copy"
   };
   var CARD_TITLE_STYLE = {
-    display: "flex",
-    alignItems: "baseline",
-    columnGap: 6,
+    display: "flow-root",
     minWidth: 0,
     fontWeight: 500,
     lineHeight: "20px",
     overflowWrap: "anywhere"
   };
-  var CARD_TITLE_BUTTON_STYLE = {
-    flex: "1 1 auto",
-    minWidth: 0,
-    padding: 0,
-    border: "none",
-    background: "transparent",
-    color: "inherit",
-    font: "inherit",
+  var CARD_TITLE_TEXT_STYLE = {
+    display: "block",
     fontWeight: "inherit",
-    textAlign: "left",
     overflowWrap: "anywhere",
     cursor: "pointer"
   };
@@ -32607,7 +32599,10 @@ ${String(target.number)}`;
                       row: props.row,
                       hierarchy,
                       copy: link.copy,
-                      onCopy: link.onCopy
+                      onCopy: link.onCopy,
+                      onOpen: () => {
+                        props.onPick(ticket);
+                      }
                     }
                   )
                 ] }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
@@ -32620,7 +32615,10 @@ ${String(target.number)}`;
                     row: props.row,
                     hierarchy,
                     copy: link.copy,
-                    onCopy: link.onCopy
+                    onCopy: link.onCopy,
+                    onOpen: () => {
+                      props.onPick(ticket);
+                    }
                   }
                 ),
                 /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: ACTION_COLUMN_STYLE, children: [
@@ -32681,13 +32679,19 @@ ${String(target.number)}`;
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
-          "button",
+          "span",
           {
-            type: "button",
+            role: "button",
+            tabIndex: 0,
             "data-testid": "ticket-row",
             "data-ref": props.ticket.ref,
             "data-focused": props.focused ? "true" : void 0,
-            style: CARD_TITLE_BUTTON_STYLE,
+            style: CARD_TITLE_TEXT_STYLE,
+            onKeyDown: (event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              props.onOpen();
+            },
             children: props.ticket.title
           }
         )

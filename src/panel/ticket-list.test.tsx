@@ -160,7 +160,7 @@ describe('工单列表布局渲染', () => {
     expect(count(markup, 'data-testid="ticket-row"')).toBe(0)
   })
 
-  it('有链接时编号是独立按钮，标题按钮里不再含编号徽标', () => {
+  it('有链接时编号是独立按钮，标题里不再含编号徽标', () => {
     const url = 'https://github.com/o/r/issues/1'
 
     for (const layout of ['flat', 'hierarchy'] as const) {
@@ -171,11 +171,13 @@ describe('工单列表布局渲染', () => {
       expect(markup).toContain(`aria-label="${ZH['tickets.refCopyLabel'].replace('{ref}', '#1')}"`)
       expect(markup).toContain(`title="${ZH['tickets.refCopyHint'].replace('{url}', url)}"`)
 
-      const titleButton = markup.match(
-        /<button[^>]*data-testid="ticket-row"[^>]*>(.*?)<\/button>/su,
+      // 标题是行内文本块而不是按钮：折行要回到编号左缘，按钮会自成一行把文字顶下去。
+      const titleText = markup.match(
+        /<span[^>]*data-testid="ticket-row"[^>]*>(.*?)<\/span>/su,
       )
-      expect(titleButton?.[1] ?? '').not.toContain('ticket-ref')
-      expect(titleButton?.[1] ?? '').toContain('票 #1')
+      expect(titleText?.[1] ?? '').not.toContain('ticket-ref')
+      expect(titleText?.[1] ?? '').toContain('票 #1')
+      expect(markup).not.toMatch(/<button[^>]*data-testid="ticket-row"/)
     }
   })
 

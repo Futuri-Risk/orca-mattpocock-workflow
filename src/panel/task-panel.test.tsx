@@ -1,9 +1,19 @@
 // @vitest-environment happy-dom
+import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { MESSAGES } from '../protocol/i18n.ts'
 import type { RpcResult, TicketDetail, WorkspaceSnapshot } from '../protocol/tracker.ts'
-import { click, find, mustFind, render, settleWith, setupDom, teardownDom } from './dom-test-support.ts'
+import {
+  click,
+  find,
+  mustFind,
+  render,
+  settle,
+  settleWith,
+  setupDom,
+  teardownDom,
+} from './dom-test-support.ts'
 import type { PromptCopy } from './injection.ts'
 import { TaskPanel } from './task-panel.tsx'
 import {
@@ -113,5 +123,34 @@ describe('任务面板的详情刷新', () => {
     expect(document.body.textContent).not.toContain('STALE 旧仓库')
     expect(document.body.textContent).toContain('B 票')
     expect(document.body.textContent).not.toContain('A 票')
+  })
+})
+
+describe('标题的键盘入口', () => {
+  it.each(['Enter', ' '])('标题块按 %j 打开详情', async (key) => {
+    const get = vi.fn<PanelClient['get']>(async () =>
+      ok(makeSnapshot({ tickets: [makeTicket()] })),
+    )
+    const getDetail = vi.fn<PanelClient['getDetail']>(async () => ok(makeDetail()))
+    const refresh = vi.fn<PanelClient['refresh']>(async () => ok(makeSnapshot()))
+    await render(
+      <TaskPanel
+        client={clientWith({ get, getDetail, refresh })}
+        workspaceRoot="/a"
+        copy={COPY}
+      />,
+    )
+
+    const row = mustFind('ticket-row')
+    expect(row.getAttribute('role')).toBe('button')
+    expect(row.tabIndex).toBe(0)
+    row.focus()
+    await act(async () => {
+      row.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+    })
+    await settle()
+
+    expect(getDetail).toHaveBeenCalled()
+    expect(find('ticket-detail')).not.toBeNull()
   })
 })

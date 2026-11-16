@@ -470,8 +470,9 @@ export const CARD_FOCUSED_STYLE: CSSProperties = {
 }
 
 /**
- * 行内容：单列。编号与标题在同一行，标题折行时回到编号右侧；元信息也从左缘起排，
- * 不再为编号单独留一整列。打开详情由整张卡片负责，编号另可成为复制按钮。
+ * 行内容：单列。编号与标题是一个行内流，标题折行时第二行回到编号左缘；
+ * 元信息也从左缘起排，不再为编号单独留一整列。打开详情由整张卡片负责，
+ * 编号另可成为复制按钮。
  */
 export const CARD_STYLE: CSSProperties = {
   display: 'grid',
@@ -488,8 +489,10 @@ export const CARD_STYLE: CSSProperties = {
   font: 'inherit',
   textAlign: 'left',
 }
-/** 编号：标题前的行内前缀，弱化成辅助色，不加粗。 */
+/** 编号：标题前的行内前缀，弱化成辅助色，不加粗；浮动起来让标题首行贴着它、续行回左缘。 */
 export const NUMBER_BADGE_STYLE: CSSProperties = {
+  float: 'left',
+  marginRight: 6,
   color: COLORS.tertiary,
   fontSize: 12,
   // 编号在标题的 500 字重里，单独压回常规字重。
@@ -501,13 +504,12 @@ export const NUMBER_BADGE_STYLE: CSSProperties = {
 
 /**
  * 编号作为复制入口时的按钮复位：保留徽标外观，去掉按钮默认的边框与底色。
- * 间距由标题行的 gap 统一给出，编号本身不再带外边距。
+ * 间距由编号自己的右外边距给出，编号因此始终是标题流里的一个行内元素。
  */
 export const REF_COPY_BUTTON_STYLE: CSSProperties = {
   ...NUMBER_BADGE_STYLE,
   // 默认仍是辅助色；悬停时由样式表把自定义属性换成强调色，读出链接感。
   color: `var(--mwf-ref-copy-color, ${COLORS.tertiary})`,
-  flex: 'none',
   padding: 0,
   border: 'none',
   borderRadius: 4,
@@ -518,28 +520,29 @@ export const REF_COPY_BUTTON_STYLE: CSSProperties = {
   cursor: 'copy',
 }
 
-/** 标题行：编号与标题按钮同一基线，编号是行首小字，长标题从编号右侧折行。 */
+/**
+ * 标题行：编号浮在左侧一行高，标题是整行宽度的块，首行贴着编号、续行回到编号左缘。
+ * 不用两列布局——那样折行的续行会缩进到标题首字，看起来像另起一段。
+ * `flow-root` 把浮动的编号包在标题行里，不让它溢到元信息行。
+ */
 export const CARD_TITLE_STYLE: CSSProperties = {
-  display: 'flex',
-  alignItems: 'baseline',
-  columnGap: 6,
+  display: 'flow-root',
   minWidth: 0,
   fontWeight: 500,
   lineHeight: '20px',
   overflowWrap: 'anywhere',
 }
 
-/** 标题按钮：只承载标题文字；打开详情仍由整张卡片负责。 */
-export const CARD_TITLE_BUTTON_STYLE: CSSProperties = {
-  flex: '1 1 auto',
-  minWidth: 0,
-  padding: 0,
-  border: 'none',
-  background: 'transparent',
-  color: 'inherit',
-  font: 'inherit',
+/**
+ * 标题文字：整行宽度的块，首行贴着浮动的编号、续行回到编号左缘。
+ * 不能用 `<button>` 承载这段文字——按钮会自成格式化上下文，被浮动的编号整个顶到下一行，
+ * 折行也就缩进到标题首字了；键盘入口改用 `role="button"` + `tabIndex`。
+ * 折行交给浏览器按行宽自然填满：`text-wrap: balance` 看似整齐，却会把中文词从中间劈开
+ * （「上 / 传」），读起来比短尾行更别扭。
+ */
+export const CARD_TITLE_TEXT_STYLE: CSSProperties = {
+  display: 'block',
   fontWeight: 'inherit',
-  textAlign: 'left',
   overflowWrap: 'anywhere',
   cursor: 'pointer',
 }
