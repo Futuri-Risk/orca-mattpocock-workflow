@@ -361,7 +361,7 @@ export const PEOPLE_CHIP_STYLE: CSSProperties = {
   color: COLORS.secondary,
   padding: '1px 9px',
   cursor: 'pointer',
-  font: 'inherit',
+  fontFamily: 'inherit',
   fontSize: 11,
   lineHeight: '18px',
   whiteSpace: 'nowrap',
