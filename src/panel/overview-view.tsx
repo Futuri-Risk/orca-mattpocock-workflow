@@ -48,9 +48,8 @@ import {
   metricText,
   statusSegments,
 } from './overview-text.ts'
-import type { PanelClient } from './transport.ts'
 import { formatAge, useNow } from './snapshot-age.ts'
-import { snapshotRefreshNotice, useSnapshotRequest } from './snapshot-request.ts'
+import { snapshotRefreshNotice, type SnapshotRequestState } from './snapshot-request.ts'
 import {
   AGE_STYLE,
   BACKEND_BADGE_STYLE,
@@ -74,11 +73,9 @@ const REFRESH_ERROR_STYLE: React.CSSProperties = {
 
 /** 概览视图依赖。 */
 export interface OverviewViewProps {
-  readonly client: PanelClient
+  readonly request: SnapshotRequestState
   readonly workspaceRoot: string | undefined
   readonly now?: (() => number) | undefined
-  /** 外部推送的刷新信号：变了就重新读一次快照。 */
-  readonly refreshToken?: number | undefined
   /** 关注清单点击：切到列表并定位这张票；只读，不写提示词。 */
   readonly onOpenTicket: (ref: string) => void
   /** 环境问题导致快照失败时跳到环境检查。 */
@@ -89,11 +86,7 @@ export interface OverviewViewProps {
 export function OverviewView(props: OverviewViewProps): React.ReactElement {
   const t = useMessages()
   const clock = props.now ?? Date.now
-  const { snapshot, error, refreshError, phase, refresh } = useSnapshotRequest(
-    props.client,
-    props.workspaceRoot,
-    props.refreshToken ?? 0,
-  )
+  const { snapshot, error, refreshError, phase, refresh } = props.request
   const nowValue = useNow(clock)
   const busy = phase === 'loading' || phase === 'refreshing'
 

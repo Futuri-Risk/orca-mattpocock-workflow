@@ -366,10 +366,10 @@ export interface TicketDeletion {
 }
 
 /**
- * 删除流程：打开确认面板 → 用户输入确认词 → 删除 → 刷新列表并返回列表。
- * 删除失败时留在面板里显示原因，不返回列表。
+ * 删除流程：打开确认面板 → 用户输入确认词 → 删除 → 刷新列表快照并返回调用方。
+ * 删除失败时留在面板里显示原因，不返回；刷新失败也照常返回，由面板保留旧数据。
  * @param client - 面板客户端。
- * @param target - 工作区与工单定位，以及删除成功后的去处。
+ * @param target - 工作区与工单定位、删除后的快照出口与去处。
  * @returns 删除状态与入口。
  */
 export function useTicketDeletion(
@@ -378,6 +378,8 @@ export function useTicketDeletion(
     readonly workspaceRoot: string
     readonly ref: string
     readonly number: number | null
+    /** 删除后重建的快照：面板据此移除这一行，不必等下一次列表重新挂载。 */
+    readonly onSnapshot: (snapshot: WorkspaceSnapshot) => void
     readonly onDeleted: () => void
   },
 ): TicketDeletion {
@@ -397,7 +399,8 @@ export function useTicketDeletion(
         return
       }
       // 删除已落地：刷新列表快照再返回，列表里不会残留这张票。
-      await client.refresh(target.workspaceRoot)
+      const snapshot = await client.refresh(target.workspaceRoot)
+      if (snapshot.ok) target.onSnapshot(snapshot.result)
       target.onDeleted()
     })()
   }

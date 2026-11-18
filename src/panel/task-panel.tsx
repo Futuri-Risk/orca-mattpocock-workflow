@@ -14,10 +14,12 @@ import type { LanguageSetting } from '../protocol/i18n.ts'
 import { ERROR_BACKENDS, type ErrorCode, type TicketSnapshot } from '../protocol/tracker.ts'
 import { useLocale, useMessages } from './i18n.ts'
 import type { PromptCopy } from './injection.ts'
+import { useDetailNavigation, type DetailTargetState } from './detail-navigation.ts'
 import { EnvCheckView } from './env-check-view.tsx'
 import { HelpView } from './help-view.tsx'
 import { OverviewView } from './overview-view.tsx'
 import type { PanelClient } from './transport.ts'
+import { useSnapshotRequest, type SnapshotRequestState } from './snapshot-request.ts'
 import {
   COLORS,
   ICON_BUTTON_STYLE,
@@ -29,6 +31,7 @@ import {
   VIEW_TABS_STYLE,
 } from './task-panel-styles.ts'
 import { TicketDetailView } from './ticket-detail-view.tsx'
+import { findSnapshotTicket } from './ticket-ref.ts'
 import { TicketsView } from './tickets-view.tsx'
 
 /** 面板依赖。 */
@@ -46,13 +49,6 @@ export interface TaskPanelProps {
 
 type View = 'tickets' | 'overview' | 'env' | 'help'
 
-/** 当前打开的详情；保存整张列表快照行，详情头部与列表行共用同一份技能动作。 */
-interface OpenTicket {
-  /** 详情所属工作区：工作区一变就立即失效，不会用新工作区去读旧票。 */
-  readonly workspaceRoot: string
-  readonly ticket: TicketSnapshot
-}
-
 const NO_CAPABILITIES = (): readonly CapabilityDiagnostic[] => []
 
 /**
@@ -63,16 +59,18 @@ const NO_CAPABILITIES = (): readonly CapabilityDiagnostic[] => []
 export function TaskPanel(props: TaskPanelProps): React.ReactElement {
   const [view, setView] = React.useState<View>('tickets')
   const [focusBackend, setFocusBackend] = React.useState<FocusBackend>(null)
-  const [openTicket, setOpenTicket] = React.useState<OpenTicket | null>(null)
+  // 详情目标与返回栈：列表打开清栈，详情里打开阻塞项压栈，返回弹栈或回列表。
+  const navigation = useDetailNavigation(props.workspaceRoot)
   // 从概览跳进列表时要定位的票；列表消费后清空。
   const [focusTicket, setFocusTicket] = React.useState<string | null>(null)
   // 从帮助返回打开前的视图；帮助里再点 tips 不覆盖它。
   const previousView = React.useRef<Exclude<View, 'help'>>('tickets')
   const clientCapabilities = props.clientCapabilities ?? NO_CAPABILITIES
+  // 快照在面板层只取一份：切视图、进详情都不重新拉，阻塞项的标题与状态跟着它更新。
+  const request = useSnapshotRequest(props.client, props.workspaceRoot, props.refreshToken ?? 0)
 
   // 详情只在它所属的工作区里有效；切换工作区后立即回到新仓库的列表。
-  const open =
-    openTicket !== null && openTicket.workspaceRoot === props.workspaceRoot ? openTicket : null
+  const open = navigation.open
 
   const openHelp = (): void => {
     if (view !== 'help') previousView.current = view
@@ -86,10 +84,10 @@ export function TaskPanel(props: TaskPanelProps): React.ReactElement {
         view={view}
         onOpenTickets={() => {
           setView('tickets')
-          setOpenTicket(null)
+          navigation.close()
         }}
         onOpenOverview={() => {
-          setOpenTicket(null)
+          navigation.close()
           setView('overview')
         }}
         onOpenEnvCheck={() => {
@@ -100,8 +98,10 @@ export function TaskPanel(props: TaskPanelProps): React.ReactElement {
       />
       <PanelContent
         panel={props}
+        request={request}
         view={view}
         open={open}
+        backRef={navigation.backRef}
         focusBackend={focusBackend}
         focusTicket={focusTicket}
         clientCapabilities={clientCapabilities}
@@ -110,18 +110,18 @@ export function TaskPanel(props: TaskPanelProps): React.ReactElement {
           setView('env')
         }}
         onOpenTicket={(ticket: TicketSnapshot) => {
-          if (props.workspaceRoot === undefined) return
-          setOpenTicket({ workspaceRoot: props.workspaceRoot, ticket })
+          navigation.openFromList(ticket)
+        }}
+        onOpenBlocker={(ref: string) => {
+          navigation.openBlocker(ref, request.snapshot)
         }}
         onFocusHandled={() => {
           setFocusTicket(null)
         }}
-        onCloseDetail={() => {
-          setOpenTicket(null)
-        }}
+        onBackDetail={navigation.back}
         onLocateTicket={(ref: string) => {
           setFocusTicket(ref)
-          setOpenTicket(null)
+          navigation.close()
           setView('tickets')
         }}
         onBack={() => {
@@ -139,15 +139,19 @@ export function TaskPanel(props: TaskPanelProps): React.ReactElement {
  */
 function PanelContent(props: {
   readonly panel: TaskPanelProps
+  readonly request: SnapshotRequestState
   readonly view: View
-  readonly open: OpenTicket | null
+  readonly open: DetailTargetState | null
+  /** 详情返回栈顶的引用；栈空时为 null。 */
+  readonly backRef: string | null
   readonly focusBackend: FocusBackend
   readonly focusTicket: string | null
   readonly clientCapabilities: () => readonly CapabilityDiagnostic[]
   readonly onOpenEnvCheck: (code: ErrorCode) => void
   readonly onOpenTicket: (ticket: TicketSnapshot) => void
+  readonly onOpenBlocker: (ref: string) => void
   readonly onFocusHandled: () => void
-  readonly onCloseDetail: () => void
+  readonly onBackDetail: () => void
   readonly onLocateTicket: (ref: string) => void
   readonly onBack: () => void
 }): React.ReactElement {
@@ -157,16 +161,18 @@ function PanelContent(props: {
     return (
       <TicketsPane
         client={panel.client}
+        request={props.request}
         workspaceRoot={panel.workspaceRoot}
         copy={panel.copy}
         now={panel.now}
-        refreshToken={panel.refreshToken}
         open={props.open}
+        backRef={props.backRef}
         focusTicket={props.focusTicket}
         onOpenEnvCheck={props.onOpenEnvCheck}
         onOpenTicket={props.onOpenTicket}
+        onOpenBlocker={props.onOpenBlocker}
         onFocusHandled={props.onFocusHandled}
-        onCloseDetail={props.onCloseDetail}
+        onBackDetail={props.onBackDetail}
       />
     )
   }
@@ -174,10 +180,9 @@ function PanelContent(props: {
   if (props.view === 'overview') {
     return (
       <OverviewPane
-        client={panel.client}
+        request={props.request}
         workspaceRoot={panel.workspaceRoot}
         now={panel.now}
-        refreshToken={panel.refreshToken}
         onOpenTicket={props.onLocateTicket}
         onOpenEnvCheck={props.onOpenEnvCheck}
       />
@@ -208,19 +213,17 @@ type FocusBackend = Exclude<BackendKind, 'markdown'> | null
  * @returns 概览视图。
  */
 function OverviewPane(props: {
-  readonly client: PanelClient
+  readonly request: SnapshotRequestState
   readonly workspaceRoot: string | undefined
   readonly now: (() => number) | undefined
-  readonly refreshToken?: number | undefined
   readonly onOpenTicket: (ref: string) => void
   readonly onOpenEnvCheck: (code: ErrorCode) => void
 }): React.ReactElement {
   return (
     <OverviewView
-      client={props.client}
+      request={props.request}
       workspaceRoot={props.workspaceRoot}
       now={props.now}
-      refreshToken={props.refreshToken}
       onOpenTicket={props.onOpenTicket}
       onOpenEnvCheck={props.onOpenEnvCheck}
     />
@@ -234,27 +237,39 @@ function OverviewPane(props: {
  */
 function TicketsPane(props: {
   readonly client: PanelClient
+  readonly request: SnapshotRequestState
   readonly workspaceRoot: string | undefined
   /** 面板的提示词复制端口。 */
   readonly copy: PromptCopy
   readonly now: (() => number) | undefined
-  /** 外部推送的刷新信号：变了就重新读一次快照。 */
-  readonly refreshToken?: number | undefined
-  readonly open: OpenTicket | null
+  readonly open: DetailTargetState | null
+  /** 详情返回栈顶的引用；栈空时为 null。 */
+  readonly backRef: string | null
   readonly focusTicket: string | null
   readonly onOpenEnvCheck: (code: ErrorCode) => void
   readonly onOpenTicket: (ticket: TicketSnapshot) => void
+  readonly onOpenBlocker: (ref: string) => void
   readonly onFocusHandled: () => void
-  readonly onCloseDetail: () => void
+  readonly onBackDetail: () => void
 }): React.ReactElement {
   if (props.workspaceRoot !== undefined && props.open !== null) {
+    const open = props.open
+    const snapshot = props.request.snapshot
+    // 详情头部用当前快照里的同一行：刷新落地后，技能徽标与阻塞项自动跟上；
+    // 快照里没有这张票时退回打开详情时保存的那一行（按引用打开时没有这一行）。
+    const current = findSnapshotTicket(snapshot?.tickets, open.target.ref) ?? open.target.ticket
     return (
       <TicketDetailView
+        key={open.target.ref}
         client={props.client}
         workspaceRoot={props.workspaceRoot}
-        ticket={props.open.ticket}
+        target={{ ...open.target, ticket: current }}
+        snapshotTickets={snapshot?.tickets ?? []}
         copy={props.copy}
-        onBack={props.onCloseDetail}
+        backRef={props.backRef}
+        onBack={props.onBackDetail}
+        onOpenBlocker={props.onOpenBlocker}
+        onSnapshot={props.request.apply}
         onOpenEnvCheck={props.onOpenEnvCheck}
       />
     )
@@ -263,10 +278,10 @@ function TicketsPane(props: {
   return (
     <TicketsView
       client={props.client}
+      request={props.request}
       workspaceRoot={props.workspaceRoot}
       copy={props.copy}
       now={props.now}
-      refreshToken={props.refreshToken}
       focusRef={props.focusTicket}
       onFocusHandled={props.onFocusHandled}
       onOpenEnvCheck={props.onOpenEnvCheck}

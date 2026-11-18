@@ -27,7 +27,10 @@ The interaction is designed around the capabilities Orca plugins actually expose
 - **Overview**: pressure at a glance (size / blocking / staleness), key numbers, status and category
   composition, and the tickets to look at first.
 - **Detail**: timeline, fields and native blocking relations for one ticket. The header can refresh
-  manually: it re-reads the ticket and syncs the list snapshot without going back to the list.
+  manually: it re-reads the ticket and syncs the list snapshot without going back to the list. When
+  blocked, the "Blocked N" badge expands into blocker rows with ref, title and state; opening one
+  shows that ticket, and Back first returns to the blocked ticket before returning to the list.
+  Backends without dependency edges keep the badge read-only.
 - **Environment check**: checks the main directory, backend selection, Orca CLI, CLI install and
   login, repository reachability, workspace initialization, the local ticket directory and the skills
   the panel uses. Every failure comes with an executable remedy.

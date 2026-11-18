@@ -4,11 +4,13 @@
  * - 头部：返回、编号（远端链接）、后端徽标；右侧是技能按钮、关闭/重开、刷新、
  *   复制链接，以及有删除权限时才出现的“更多”菜单；
  * - 标题区：标题、实心状态徽标、作者与时间、评论数，紧跟属性条（见 ticket-detail-fields）；
+ * - 阻塞项：被阻塞且快照里有引用时，头部的「阻塞 N」是 disclosure，展开的列表是滚动区的第一块；
  * - 时间线：正文卡片与评论卡片（见 ticket-timeline）。
  *
  * 详情不自动复制提示词：浏览与开工是两个动作，复制由明确的技能按钮触发。
  * 技能动作来自列表快照（判定在 core，只有一处），按钮与列表行徽标共用同一个组件；
  * 写操作与手动刷新后宿主会重建快照，这里用刷新后的快照更新徽标，不重新判定。
+ * 按引用打开、快照里没有这张票时只渲染详情数据，不伪造技能徽标与阻塞入口。
  * 数据读取与写操作在 ticket-detail-hooks 里。
  */
 import * as React from 'react'
@@ -31,6 +33,7 @@ import type { PromptCopy, PromptCopyState } from './injection.ts'
 import { PromptCopyArea } from './prompt-copy.tsx'
 import type { PanelClient } from './transport.ts'
 import { SkillActionBadge } from './skill-action-badge.tsx'
+import { actionBadgeLabel, actionHint } from './skill-action-text.ts'
 import {
   BACKEND_BADGE_STYLE,
   BUTTON_STYLE,
@@ -38,6 +41,12 @@ import {
   ERROR_STYLE,
   STATUS_DOT_STYLE,
 } from './task-panel-styles.ts'
+import {
+  BlockersSection,
+  BlockersToggle,
+  blockerItems,
+  type BlockerItem,
+} from './ticket-blockers.tsx'
 import { DeleteConfirm, MoreMenu } from './ticket-delete.tsx'
 import {
   CopyFailure,
@@ -57,6 +66,7 @@ import {
   type TicketDeletion,
 } from './ticket-detail-hooks.ts'
 import {
+  DETAIL_BACK_LABEL_STYLE,
   DETAIL_BACK_STYLE,
   DETAIL_ERROR_STYLE,
   DETAIL_HEADER_STYLE,
@@ -82,16 +92,34 @@ import {
   worktreeAvailability,
 } from './worktree-action.tsx'
 
+/** 详情要打开的工单：引用与编号负责读取，快照行只用于头部判定。 */
+export interface DetailTarget {
+  /** 工单引用：远端是 `#15`，本地 Markdown 是相对工作区的文件路径。 */
+  readonly ref: string
+  /** 数字编号；本地 Markdown 没有编号，为 null。 */
+  readonly number: number | null
+  /** 当前快照里的那一行；按引用打开、快照里没有这张票时为 null。 */
+  readonly ticket: TicketSnapshot | null
+}
+
 /** 工单详情视图依赖。 */
 export interface TicketDetailViewProps {
   readonly client: PanelClient
   readonly workspaceRoot: string
-  /** 列表里选中的那张票：详情按它的引用加载，技能动作也来自它（写操作与手动刷新后按快照更新）。 */
-  readonly ticket: TicketSnapshot
+  /** 要打开的工单：详情按引用与编号加载，技能动作来自可选的快照行。 */
+  readonly target: DetailTarget
+  /** 当前快照的全部行：阻塞项按引用查标题与状态。 */
+  readonly snapshotTickets: readonly TicketSnapshot[]
   /** 面板的提示词复制端口。 */
   readonly copy: PromptCopy
-  /** 返回列表；Esc、返回按钮与删除成功后都走这里。 */
+  /** 有上一张票时返回按钮显示它的引用；null 时显示“返回列表”。 */
+  readonly backRef: string | null
+  /** 返回上一层；Esc、返回按钮与删除成功后都走这里。栈空时面板回列表。 */
   readonly onBack: () => void
+  /** 打开一条阻塞项：只导航，不复制提示词、不改筛选与排序。 */
+  readonly onOpenBlocker: (ref: string) => void
+  /** 详情刷新或写操作得到的新快照：写回面板，阻塞项与列表共用同一份。 */
+  readonly onSnapshot: (snapshot: WorkspaceSnapshot) => void
   /** 建 worktree 失败属于环境问题时，跳到环境检查。 */
   readonly onOpenEnvCheck: (code: ErrorCode) => void
 }
@@ -99,47 +127,48 @@ export interface TicketDetailViewProps {
 /** 工单详情视图。 */
 export function TicketDetailView(props: TicketDetailViewProps): React.ReactElement {
   const t = useMessages()
-  const { client, workspaceRoot, ticket } = props
-  const ref = ticket.ref
-  const number = ticket.number
+  const { client, workspaceRoot } = props
+  const { ref, number, ticket } = props.target
   const request = useDetailRequest(client, workspaceRoot, ref, number)
   const detail = request.detail
-  // 技能徽标跟着宿主刷新后的快照走：关单/改标签后动作可能变成“已关闭”或换一个技能。
-  const [currentTicket, setCurrentTicket] = React.useState(ticket)
+  // 技能徽标与阻塞项跟着面板快照走：关单/改标签/刷新落地后，父层会把同一行换进来。
+  const blockers = blockerItems(ticket, props.snapshotTickets)
+  const canExpandBlockers =
+    ticket !== null && ticket.skillActionReason === 'blocked' && blockers.length > 0
+  // 展开状态只在当前这张票上有效：换票或从返回栈重新打开时都收起。
+  const [expandedRef, setExpandedRef] = React.useState<string | null>(null)
   React.useEffect(() => {
-    setCurrentTicket(ticket)
-  }, [ticket])
-  // 写操作与手动刷新都把快照里的同一行换进详情头部，技能徽标随之更新。
-  const applySnapshot = (snapshot: WorkspaceSnapshot): void => {
-    const next = snapshot.tickets.find((item) => item.ref === ref)
-    if (next !== undefined) setCurrentTicket(next)
-  }
+    setExpandedRef(null)
+  }, [ref])
+  const blockersExpanded = expandedRef === ref && canExpandBlockers
+  // 写操作、删除与手动刷新都通过 onSnapshot 把这批新快照写回面板，阻塞项随之更新。
   const mutation = useTicketMutation(client, {
     workspaceRoot,
     ref,
     number,
     onUpdated: request.replace,
-    onSnapshot: applySnapshot,
+    onSnapshot: props.onSnapshot,
   })
   const refresh = useDetailRefresh(
     client,
     { workspaceRoot, ref, number },
     request.replace,
-    applySnapshot,
+    props.onSnapshot,
   )
   const deletion = useTicketDeletion(client, {
     workspaceRoot,
     ref,
     number,
+    onSnapshot: props.onSnapshot,
     onDeleted: props.onBack,
   })
   const options = useTicketOptions(client, workspaceRoot, detail?.capabilities.labels === true)
   const actions = useTicketActions(workspaceRoot, props.copy, client)
-  const worktree = useWorktreeCreate(client, workspaceRoot, currentTicket)
+  const worktree = useWorktreeCreate(client, workspaceRoot, ticket)
   const worktreeState =
-    detail === null
+    detail === null || ticket === null
       ? { visible: false, enabled: false, reason: null }
-      : worktreeAvailability(currentTicket, detail.backend, workspaceRoot, t)
+      : worktreeAvailability(ticket, detail.backend, workspaceRoot, t)
   const link = useCopyLink(detail?.url ?? null)
   // 刷新期间一并禁用写控件：半截编辑不能撞上刚换掉的数据。
   const busy = mutation.busy || deletion.deleting || refresh.refreshing
@@ -147,12 +176,28 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
 
   return (
     <div data-testid="ticket-detail" style={DETAIL_ROOT_STYLE}>
-      <DetailHeader refText={ref} detail={detail} onBack={props.onBack}>
-        <SkillActionBadge
-          ticket={currentTicket}
-          copied={actions.copied === currentTicket.ref && currentTicket.skillAction !== 'none'}
-          onSkillAction={actions.onSkillAction}
-        />
+      <DetailHeader
+        refText={ref}
+        detail={detail}
+        backRef={props.backRef}
+        onBack={props.onBack}
+      >
+        {ticket === null ? null : canExpandBlockers ? (
+          <BlockersToggle
+            label={actionBadgeLabel(ticket, t)}
+            hint={actionHint(ticket, t)}
+            expanded={blockersExpanded}
+            onToggle={() => {
+              setExpandedRef(blockersExpanded ? null : ref)
+            }}
+          />
+        ) : (
+          <SkillActionBadge
+            ticket={ticket}
+            copied={actions.copied === ticket.ref && ticket.skillAction !== 'none'}
+            onSkillAction={actions.onSkillAction}
+          />
+        )}
         <WorktreeCreateButton
           availability={worktreeState}
           busy={worktree.busy}
@@ -191,6 +236,9 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
           onDismissCopy={actions.dismiss}
           options={options}
           deletion={deletion}
+          blockers={blockers}
+          blockersExpanded={blockersExpanded}
+          onOpenBlocker={props.onOpenBlocker}
           onApply={mutation.apply}
           worktreeError={worktree.error}
           worktreeResult={worktree.result}
@@ -238,13 +286,18 @@ function RefreshButton(props: {
 function DetailHeader(props: {
   readonly refText: string
   readonly detail: TicketDetail | null
+  /** 有详情返回栈时是上一张票的引用，栈空时为 null。 */
+  readonly backRef: string | null
   readonly onBack: () => void
   /** 右侧的技能按钮、工单操作与更多菜单。 */
   readonly children: React.ReactNode
 }): React.ReactElement {
   const t = useMessages()
-  const { detail } = props
+  const { detail, backRef } = props
   const url = detail?.url ?? null
+  const backLabel = backRef === null ? t('detail.back') : t('detail.backTo', { ref: backRef })
+  const backTitle =
+    backRef === null ? t('detail.backHint') : t('detail.backToTitle', { ref: backRef })
 
   return (
     <header style={DETAIL_HEADER_STYLE}>
@@ -252,12 +305,12 @@ function DetailHeader(props: {
         type="button"
         data-testid="detail-back"
         data-hover="soft"
-        title={t('detail.backHint')}
+        title={backTitle}
         onClick={props.onBack}
         style={DETAIL_BACK_STYLE}
       >
         <ChevronLeftIcon />
-        {t('detail.back')}
+        <span style={DETAIL_BACK_LABEL_STYLE}>{backLabel}</span>
       </button>
       {url === null ? (
         <span data-testid="detail-ref" title={props.refText} style={DETAIL_REF_STYLE}>
@@ -298,6 +351,9 @@ function DetailContent(props: {
   readonly onDismissCopy: () => void
   readonly options: OptionsState
   readonly deletion: TicketDeletion
+  readonly blockers: readonly BlockerItem[]
+  readonly blockersExpanded: boolean
+  readonly onOpenBlocker: (ref: string) => void
   readonly onApply: (patch: TicketPatch) => void
   readonly worktreeError: RpcErrorBody | null
   readonly worktreeResult: TicketWorktreeResult | null
@@ -309,6 +365,9 @@ function DetailContent(props: {
 
   return (
     <div data-testid="detail-content" aria-busy={props.busy} style={DETAIL_SCROLL_STYLE}>
+      {props.blockersExpanded && props.blockers.length > 0 ? (
+        <BlockersSection items={props.blockers} onOpen={props.onOpenBlocker} />
+      ) : null}
       {deletion.confirming ? (
         <DeleteConfirm
           refText={detail.ref}

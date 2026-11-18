@@ -89,7 +89,7 @@ export interface WorktreeCreateState {
 export function useWorktreeCreate(
   client: PanelClient,
   workspaceRoot: string | undefined,
-  ticket: TicketSnapshot,
+  ticket: TicketSnapshot | null,
 ): WorktreeCreateState {
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState<RpcErrorBody | null>(null)
@@ -97,6 +97,7 @@ export function useWorktreeCreate(
   const running = React.useRef(false)
   // 换票或换工作区后，旧请求的响应不能覆盖新状态。
   const generation = React.useRef(0)
+  const ref = ticket?.ref
 
   React.useEffect(() => {
     generation.current += 1
@@ -104,10 +105,10 @@ export function useWorktreeCreate(
     setError(null)
     setResult(null)
     running.current = false
-  }, [workspaceRoot, ticket.ref])
+  }, [workspaceRoot, ref])
 
   const create = (): void => {
-    if (running.current || workspaceRoot === undefined) return
+    if (running.current || workspaceRoot === undefined || ticket === null) return
     running.current = true
     const request = generation.current + 1
     generation.current = request

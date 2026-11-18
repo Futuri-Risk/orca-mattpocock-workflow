@@ -1364,7 +1364,7 @@
           return dispatcher;
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var React33 = require_react(), Internals = {
+        var React35 = require_react(), Internals = {
           d: {
             f: noop,
             r: function() {
@@ -1382,7 +1382,7 @@
           },
           p: 0,
           findDOMNode: null
-        }, REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), REACT_OPTIMISTIC_KEY = /* @__PURE__ */ Symbol.for("react.optimistic_key"), ReactSharedInternals = React33.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+        }, REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), REACT_OPTIMISTIC_KEY = /* @__PURE__ */ Symbol.for("react.optimistic_key"), ReactSharedInternals = React35.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
         "function" === typeof Map && null != Map.prototype && "function" === typeof Map.prototype.forEach && "function" === typeof Set && null != Set.prototype && "function" === typeof Set.prototype.clear && "function" === typeof Set.prototype.forEach || console.error(
           "React depends on Map and Set built-in types. Make sure that you load a polyfill in older browsers. https://reactjs.org/link/react-polyfills"
         );
@@ -3068,7 +3068,7 @@
           node.defaultValue !== "" + value && (node.defaultValue = "" + value);
         }
         function validateOptionProps(element, props) {
-          null == props.value && ("object" === typeof props.children && null !== props.children ? React33.Children.forEach(props.children, function(child) {
+          null == props.value && ("object" === typeof props.children && null !== props.children ? React35.Children.forEach(props.children, function(child) {
             null == child || "string" === typeof child || "number" === typeof child || "bigint" === typeof child || didWarnInvalidChild || (didWarnInvalidChild = true, console.error(
               "Cannot infer the option value of complex children. Pass a `value` prop or use a plain string as children to <option>."
             ));
@@ -20216,11 +20216,11 @@
           ));
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var Scheduler = require_scheduler(), React33 = require_react(), ReactDOM = require_react_dom(), searchTarget = null, searchBoundary = null, assign = Object.assign, REACT_LEGACY_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.element"), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy");
+        var Scheduler = require_scheduler(), React35 = require_react(), ReactDOM = require_react_dom(), searchTarget = null, searchBoundary = null, assign = Object.assign, REACT_LEGACY_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.element"), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy");
         /* @__PURE__ */ Symbol.for("react.scope");
         var REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity"), REACT_LEGACY_HIDDEN_TYPE = /* @__PURE__ */ Symbol.for("react.legacy_hidden");
         /* @__PURE__ */ Symbol.for("react.tracing_marker");
-        var REACT_MEMO_CACHE_SENTINEL = /* @__PURE__ */ Symbol.for("react.memo_cache_sentinel"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), MAYBE_ITERATOR_SYMBOL = Symbol.iterator, REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), isArrayImpl = Array.isArray, ReactSharedInternals = React33.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, NotPending = Object.freeze({
+        var REACT_MEMO_CACHE_SENTINEL = /* @__PURE__ */ Symbol.for("react.memo_cache_sentinel"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), MAYBE_ITERATOR_SYMBOL = Symbol.iterator, REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), isArrayImpl = Array.isArray, ReactSharedInternals = React35.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, NotPending = Object.freeze({
           pending: false,
           data: null,
           method: null,
@@ -23412,7 +23412,7 @@
           }
         };
         (function() {
-          var isomorphicReactPackageVersion = React33.version;
+          var isomorphicReactPackageVersion = React35.version;
           if ("19.3.1" !== isomorphicReactPackageVersion)
             throw Error(
               'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' + (isomorphicReactPackageVersion + "\n  - react-dom:  19.3.1\nLearn more: https://react.dev/warnings/version-mismatch")
@@ -23768,18 +23768,18 @@
         function isValidElement(object) {
           return "object" === typeof object && null !== object && object.$$typeof === REACT_ELEMENT_TYPE;
         }
-        var React33 = require_react(), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), ReactSharedInternals = React33.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
+        var React35 = require_react(), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), ReactSharedInternals = React35.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
           return null;
         };
-        React33 = {
+        React35 = {
           react_stack_bottom_frame: function(callStackForError) {
             return callStackForError();
           }
         };
         var specialPropKeyWarningShown;
         var didWarnAboutElementRef = {};
-        var unknownOwnerDebugStack = React33.react_stack_bottom_frame.bind(
-          React33,
+        var unknownOwnerDebugStack = React35.react_stack_bottom_frame.bind(
+          React35,
           UnknownOwner
         )();
         var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
@@ -23836,7 +23836,7 @@
   });
 
   // src/panel/main.tsx
-  var React32 = __toESM(require_react(), 1);
+  var React34 = __toESM(require_react(), 1);
   var import_client = __toESM(require_client(), 1);
 
   // src/panel/avatar-source.ts
@@ -24291,6 +24291,16 @@
     "detail.loading": "\u6B63\u5728\u8BFB\u53D6\u5DE5\u5355\u8BE6\u60C5\u2026",
     "detail.back": "\u8FD4\u56DE\u5217\u8868",
     "detail.backHint": "\u8FD4\u56DE\u5217\u8868\uFF08Esc\uFF09",
+    "detail.backTo": "\u8FD4\u56DE {ref}",
+    "detail.backToTitle": "\u8FD4\u56DE {ref}\uFF08Esc\uFF09",
+    "detail.blockers.title": "\u963B\u585E\u9879",
+    "detail.blockers.expand": "\u5C55\u5F00\u67E5\u770B\u963B\u585E\u9879",
+    "detail.blockers.collapse": "\u6536\u8D77\u963B\u585E\u9879",
+    "detail.blockers.unloaded": "\u672A\u52A0\u8F7D",
+    "detail.blockers.unloadedTitle": "\u8FD9\u5F20\u963B\u585E\u7968\u4E0D\u5728\u5F53\u524D\u5217\u8868\u5FEB\u7167\u91CC",
+    "detail.blockers.hint": "{hint}\uFF1B{action}",
+    "detail.blockers.openTitle": "\u6253\u5F00 {ref}\uFF1A{title}",
+    "detail.blockers.toggle": "{label}\uFF1A{hint}",
     "detail.openInBrowser": "\u5728\u6D4F\u89C8\u5668\u6253\u5F00 {url}",
     "detail.createdAt": "\u521B\u5EFA\u4E8E {time}",
     "detail.updatedAt": "\u66F4\u65B0\u4E8E {time}",
@@ -24805,6 +24815,16 @@
     "detail.loading": "Loading ticket details\u2026",
     "detail.back": "Back to list",
     "detail.backHint": "Back to list (Esc)",
+    "detail.backTo": "Back to {ref}",
+    "detail.backToTitle": "Back to {ref} (Esc)",
+    "detail.blockers.title": "Blocking tickets",
+    "detail.blockers.expand": "Show blocking tickets",
+    "detail.blockers.collapse": "Hide blocking tickets",
+    "detail.blockers.unloaded": "Not loaded",
+    "detail.blockers.unloadedTitle": "This blocking ticket is outside the current list snapshot",
+    "detail.blockers.hint": "{hint}; {action}",
+    "detail.blockers.openTitle": "Open {ref}: {title}",
+    "detail.blockers.toggle": "{label}: {hint}",
     "detail.openInBrowser": "Open {url} in the browser",
     "detail.createdAt": "Created {time}",
     "detail.updatedAt": "Updated {time}",
@@ -25609,10 +25629,77 @@
   }
 
   // src/panel/task-panel.tsx
-  var React30 = __toESM(require_react(), 1);
+  var React32 = __toESM(require_react(), 1);
+
+  // src/panel/detail-navigation.ts
+  var React3 = __toESM(require_react(), 1);
+
+  // src/panel/ticket-ref.ts
+  function findSnapshotTicket(tickets, ref) {
+    return tickets?.find((ticket) => ticket.ref === ref) ?? null;
+  }
+  function blockerNumber(ref) {
+    const match = /^#(\d+)$/.exec(ref);
+    if (match === null) return null;
+    const number = Number.parseInt(match[1] ?? "", 10);
+    return Number.isSafeInteger(number) ? number : null;
+  }
+
+  // src/panel/detail-navigation.ts
+  var EMPTY = { open: null, stack: [] };
+  function useDetailNavigation(workspaceRoot) {
+    const [navigation2, setNavigation] = React3.useState(EMPTY);
+    React3.useEffect(() => {
+      setNavigation((current) => current.stack.length === 0 ? current : { ...current, stack: [] });
+    }, [workspaceRoot]);
+    const open = navigation2.open !== null && navigation2.open.workspaceRoot === workspaceRoot ? navigation2.open : null;
+    return {
+      open,
+      backRef: open === null ? null : navigation2.stack.at(-1)?.target.ref ?? null,
+      openFromList: (ticket) => {
+        if (workspaceRoot === void 0) return;
+        setNavigation({
+          open: {
+            workspaceRoot,
+            target: { ref: ticket.ref, number: ticket.number, ticket }
+          },
+          stack: []
+        });
+      },
+      openBlocker: (ref, snapshot) => {
+        if (workspaceRoot === void 0) return;
+        setNavigation((current) => {
+          const from = current.open;
+          if (from?.workspaceRoot !== workspaceRoot) return current;
+          const row = findSnapshotTicket(snapshot?.tickets, ref);
+          return {
+            open: {
+              workspaceRoot,
+              target: {
+                ref,
+                number: row?.number ?? blockerNumber(ref),
+                ticket: row
+              }
+            },
+            stack: [...current.stack, from]
+          };
+        });
+      },
+      back: () => {
+        setNavigation((current) => {
+          const previous = current.stack.at(-1);
+          if (previous === void 0) return EMPTY;
+          return { open: previous, stack: current.stack.slice(0, -1) };
+        });
+      },
+      close: () => {
+        setNavigation(EMPTY);
+      }
+    };
+  }
 
   // src/panel/env-check-view.tsx
-  var React5 = __toESM(require_react(), 1);
+  var React6 = __toESM(require_react(), 1);
 
   // src/panel/task-panel-styles.ts
   var MONO_FONT = "ui-monospace, SFMono-Regular, Menlo, monospace";
@@ -26507,10 +26594,10 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/env-remedy-view.tsx
-  var React4 = __toESM(require_react(), 1);
+  var React5 = __toESM(require_react(), 1);
 
   // src/panel/prompt-copy.tsx
-  var React3 = __toESM(require_react(), 1);
+  var React4 = __toESM(require_react(), 1);
   var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
   var AREA_STYLE = {
     display: "flex",
@@ -26572,8 +26659,8 @@ ${MARKDOWN_SHEET}
   }
   function ManualCopyField(props) {
     const t = useMessages();
-    const field = React3.useRef(null);
-    React3.useEffect(() => {
+    const field = React4.useRef(null);
+    React4.useEffect(() => {
       const node = field.current;
       if (node === null) return;
       node.focus();
@@ -26854,8 +26941,8 @@ ${MARKDOWN_SHEET}
   }
   function InstallSkillAction(props) {
     const t = useMessages();
-    const [busy, setBusy] = React4.useState(false);
-    const [result, setResult] = React4.useState(null);
+    const [busy, setBusy] = React5.useState(false);
+    const [result, setResult] = React5.useState(null);
     return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: ENV_REMEDY_ACTIONS_STYLE, children: [
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
         "button",
@@ -26924,8 +27011,8 @@ ${MARKDOWN_SHEET}
   }
   function CopyButton(props) {
     const t = useMessages();
-    const [state, setState] = React4.useState("idle");
-    React4.useEffect(() => {
+    const [state, setState] = React5.useState("idle");
+    React5.useEffect(() => {
       if (state === "idle") return void 0;
       const timer = window.setTimeout(() => {
         setState("idle");
@@ -27053,11 +27140,11 @@ ${MARKDOWN_SHEET}
   }
   function useSnapshotCache(client2, workspaceRoot) {
     const t = useMessages();
-    const [info, setInfo] = React5.useState(null);
-    const [error, setError] = React5.useState(null);
-    const [notice, setNotice] = React5.useState(null);
-    const [busy, setBusy] = React5.useState(false);
-    const load = React5.useCallback(async () => {
+    const [info, setInfo] = React6.useState(null);
+    const [error, setError] = React6.useState(null);
+    const [notice, setNotice] = React6.useState(null);
+    const [busy, setBusy] = React6.useState(false);
+    const load = React6.useCallback(async () => {
       if (workspaceRoot === void 0) return;
       const result = await requestCache(client2, workspaceRoot, false, t);
       if (!result.ok) {
@@ -27066,13 +27153,13 @@ ${MARKDOWN_SHEET}
       }
       setInfo(result.result);
     }, [client2, workspaceRoot, t]);
-    React5.useEffect(() => {
+    React6.useEffect(() => {
       setInfo(null);
       setError(null);
       setNotice(null);
       void load();
     }, [load]);
-    const clearAsync = React5.useCallback(async () => {
+    const clearAsync = React6.useCallback(async () => {
       if (workspaceRoot === void 0) return;
       setBusy(true);
       setError(null);
@@ -27086,7 +27173,7 @@ ${MARKDOWN_SHEET}
       setNotice(t("env.cache.cleared", { n: result.result.cleared }));
       await load();
     }, [client2, workspaceRoot, load, t]);
-    const clear = React5.useCallback(() => {
+    const clear = React6.useCallback(() => {
       void clearAsync();
     }, [clearAsync]);
     return { info, error, notice, busy, clear };
@@ -27133,11 +27220,11 @@ ${MARKDOWN_SHEET}
   }
   function useEnvCheckRequest(client2, workspaceRoot) {
     const t = useMessages();
-    const [report, setReport] = React5.useState(null);
-    const [error, setError] = React5.useState(null);
-    const [phase, setPhase] = React5.useState("loading");
-    const sequence = React5.useRef(0);
-    const request = React5.useCallback(
+    const [report, setReport] = React6.useState(null);
+    const [error, setError] = React6.useState(null);
+    const [phase, setPhase] = React6.useState("loading");
+    const sequence = React6.useRef(0);
+    const request = React6.useCallback(
       async (keepResult) => {
         const current = sequence.current + 1;
         sequence.current = current;
@@ -27165,32 +27252,32 @@ ${MARKDOWN_SHEET}
       },
       [client2, workspaceRoot, t]
     );
-    React5.useEffect(() => {
+    React6.useEffect(() => {
       setReport(null);
       setError(null);
       void request(false);
     }, [request]);
-    const recheck = React5.useCallback(() => {
+    const recheck = React6.useCallback(() => {
       if (phase === "loading" || phase === "refreshing") return;
       void request(true);
     }, [phase, request]);
     return { report, error, phase, recheck };
   }
   function useFocusBackend(report, backend, jumpTo) {
-    React5.useEffect(() => {
+    React6.useEffect(() => {
       if (report === null || backend === null) return;
       const target = report.items.find((item) => item.status === "fail" && item.subject === backend);
       if (target !== void 0) jumpTo(target);
     }, [report, backend, jumpTo]);
   }
   function useRootCauseJump() {
-    const cards = React5.useRef(/* @__PURE__ */ new Map());
-    const [highlighted, setHighlighted] = React5.useState(null);
-    const registerCard = React5.useCallback((key, node) => {
+    const cards = React6.useRef(/* @__PURE__ */ new Map());
+    const [highlighted, setHighlighted] = React6.useState(null);
+    const registerCard = React6.useCallback((key, node) => {
       if (node === null) cards.current.delete(key);
       else cards.current.set(key, node);
     }, []);
-    const jumpTo = React5.useCallback((target) => {
+    const jumpTo = React6.useCallback((target) => {
       const key = refKey(target);
       const node = cards.current.get(key);
       if (node === void 0) return;
@@ -27198,7 +27285,7 @@ ${MARKDOWN_SHEET}
       node.focus();
       setHighlighted(key);
     }, []);
-    React5.useEffect(() => {
+    React6.useEffect(() => {
       if (highlighted === null) return void 0;
       const timer = window.setTimeout(() => {
         setHighlighted(null);
@@ -27373,7 +27460,7 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/help-view.tsx
-  var React6 = __toESM(require_react(), 1);
+  var React7 = __toESM(require_react(), 1);
 
   // src/protocol/flow.ts
   var FLOW_COMMANDS = {
@@ -27732,7 +27819,7 @@ ${MARKDOWN_SHEET}
   var DIAGRAM_MAX_WIDTH = 360;
   function HelpView(props) {
     const t = useMessages();
-    const [activeId, setActiveId] = React6.useState(
+    const [activeId, setActiveId] = React7.useState(
       props.initialDiagramId ?? FLOW_DIAGRAMS[0]?.id ?? ""
     );
     const active = FLOW_DIAGRAMS.find((diagram) => diagram.id === activeId) ?? FLOW_DIAGRAMS[0];
@@ -28165,10 +28252,10 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/overview-view.tsx
-  var React13 = __toESM(require_react(), 1);
+  var React14 = __toESM(require_react(), 1);
 
   // src/panel/error-banner.tsx
-  var React7 = __toESM(require_react(), 1);
+  var React8 = __toESM(require_react(), 1);
 
   // src/panel/error-text.ts
   var ERROR_MESSAGES = {
@@ -28213,7 +28300,7 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/icons.tsx
-  var React8 = __toESM(require_react(), 1);
+  var React9 = __toESM(require_react(), 1);
   var import_jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
   function FolderIcon() {
     return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
@@ -28649,7 +28736,7 @@ ${MARKDOWN_SHEET}
   };
 
   // src/panel/overview-charts.tsx
-  var React9 = __toESM(require_react(), 1);
+  var React10 = __toESM(require_react(), 1);
 
   // src/panel/overview-styles.ts
   var TIER_COLORS = {
@@ -29101,7 +29188,7 @@ ${MARKDOWN_SHEET}
   function FlowChart(props) {
     const t = useMessages();
     const { buckets } = props;
-    const [active, setActive] = React9.useState(null);
+    const [active, setActive] = React10.useState(null);
     const hasClosed = buckets.some((bucket) => bucket.closed !== null);
     const peak = Math.max(1, ...buckets.map((bucket) => Math.max(bucket.opened, bucket.closed ?? 0)));
     const shown = buckets[active ?? buckets.length - 1];
@@ -29229,7 +29316,7 @@ ${MARKDOWN_SHEET}
   function AgeHistogram(props) {
     const t = useMessages();
     const peak = Math.max(1, ...props.buckets.map((bucket) => bucket.count));
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { "data-testid": "age-histogram", style: AGE_LIST_STYLE, children: props.buckets.map((bucket) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(React9.Fragment, { children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { "data-testid": "age-histogram", style: AGE_LIST_STYLE, children: props.buckets.map((bucket) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(React10.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: AGE_LABEL_STYLE, children: bucket.label }),
       /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
         "span",
@@ -29321,7 +29408,7 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/overview-pressure.tsx
-  var React10 = __toESM(require_react(), 1);
+  var React11 = __toESM(require_react(), 1);
   var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
   function PressureSection(props) {
     const t = useMessages();
@@ -29485,11 +29572,11 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/snapshot-age.ts
-  var React11 = __toESM(require_react(), 1);
+  var React12 = __toESM(require_react(), 1);
   var AGE_TICK_MS = 3e4;
   function useNow(clock) {
-    const [now, setNow] = React11.useState(() => clock());
-    React11.useEffect(() => {
+    const [now, setNow] = React12.useState(() => clock());
+    React12.useEffect(() => {
       const id = setInterval(() => {
         setNow(clock());
       }, AGE_TICK_MS);
@@ -29510,7 +29597,7 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/snapshot-request.ts
-  var React12 = __toESM(require_react(), 1);
+  var React13 = __toESM(require_react(), 1);
   function snapshotRefreshNotice(snapshot, refreshError, t) {
     if (refreshError !== null) return refreshError.message;
     const hostMessage = snapshot?.refreshError?.message;
@@ -29519,12 +29606,9 @@ ${MARKDOWN_SHEET}
     return null;
   }
   function useSnapshotRequest(client2, workspaceRoot, reloadToken = 0) {
-    const { snapshot, error, refreshError, phase, appending, load, append } = useSnapshotLoader(
-      client2,
-      workspaceRoot
-    );
-    const autoRefreshed = React12.useRef(false);
-    const run = React12.useCallback(
+    const { snapshot, error, refreshError, phase, appending, load, apply, append } = useSnapshotLoader(client2, workspaceRoot);
+    const autoRefreshed = React13.useRef(false);
+    const run = React13.useCallback(
       async (mode) => {
         const applied = await load(mode);
         if (applied === null) return;
@@ -29539,35 +29623,47 @@ ${MARKDOWN_SHEET}
       },
       [load]
     );
-    React12.useEffect(() => {
+    React13.useEffect(() => {
       autoRefreshed.current = false;
       void run("get");
     }, [run, reloadToken]);
-    const refresh = React12.useCallback(() => {
+    const refresh = React13.useCallback(() => {
       if (phase === "loading" || phase === "refreshing") return;
       void run("refresh");
     }, [phase, run]);
-    const refreshFull = React12.useCallback(() => {
+    const refreshFull = React13.useCallback(() => {
       if (phase === "loading" || phase === "refreshing") return;
       void run("refresh-full");
     }, [phase, run]);
-    const loadMore = React12.useCallback(() => {
+    const loadMore = React13.useCallback(() => {
       if (phase === "loading" || phase === "refreshing" || appending) return;
       void append();
     }, [appending, append, phase]);
-    return { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore };
+    return {
+      snapshot,
+      error,
+      refreshError,
+      phase,
+      refresh,
+      refreshFull,
+      apply,
+      appending,
+      loadMore
+    };
   }
   function useSnapshotLoader(client2, workspaceRoot) {
     const t = useMessages();
-    const [snapshot, setSnapshot] = React12.useState(null);
-    const [error, setError] = React12.useState(null);
-    const [refreshError, setRefreshError] = React12.useState(null);
-    const [phase, setPhase] = React12.useState("loading");
-    const [appending, setAppending] = React12.useState(false);
-    const sequence = React12.useRef(0);
-    const hasData = React12.useRef(false);
-    const appendingRef = React12.useRef(false);
-    const load = React12.useCallback(
+    const [snapshot, setSnapshot] = React13.useState(null);
+    const [error, setError] = React13.useState(null);
+    const [refreshError, setRefreshError] = React13.useState(null);
+    const [phase, setPhase] = React13.useState("loading");
+    const [appending, setAppending] = React13.useState(false);
+    const sequence = React13.useRef(0);
+    const hasData = React13.useRef(false);
+    const workspace = React13.useRef(workspaceRoot);
+    workspace.current = workspaceRoot;
+    const appendingRef = React13.useRef(false);
+    const load = React13.useCallback(
       async (mode) => {
         const current = sequence.current + 1;
         sequence.current = current;
@@ -29610,13 +29706,13 @@ ${MARKDOWN_SHEET}
       },
       [client2, workspaceRoot, t]
     );
-    React12.useEffect(() => {
+    React13.useEffect(() => {
       setSnapshot(null);
       setError(null);
       setRefreshError(null);
       hasData.current = false;
     }, [workspaceRoot]);
-    const append = React12.useCallback(async () => {
+    const append = React13.useCallback(async () => {
       if (appendingRef.current || workspaceRoot === void 0) return;
       const started = sequence.current;
       appendingRef.current = true;
@@ -29637,7 +29733,25 @@ ${MARKDOWN_SHEET}
         setAppending(false);
       }
     }, [client2, workspaceRoot]);
-    return { snapshot, error, refreshError, phase, appending, load, append };
+    const apply = React13.useCallback(
+      (applied) => {
+        if (workspaceRoot === void 0 || workspace.current !== workspaceRoot) return;
+        const started = sequence.current;
+        setSnapshot(applied);
+        hasData.current = true;
+        setError(null);
+        setRefreshError(null);
+        setPhase("ready");
+        if (applied.blockersFinalized) return;
+        void client2.resolveBlockers(workspaceRoot).then((finalized) => {
+          if (!finalized.ok) return;
+          if (workspace.current !== workspaceRoot || sequence.current !== started) return;
+          setSnapshot(finalized.result);
+        });
+      },
+      [client2, workspaceRoot]
+    );
+    return { snapshot, error, refreshError, phase, appending, load, apply, append };
   }
 
   // src/panel/overview-view.tsx
@@ -29653,11 +29767,7 @@ ${MARKDOWN_SHEET}
   function OverviewView(props) {
     const t = useMessages();
     const clock = props.now ?? Date.now;
-    const { snapshot, error, refreshError, phase, refresh } = useSnapshotRequest(
-      props.client,
-      props.workspaceRoot,
-      props.refreshToken ?? 0
-    );
+    const { snapshot, error, refreshError, phase, refresh } = props.request;
     const nowValue = useNow(clock);
     const busy = phase === "loading" || phase === "refreshing";
     return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
@@ -29906,7 +30016,7 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/ticket-detail-view.tsx
-  var React24 = __toESM(require_react(), 1);
+  var React26 = __toESM(require_react(), 1);
 
   // src/panel/author-text.ts
   function authorName(user) {
@@ -29917,7 +30027,7 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/skill-action-badge.tsx
-  var React14 = __toESM(require_react(), 1);
+  var React15 = __toESM(require_react(), 1);
 
   // src/panel/skill-action-text.ts
   var ACTION_HINTS = {
@@ -30003,8 +30113,8 @@ ${MARKDOWN_SHEET}
     );
   }
 
-  // src/panel/ticket-delete.tsx
-  var React15 = __toESM(require_react(), 1);
+  // src/panel/ticket-blockers.tsx
+  var React16 = __toESM(require_react(), 1);
 
   // src/panel/ticket-detail-styles.ts
   var CONTROL_LINE_HEIGHT = "18px";
@@ -30036,6 +30146,11 @@ ${MARKDOWN_SHEET}
     fontSize: 12,
     lineHeight: CONTROL_LINE_HEIGHT,
     whiteSpace: "nowrap"
+  };
+  var DETAIL_BACK_LABEL_STYLE = {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: 160
   };
   var DETAIL_REF_STYLE = {
     color: COLORS.tertiary,
@@ -30212,6 +30327,74 @@ ${MARKDOWN_SHEET}
     color: COLORS.secondary,
     cursor: "pointer"
   };
+  var DETAIL_BLOCKERS_TOGGLE_STYLE = {
+    ...ACTION_BADGE_STYLES.blocked,
+    font: "inherit",
+    fontSize: 11,
+    background: "transparent",
+    cursor: "pointer"
+  };
+  var DETAIL_BLOCKERS_CHEVRON_STYLE = {
+    display: "inline-flex",
+    transition: "transform 150ms ease-out"
+  };
+  var DETAIL_BLOCKERS_SECTION_STYLE = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    padding: "8px 10px 6px",
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: 8
+  };
+  var DETAIL_BLOCKERS_TITLE_STYLE = {
+    margin: 0,
+    color: COLORS.tertiary,
+    fontSize: 12,
+    fontWeight: 600
+  };
+  var DETAIL_BLOCKERS_LIST_STYLE = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 2
+  };
+  var DETAIL_BLOCKER_ROW_STYLE = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    width: "100%",
+    minWidth: 0,
+    border: "none",
+    borderRadius: 6,
+    padding: "3px 6px",
+    color: COLORS.text,
+    cursor: "pointer",
+    font: "inherit",
+    fontSize: 12,
+    textAlign: "left"
+  };
+  var DETAIL_BLOCKER_REF_STYLE = {
+    flex: "none",
+    color: COLORS.accent,
+    fontVariantNumeric: "tabular-nums",
+    whiteSpace: "nowrap"
+  };
+  var DETAIL_BLOCKER_TITLE_STYLE = {
+    flex: 1,
+    minWidth: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap"
+  };
+  var DETAIL_BLOCKER_STATE_STYLE = {
+    flex: "none",
+    fontSize: 11,
+    whiteSpace: "nowrap"
+  };
+  var DETAIL_BLOCKER_UNLOADED_STYLE = {
+    flex: 1,
+    color: COLORS.tertiary,
+    fontSize: 11
+  };
   var VISUALLY_HIDDEN_STYLE = {
     position: "absolute",
     width: 1,
@@ -30223,6 +30406,113 @@ ${MARKDOWN_SHEET}
     whiteSpace: "nowrap",
     border: 0
   };
+
+  // src/panel/ticket-blockers.tsx
+  var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
+  var BLOCKERS_PANEL_ID = "detail-blockers";
+  function blockerItems(ticket, tickets) {
+    const refs = ticket?.blockedBy;
+    if (refs === void 0) return [];
+    const rows = new Map(tickets.map((row) => [row.ref, row]));
+    const seen = /* @__PURE__ */ new Set();
+    const items = [];
+    for (const ref of refs) {
+      if (seen.has(ref)) continue;
+      seen.add(ref);
+      const row = rows.get(ref);
+      if (row?.state === "closed") continue;
+      items.push({ ref, ticket: row ?? null });
+    }
+    return items;
+  }
+  function BlockersToggle(props) {
+    const t = useMessages();
+    const action = t(props.expanded ? "detail.blockers.collapse" : "detail.blockers.expand");
+    const hint = t("detail.blockers.hint", { hint: props.hint, action });
+    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+      "button",
+      {
+        type: "button",
+        "data-testid": "blockers-toggle",
+        "data-hover": "action",
+        "aria-expanded": props.expanded,
+        "aria-controls": BLOCKERS_PANEL_ID,
+        title: hint,
+        "aria-label": t("detail.blockers.toggle", { label: props.label, hint }),
+        onClick: props.onToggle,
+        style: DETAIL_BLOCKERS_TOGGLE_STYLE,
+        children: [
+          props.label,
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+            "span",
+            {
+              style: {
+                ...DETAIL_BLOCKERS_CHEVRON_STYLE,
+                transform: props.expanded ? "rotate(90deg)" : "rotate(-90deg)"
+              },
+              "aria-hidden": "true",
+              children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(ChevronLeftIcon, {})
+            }
+          )
+        ]
+      }
+    );
+  }
+  function BlockersSection(props) {
+    const t = useMessages();
+    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+      "section",
+      {
+        id: BLOCKERS_PANEL_ID,
+        "data-testid": "detail-blockers",
+        "aria-label": t("detail.blockers.title"),
+        style: DETAIL_BLOCKERS_SECTION_STYLE,
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h3", { style: DETAIL_BLOCKERS_TITLE_STYLE, children: t("detail.blockers.title") }),
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: DETAIL_BLOCKERS_LIST_STYLE, children: props.items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(BlockerRow, { item, onOpen: props.onOpen }, item.ref)) })
+        ]
+      }
+    );
+  }
+  function BlockerRow(props) {
+    const t = useMessages();
+    const row = props.item.ticket;
+    const title = row === null ? t("detail.blockers.unloadedTitle") : t("detail.blockers.openTitle", { ref: props.item.ref, title: row.title });
+    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+      "button",
+      {
+        type: "button",
+        "data-testid": "blocker-item",
+        "data-ref": props.item.ref,
+        "data-hover": "soft",
+        title,
+        onClick: () => {
+          props.onOpen(props.item.ref);
+        },
+        style: DETAIL_BLOCKER_ROW_STYLE,
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { "data-testid": "blocker-ref", style: DETAIL_BLOCKER_REF_STYLE, children: props.item.ref }),
+          row === null ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { "data-testid": "blocker-unloaded", style: DETAIL_BLOCKER_UNLOADED_STYLE, children: t("detail.blockers.unloaded") }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_jsx_runtime11.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { "data-testid": "blocker-title", style: DETAIL_BLOCKER_TITLE_STYLE, children: row.title }),
+            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+              "span",
+              {
+                "data-testid": "blocker-state",
+                style: {
+                  ...DETAIL_BLOCKER_STATE_STYLE,
+                  color: row.state === "closed" ? COLORS.tertiary : COLORS.success
+                },
+                children: t(row.state === "closed" ? "status.closed" : "status.open")
+              }
+            )
+          ] })
+        ]
+      }
+    );
+  }
+
+  // src/panel/ticket-delete.tsx
+  var React17 = __toESM(require_react(), 1);
 
   // src/panel/ticket-timeline-styles.ts
   var CARD_HEADER_BG = "rgba(128, 128, 128, 0.07)";
@@ -30427,13 +30717,13 @@ ${MARKDOWN_SHEET}
   };
 
   // src/panel/ticket-delete.tsx
-  var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
   function MoreMenu(props) {
     const t = useMessages();
-    const [open, setOpen] = React15.useState(false);
-    const wrapper = React15.useRef(null);
-    const menuId = React15.useId();
-    React15.useEffect(() => {
+    const [open, setOpen] = React17.useState(false);
+    const wrapper = React17.useRef(null);
+    const menuId = React17.useId();
+    React17.useEffect(() => {
       if (!open) return;
       const onPointer = (event) => {
         if (wrapper.current?.contains(event.target) !== true) setOpen(false);
@@ -30443,7 +30733,7 @@ ${MARKDOWN_SHEET}
         document.removeEventListener("mousedown", onPointer);
       };
     }, [open]);
-    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
       "div",
       {
         ref: wrapper,
@@ -30455,7 +30745,7 @@ ${MARKDOWN_SHEET}
           }
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
             "button",
             {
               type: "button",
@@ -30470,10 +30760,10 @@ ${MARKDOWN_SHEET}
                 setOpen((value) => !value);
               },
               style: MENU_TRIGGER_STYLE,
-              children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(MoreIcon, {})
+              children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(MoreIcon, {})
             }
           ),
-          open ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { id: menuId, role: "menu", "aria-label": t("detail.more"), style: MENU_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+          open ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { id: menuId, role: "menu", "aria-label": t("detail.more"), style: MENU_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
             "button",
             {
               type: "button",
@@ -30487,7 +30777,7 @@ ${MARKDOWN_SHEET}
               },
               style: MENU_ITEM_DANGER_STYLE,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(TrashIcon, {}),
+                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(TrashIcon, {}),
                 t("detail.delete.menu")
               ]
             }
@@ -30498,11 +30788,11 @@ ${MARKDOWN_SHEET}
   }
   function DeleteConfirm(props) {
     const t = useMessages();
-    const [typed, setTyped] = React15.useState("");
-    const titleId = React15.useId();
-    const inputId = React15.useId();
+    const [typed, setTyped] = React17.useState("");
+    const titleId = React17.useId();
+    const inputId = React17.useId();
     const confirmed = typed.trim() === TICKET_DELETE_CONFIRMATION;
-    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
       "section",
       {
         role: "alertdialog",
@@ -30516,14 +30806,14 @@ ${MARKDOWN_SHEET}
         },
         style: DELETE_PANEL_STYLE,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h3", { id: titleId, style: DELETE_PANEL_TITLE_STYLE, children: t("detail.delete.title", { ref: props.refText }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { style: DELETE_PANEL_TEXT_STYLE, children: t("detail.delete.body", { title: props.title, backend: props.backendLabel }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("label", { htmlFor: inputId, style: DELETE_PANEL_TEXT_STYLE, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h3", { id: titleId, style: DELETE_PANEL_TITLE_STYLE, children: t("detail.delete.title", { ref: props.refText }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { style: DELETE_PANEL_TEXT_STYLE, children: t("detail.delete.body", { title: props.title, backend: props.backendLabel }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("label", { htmlFor: inputId, style: DELETE_PANEL_TEXT_STYLE, children: [
             t("detail.delete.confirmPrefix"),
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("code", { children: TICKET_DELETE_CONFIRMATION }),
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("code", { children: TICKET_DELETE_CONFIRMATION }),
             t("detail.delete.confirmSuffix")
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
             "input",
             {
               id: inputId,
@@ -30542,8 +30832,8 @@ ${MARKDOWN_SHEET}
               style: DETAIL_INPUT_STYLE
             }
           ),
-          props.error === null ? null : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { role: "alert", "data-testid": "delete-error", style: DELETE_PANEL_TEXT_STYLE, children: errorText(props.error, t) }),
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+          props.error === null ? null : /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { role: "alert", "data-testid": "delete-error", style: DELETE_PANEL_TEXT_STYLE, children: errorText(props.error, t) }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
             DeleteActions,
             {
               confirmed,
@@ -30558,8 +30848,8 @@ ${MARKDOWN_SHEET}
   }
   function DeleteActions(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { style: DELETE_PANEL_ACTIONS_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { style: DELETE_PANEL_ACTIONS_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
         "button",
         {
           type: "button",
@@ -30571,7 +30861,7 @@ ${MARKDOWN_SHEET}
           children: t("common.cancel")
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
         "button",
         {
           type: "button",
@@ -30587,13 +30877,13 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/ticket-detail-fields.tsx
-  var React18 = __toESM(require_react(), 1);
+  var React20 = __toESM(require_react(), 1);
 
   // src/panel/ticket-combobox.tsx
-  var React17 = __toESM(require_react(), 1);
+  var React19 = __toESM(require_react(), 1);
 
   // src/panel/user-avatar.tsx
-  var React16 = __toESM(require_react(), 1);
+  var React18 = __toESM(require_react(), 1);
 
   // src/panel/ticket-row-styles.ts
   var CARD_META_STYLE = {
@@ -30733,22 +31023,22 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/user-avatar.tsx
-  var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
   var NO_AVATAR_SOURCE = () => Promise.resolve(null);
-  var AvatarSourceContext = React16.createContext(NO_AVATAR_SOURCE);
+  var AvatarSourceContext = React18.createContext(NO_AVATAR_SOURCE);
   function AvatarSourceProvider(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(AvatarSourceContext.Provider, { value: props.loader, children: props.children });
+    return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(AvatarSourceContext.Provider, { value: props.loader, children: props.children });
   }
   function UserAvatar(props) {
     const t = useMessages();
-    const [failedSrc, setFailedSrc] = React16.useState(null);
-    const loader = React16.useContext(AvatarSourceContext);
+    const [failedSrc, setFailedSrc] = React18.useState(null);
+    const loader = React18.useContext(AvatarSourceContext);
     const { user, size } = props;
     const label = avatarLabel(props.role, user, t);
     const hint = avatarHint(user, t);
     const src = usableAvatarUrl(user?.avatarUrl ?? null);
-    const [resolved, setResolved] = React16.useState(null);
-    React16.useEffect(() => {
+    const [resolved, setResolved] = React18.useState(null);
+    React18.useEffect(() => {
       if (src === null) {
         setResolved(null);
         return;
@@ -30770,7 +31060,7 @@ ${MARKDOWN_SHEET}
     const box = { ...AVATAR_STYLE, width: size, height: size };
     const testId = props.testId ?? "user-avatar";
     if (src !== null && dataUrl !== null && src !== failedSrc) {
-      return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
         "img",
         {
           "data-testid": testId,
@@ -30785,7 +31075,7 @@ ${MARKDOWN_SHEET}
         }
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
       "span",
       {
         "data-testid": testId,
@@ -30805,14 +31095,14 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/ticket-combobox.tsx
-  var import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
   var MAX_VISIBLE = 8;
   function TokenEditor(props) {
     const t = useMessages();
     const { kind, busy } = props;
-    const listId = React17.useId();
-    const [draft, setDraft] = React17.useState("");
-    const [active, setActive] = React17.useState(0);
+    const listId = React19.useId();
+    const [draft, setDraft] = React19.useState("");
+    const [active, setActive] = React19.useState(0);
     const query = draft.trim();
     const matches = filterSuggestions(props.source, props.selected, query);
     const activeItem = matches[active];
@@ -30829,8 +31119,8 @@ ${MARKDOWN_SHEET}
       },
       onClose: props.onClose
     });
-    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_jsx_runtime13.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(import_jsx_runtime14.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         "input",
         {
           "data-testid": `${kind}-input`,
@@ -30857,7 +31147,7 @@ ${MARKDOWN_SHEET}
           style: DETAIL_INLINE_INPUT_STYLE
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         EditorButtons,
         {
           kind,
@@ -30870,7 +31160,7 @@ ${MARKDOWN_SHEET}
           onClose: props.onClose
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         SuggestionList,
         {
           listId,
@@ -30904,8 +31194,8 @@ ${MARKDOWN_SHEET}
   function EditorButtons(props) {
     const t = useMessages();
     const assignSelf = props.onAssignSelf;
-    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_jsx_runtime13.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(import_jsx_runtime14.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         "button",
         {
           type: "button",
@@ -30918,7 +31208,7 @@ ${MARKDOWN_SHEET}
           children: t("common.add")
         }
       ),
-      assignSelf === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+      assignSelf === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         "button",
         {
           type: "button",
@@ -30939,7 +31229,7 @@ ${MARKDOWN_SHEET}
   function SuggestionList(props) {
     const t = useMessages();
     const note = listNote(props.source, props.matches.length, props.query, t);
-    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
       "ul",
       {
         id: props.listId,
@@ -30948,7 +31238,7 @@ ${MARKDOWN_SHEET}
         "aria-label": t("detail.combobox.suggestions"),
         style: COMBO_LIST_STYLE,
         children: [
-          props.matches.map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+          props.matches.map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
             "li",
             {
               id: optionId(props.listId, index),
@@ -30964,21 +31254,21 @@ ${MARKDOWN_SHEET}
               },
               style: index === props.active ? { ...COMBO_OPTION_STYLE, ...COMBO_OPTION_ACTIVE_STYLE } : COMBO_OPTION_STYLE,
               children: [
-                item.color === null ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                item.color === null ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                   UserAvatar,
                   {
                     user: { login: item.value, displayName: item.detail, avatarUrl: null },
                     role: "candidate",
                     size: 18
                   }
-                ) : /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { style: { ...COMBO_SWATCH_STYLE, background: item.color } }),
-                /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { "data-option-name": "", style: { minWidth: 0 }, children: item.value }),
-                item.detail === null ? null : /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { style: COMBO_OPTION_DETAIL_STYLE, children: item.detail })
+                ) : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: { ...COMBO_SWATCH_STYLE, background: item.color } }),
+                /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { "data-option-name": "", style: { minWidth: 0 }, children: item.value }),
+                item.detail === null ? null : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: COMBO_OPTION_DETAIL_STYLE, children: item.detail })
               ]
             },
             item.value
           )),
-          note === null ? null : /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("li", { role: "presentation", style: COMBO_EMPTY_STYLE, children: note })
+          note === null ? null : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("li", { role: "presentation", style: COMBO_EMPTY_STYLE, children: note })
         ]
       }
     );
@@ -31037,14 +31327,14 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/ticket-detail-fields.tsx
-  var import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
   function HeaderActions(props) {
     const t = useMessages();
     const { detail, busy } = props;
     const next = detail.state === "open" ? "closed" : "open";
     const copied = props.copy.status === "copied";
-    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(import_jsx_runtime14.Fragment, { children: [
-      detail.capabilities.state ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_jsx_runtime15.Fragment, { children: [
+      detail.capabilities.state ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
         "button",
         {
           type: "button",
@@ -31059,7 +31349,7 @@ ${MARKDOWN_SHEET}
         }
       ) : null,
       props.afterState,
-      detail.url === null ? null : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+      detail.url === null ? null : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
         "button",
         {
           type: "button",
@@ -31069,17 +31359,17 @@ ${MARKDOWN_SHEET}
           title: copied ? t("common.copied") : t("detail.copyLinkWithUrl", { url: detail.url }),
           onClick: props.onCopy,
           style: copied ? { ...HEADER_ICON_BUTTON_STYLE, color: COLORS.success } : HEADER_ICON_BUTTON_STYLE,
-          children: copied ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(CheckIcon, {}) : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(LinkIcon, {})
+          children: copied ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(CheckIcon, {}) : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(LinkIcon, {})
         }
       ),
-      copied ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { role: "status", "data-testid": "copy-notice", style: VISUALLY_HIDDEN_STYLE, children: t("detail.copiedLinkNotice") }) : null
+      copied ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { role: "status", "data-testid": "copy-notice", style: VISUALLY_HIDDEN_STYLE, children: t("detail.copiedLinkNotice") }) : null
     ] });
   }
   function CopyFailure(props) {
     const t = useMessages();
     const { copy, url } = props;
     if (copy.status !== "failed" || url === null) return null;
-    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
       "div",
       {
         role: "alert",
@@ -31087,7 +31377,7 @@ ${MARKDOWN_SHEET}
         style: { ...DETAIL_ERROR_STYLE, ...DETAIL_STACK_STYLE },
         children: [
           copy.message,
-          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
             "input",
             {
               "data-testid": props.inputTestId ?? "detail-link",
@@ -31108,15 +31398,15 @@ ${MARKDOWN_SHEET}
     const t = useMessages();
     const { detail, busy, options } = props;
     const unsupported = unsupportedActions(detail).map((id) => t(id));
-    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: DETAIL_STACK_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: DETAIL_STRIP_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: DETAIL_STACK_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: DETAIL_STRIP_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
           TokenGroup,
           {
             kind: "label",
             name: t("detail.labels"),
             addLabel: t("detail.addLabels"),
-            icon: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(TagIcon, {}),
+            icon: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(TagIcon, {}),
             values: detail.labels.map((name) => ({
               kind: "label",
               name,
@@ -31133,13 +31423,13 @@ ${MARKDOWN_SHEET}
             }
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
           TokenGroup,
           {
             kind: "assignee",
             name: t("detail.assignees"),
             addLabel: t("detail.addAssignees"),
-            icon: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(PersonIcon, {}),
+            icon: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(PersonIcon, {}),
             values: detail.assignees.map((user) => ({ kind: "assignee", user })),
             emptyText: t("detail.unassigned"),
             placeholder: t("detail.searchAssignees"),
@@ -31156,7 +31446,7 @@ ${MARKDOWN_SHEET}
           }
         )
       ] }),
-      unsupported.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { "data-testid": "detail-unsupported-note", style: DETAIL_HINT_STYLE, children: t("detail.unsupported", {
+      unsupported.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { "data-testid": "detail-unsupported-note", style: DETAIL_HINT_STYLE, children: t("detail.unsupported", {
         backend: backendLabel(detail.backend, t),
         actions: unsupported.join(t("common.listSeparator"))
       }) })
@@ -31167,9 +31457,9 @@ ${MARKDOWN_SHEET}
   }
   function TokenGroup(props) {
     const { kind, values, busy } = props;
-    const [editing, setEditing] = React18.useState(false);
+    const [editing, setEditing] = React20.useState(false);
     const keys = values.map(tokenKey);
-    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
       "div",
       {
         role: "group",
@@ -31177,9 +31467,9 @@ ${MARKDOWN_SHEET}
         "data-testid": kind === "label" ? "detail-labels" : "detail-assignees",
         style: editing ? { ...DETAIL_GROUP_STYLE, flexBasis: "100%" } : DETAIL_GROUP_STYLE,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { title: props.name, style: DETAIL_GROUP_ICON_STYLE, children: props.icon }),
-          values.length === 0 && !editing ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: DETAIL_TOKEN_EMPTY_STYLE, children: props.emptyText }) : null,
-          values.map((item) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { title: props.name, style: DETAIL_GROUP_ICON_STYLE, children: props.icon }),
+          values.length === 0 && !editing ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: DETAIL_TOKEN_EMPTY_STYLE, children: props.emptyText }) : null,
+          values.map((item) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
             Token,
             {
               kind,
@@ -31193,7 +31483,7 @@ ${MARKDOWN_SHEET}
             },
             tokenKey(item)
           )),
-          !props.editable ? null : editing ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+          !props.editable ? null : editing ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
             TokenEditor,
             {
               kind,
@@ -31210,7 +31500,7 @@ ${MARKDOWN_SHEET}
                 setEditing(false);
               }
             }
-          ) : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+          ) : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
             "button",
             {
               type: "button",
@@ -31224,7 +31514,7 @@ ${MARKDOWN_SHEET}
                 setEditing(true);
               },
               style: DETAIL_ADD_STYLE,
-              children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(PlusIcon, {})
+              children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(PlusIcon, {})
             }
           )
         ]
@@ -31242,16 +31532,16 @@ ${MARKDOWN_SHEET}
       ...isAssignee ? { paddingLeft: 2 } : labelColorStyle(item.color),
       ...props.editable ? {} : { paddingRight: 9 }
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
       "span",
       {
         "data-testid": `${props.kind}-chip`,
         style,
         ...isAssignee ? { title: authorTitle(item.user, t) } : {},
         children: [
-          isAssignee ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(UserAvatar, { user: item.user, role: "assignee", size: 16 }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { "data-token-name": "", style: isAssignee ? { marginLeft: 3 } : void 0, children: text }),
-          props.editable ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+          isAssignee ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(UserAvatar, { user: item.user, role: "assignee", size: 16 }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { "data-token-name": "", style: isAssignee ? { marginLeft: 3 } : void 0, children: text }),
+          props.editable ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
             "button",
             {
               type: "button",
@@ -31262,7 +31552,7 @@ ${MARKDOWN_SHEET}
               disabled: props.busy,
               onClick: props.onRemove,
               style: { ...DETAIL_TOKEN_REMOVE_STYLE, color: "inherit", opacity: 0.7 },
-              children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(CloseIcon, {})
+              children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(CloseIcon, {})
             }
           ) : null
         ]
@@ -31279,13 +31569,13 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/ticket-detail-hooks.ts
-  var React19 = __toESM(require_react(), 1);
+  var React21 = __toESM(require_react(), 1);
   function useDetailRequest(client2, workspaceRoot, ref, number) {
-    const [detail, setDetail] = React19.useState(null);
-    const [error, setError] = React19.useState(null);
-    const [phase, setPhase] = React19.useState("loading");
-    const [attempt, setAttempt] = React19.useState(0);
-    React19.useEffect(() => {
+    const [detail, setDetail] = React21.useState(null);
+    const [error, setError] = React21.useState(null);
+    const [phase, setPhase] = React21.useState("loading");
+    const [attempt, setAttempt] = React21.useState(0);
+    React21.useEffect(() => {
       let active = true;
       setDetail(null);
       setError(null);
@@ -31327,22 +31617,22 @@ ${MARKDOWN_SHEET}
     return Promise.all([detail, snapshot]).then(() => void 0);
   }
   function useDetailRefresh(client2, target, onDetail, onSnapshot) {
-    const [refreshing, setRefreshing] = React19.useState(false);
-    const [error, setError] = React19.useState(null);
-    const running = React19.useRef(false);
-    const mounted = React19.useRef(true);
+    const [refreshing, setRefreshing] = React21.useState(false);
+    const [error, setError] = React21.useState(null);
+    const running = React21.useRef(false);
+    const mounted = React21.useRef(true);
     const key = `${target.workspaceRoot}
 ${target.ref}
 ${String(target.number)}`;
-    const latest = React19.useRef(key);
+    const latest = React21.useRef(key);
     latest.current = key;
-    React19.useEffect(() => {
+    React21.useEffect(() => {
       mounted.current = true;
       return () => {
         mounted.current = false;
       };
     }, []);
-    React19.useEffect(() => {
+    React21.useEffect(() => {
       setError(null);
     }, [key]);
     const refresh = () => {
@@ -31367,9 +31657,9 @@ ${String(target.number)}`;
     return { refreshing, error, refresh };
   }
   function useTicketMutation(client2, options) {
-    const [busy, setBusy] = React19.useState(false);
-    const [error, setError] = React19.useState(null);
-    const running = React19.useRef(false);
+    const [busy, setBusy] = React21.useState(false);
+    const [error, setError] = React21.useState(null);
+    const running = React21.useRef(false);
     const apply = (patch) => {
       if (running.current) return;
       running.current = true;
@@ -31406,9 +31696,9 @@ ${String(target.number)}`;
     return { busy, error, apply };
   }
   function useEscapeKey(onBack) {
-    const handler = React19.useRef(onBack);
+    const handler = React21.useRef(onBack);
     handler.current = onBack;
-    React19.useEffect(() => {
+    React21.useEffect(() => {
       const listener = (event) => {
         if (event.key === "Escape") handler.current();
       };
@@ -31420,16 +31710,16 @@ ${String(target.number)}`;
   }
   function useTicketOptions(client2, workspaceRoot, eager) {
     const t = useMessages();
-    const [load, setLoad] = React19.useState({ status: "idle" });
-    const started = React19.useRef(false);
-    const mounted = React19.useRef(true);
-    React19.useEffect(() => {
+    const [load, setLoad] = React21.useState({ status: "idle" });
+    const started = React21.useRef(false);
+    const mounted = React21.useRef(true);
+    React21.useEffect(() => {
       mounted.current = true;
       return () => {
         mounted.current = false;
       };
     }, []);
-    const request = React19.useCallback(() => {
+    const request = React21.useCallback(() => {
       if (started.current) return;
       started.current = true;
       setLoad({ status: "loading" });
@@ -31440,10 +31730,10 @@ ${String(target.number)}`;
         );
       });
     }, [client2, workspaceRoot]);
-    React19.useEffect(() => {
+    React21.useEffect(() => {
       if (eager) request();
     }, [eager, request]);
-    return React19.useMemo(() => optionsState(load, request, t), [load, request, t]);
+    return React21.useMemo(() => optionsState(load, request, t), [load, request, t]);
   }
   function optionsState(load, request, t) {
     if (load.status !== "ready") {
@@ -31475,9 +31765,9 @@ ${String(target.number)}`;
     };
   }
   function useTicketDeletion(client2, target) {
-    const [confirming, setConfirming] = React19.useState(false);
-    const [deleting, setDeleting] = React19.useState(false);
-    const [error, setError] = React19.useState(null);
+    const [confirming, setConfirming] = React21.useState(false);
+    const [deleting, setDeleting] = React21.useState(false);
+    const [error, setError] = React21.useState(null);
     const confirm = () => {
       if (deleting) return;
       setDeleting(true);
@@ -31489,7 +31779,8 @@ ${String(target.number)}`;
           setDeleting(false);
           return;
         }
-        await client2.refresh(target.workspaceRoot);
+        const snapshot = await client2.refresh(target.workspaceRoot);
+        if (snapshot.ok) target.onSnapshot(snapshot.result);
         target.onDeleted();
       })();
     };
@@ -31511,8 +31802,8 @@ ${String(target.number)}`;
   var COPIED_RESET_MS = 2e3;
   function useCopyLink(url) {
     const t = useMessages();
-    const [copy, setCopy] = React19.useState({ status: "idle" });
-    React19.useEffect(() => {
+    const [copy, setCopy] = React21.useState({ status: "idle" });
+    React21.useEffect(() => {
       if (copy.status !== "copied") return;
       const timer = setTimeout(() => {
         setCopy({ status: "idle" });
@@ -31535,11 +31826,11 @@ ${String(target.number)}`;
   }
 
   // src/panel/ticket-timeline.tsx
-  var React21 = __toESM(require_react(), 1);
+  var React23 = __toESM(require_react(), 1);
 
   // src/panel/markdown-body.tsx
-  var React20 = __toESM(require_react(), 1);
-  var import_jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
+  var React22 = __toESM(require_react(), 1);
+  var import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
   function inlinePattern() {
     return /(!\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))*\))|(`[^`]+`)|(\*\*[^*]+\*\*)|(__[^_]+__)|(\*[^*\n]+\*)|(_[^_\n]+_)|(~~[^~]+~~)|(\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))*\))|(<https?:\/\/[^>\s]+>)/g;
   }
@@ -31547,11 +31838,11 @@ ${String(target.number)}`;
   var INLINE_IMAGE = /^data:image\/(?:png|jpeg|gif|webp|bmp);base64,[A-Za-z0-9+/]+={0,2}$/;
   function MarkdownBody(props) {
     const allowInlineImages = props.allowInlineImages === true;
-    const content = React20.useMemo(
+    const content = React22.useMemo(
       () => renderMarkdown(props.source, allowInlineImages),
       [props.source, allowInlineImages]
     );
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { "data-testid": props.testId, ...{ [MARKDOWN_ATTRIBUTE]: "" }, children: content });
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { "data-testid": props.testId, ...{ [MARKDOWN_ATTRIBUTE]: "" }, children: content });
   }
   function renderMarkdown(source, allowInlineImages) {
     const lines = source.replace(/\r\n?/g, "\n").split("\n");
@@ -31574,7 +31865,7 @@ ${String(target.number)}`;
         }
         index += 1;
         blocks.push(
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("pre", { children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("code", { "data-language": language, children: body.join("\n") }) }, `code-${String(index)}`)
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("pre", { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("code", { "data-language": language, children: body.join("\n") }) }, `code-${String(index)}`)
         );
         continue;
       }
@@ -31583,7 +31874,7 @@ ${String(target.number)}`;
         const level = (heading[1] ?? "#").length;
         const text = heading[2] ?? "";
         blocks.push(
-          React20.createElement(
+          React22.createElement(
             `h${String(level)}`,
             { key: `h-${String(index)}` },
             renderInline(text, allowInlineImages)
@@ -31593,7 +31884,7 @@ ${String(target.number)}`;
         continue;
       }
       if (/^\s*([-*_])\s*\1\s*\1[\s-*_]*$/.test(line)) {
-        blocks.push(/* @__PURE__ */ (0, import_jsx_runtime15.jsx)("hr", {}, `hr-${String(index)}`));
+        blocks.push(/* @__PURE__ */ (0, import_jsx_runtime16.jsx)("hr", {}, `hr-${String(index)}`));
         index += 1;
         continue;
       }
@@ -31604,7 +31895,7 @@ ${String(target.number)}`;
           index += 1;
         }
         blocks.push(
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("blockquote", { children: renderMarkdown(quoted.join("\n"), allowInlineImages) }, `quote-${String(index)}`)
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("blockquote", { children: renderMarkdown(quoted.join("\n"), allowInlineImages) }, `quote-${String(index)}`)
         );
         continue;
       }
@@ -31631,7 +31922,7 @@ ${String(target.number)}`;
         index += 1;
       }
       blocks.push(
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { children: renderInline(paragraph.join("\n"), allowInlineImages) }, `p-${String(index)}`)
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { children: renderInline(paragraph.join("\n"), allowInlineImages) }, `p-${String(index)}`)
       );
     }
     return blocks;
@@ -31648,9 +31939,9 @@ ${String(target.number)}`;
       index += 1;
     }
     return {
-      node: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("table", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("tr", { children: header.map((cell, cellIndex) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("th", { children: renderInline(cell, allowInlineImages) }, `th-${String(cellIndex)}`)) }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("tbody", { children: rows.map((row, rowIndex) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("tr", { children: row.map((cell, cellIndex) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("td", { children: renderInline(cell, allowInlineImages) }, `td-${String(cellIndex)}`)) }, `tr-${String(rowIndex)}`)) })
+      node: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("table", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("tr", { children: header.map((cell, cellIndex) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { children: renderInline(cell, allowInlineImages) }, `th-${String(cellIndex)}`)) }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("tbody", { children: rows.map((row, rowIndex) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("tr", { children: row.map((cell, cellIndex) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { children: renderInline(cell, allowInlineImages) }, `td-${String(cellIndex)}`)) }, `tr-${String(rowIndex)}`)) })
       ] }, `table-${String(start)}`),
       next: index
     };
@@ -31679,9 +31970,9 @@ ${String(target.number)}`;
       items.push(line.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, ""));
       index += 1;
     }
-    const children = items.map((item, itemIndex) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("li", { children: item.trim().length === 0 ? null : renderInline(item, allowInlineImages) }, `li-${String(itemIndex)}`));
+    const children = items.map((item, itemIndex) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("li", { children: item.trim().length === 0 ? null : renderInline(item, allowInlineImages) }, `li-${String(itemIndex)}`));
     return {
-      node: ordered ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("ol", { children }, `ol-${String(start)}`) : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("ul", { children }, `ul-${String(start)}`),
+      node: ordered ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("ol", { children }, `ol-${String(start)}`) : /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("ul", { children }, `ul-${String(start)}`),
       next: index
     };
   }
@@ -31715,28 +32006,28 @@ ${String(target.number)}`;
       const alt = parsed[1] ?? "";
       const src = (parsed[2] ?? "").trim();
       if (allowInlineImages && INLINE_IMAGE.test(src)) {
-        return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("img", { src, alt }, `i-${String(key)}`);
+        return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("img", { src, alt }, `i-${String(key)}`);
       }
-      return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(React20.Fragment, { children: [
+      return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(React22.Fragment, { children: [
         "!",
-        isSafeUrl(src) ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ExternalLink, { href: src, children: alt }) : alt
+        isSafeUrl(src) ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ExternalLink, { href: src, children: alt }) : alt
       ] }, `i-${String(key)}`);
     }
     if (token.startsWith("`") && token.endsWith("`")) {
-      return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("code", { children: token.slice(1, -1) }, `i-${String(key)}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("code", { children: token.slice(1, -1) }, `i-${String(key)}`);
     }
     if (token.startsWith("**") || token.startsWith("__")) {
-      return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("strong", { children: renderInline(token.slice(2, -2), allowInlineImages) }, `i-${String(key)}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("strong", { children: renderInline(token.slice(2, -2), allowInlineImages) }, `i-${String(key)}`);
     }
     if (token.startsWith("~~")) {
-      return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("del", { children: renderInline(token.slice(2, -2), allowInlineImages) }, `i-${String(key)}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("del", { children: renderInline(token.slice(2, -2), allowInlineImages) }, `i-${String(key)}`);
     }
     if (token.startsWith("*") || token.startsWith("_")) {
-      return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("em", { children: renderInline(token.slice(1, -1), allowInlineImages) }, `i-${String(key)}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("em", { children: renderInline(token.slice(1, -1), allowInlineImages) }, `i-${String(key)}`);
     }
     if (token.startsWith("<")) {
       const url = token.slice(1, -1);
-      return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ExternalLink, { href: url, children: url }, `i-${String(key)}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ExternalLink, { href: url, children: url }, `i-${String(key)}`);
     }
     if (token.startsWith("[")) {
       const parsed = /^\[([^\]]*)\]\((.*)\)$/.exec(token);
@@ -31744,7 +32035,7 @@ ${String(target.number)}`;
       const label = parsed[1] ?? "";
       const href = (parsed[2] ?? "").trim();
       if (!isSafeUrl(href)) return label;
-      return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ExternalLink, { href, children: label }, `i-${String(key)}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ExternalLink, { href, children: label }, `i-${String(key)}`);
     }
     return token;
   }
@@ -31754,18 +32045,18 @@ ${String(target.number)}`;
     return SAFE_PROTOCOL.test(href);
   }
   function ExternalLink(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("a", { ...props, target: "_blank", rel: "noopener noreferrer" });
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("a", { ...props, target: "_blank", rel: "noopener noreferrer" });
   }
 
   // src/panel/ticket-timeline.tsx
-  var import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
   function Timeline(props) {
     const t = useMessages();
     const { detail } = props;
     const count = detail.comments.length;
     const allowInlineImages = detail.backend === "gitlab";
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: TIMELINE_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: TIMELINE_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
         TimelineCard,
         {
           testId: "detail-body-section",
@@ -31776,7 +32067,7 @@ ${String(target.number)}`;
           time: detail.createdAt,
           isTicketAuthor: false,
           ariaLabel: t("detail.body"),
-          children: detail.body.trim().length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { "data-testid": "detail-no-body", style: TIMELINE_EMPTY_STYLE, children: t("detail.noBody") }) : /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+          children: detail.body.trim().length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { "data-testid": "detail-no-body", style: TIMELINE_EMPTY_STYLE, children: t("detail.noBody") }) : /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
             MarkdownBody,
             {
               testId: "detail-body",
@@ -31786,15 +32077,15 @@ ${String(target.number)}`;
           )
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
         "section",
         {
           "data-testid": "detail-comments",
           "aria-label": t("detail.comments", { n: count }),
-          children: count === 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_jsx_runtime16.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: TIMELINE_CONNECTOR_STYLE }),
-            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { "data-testid": "detail-no-comments", style: TIMELINE_EMPTY_STYLE, children: t("detail.noComments") })
-          ] }) : detail.comments.map((comment, index) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+          children: count === 0 ? /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_jsx_runtime17.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: TIMELINE_CONNECTOR_STYLE }),
+            /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { "data-testid": "detail-no-comments", style: TIMELINE_EMPTY_STYLE, children: t("detail.noComments") })
+          ] }) : detail.comments.map((comment, index) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
             CommentCard,
             {
               comment,
@@ -31811,9 +32102,9 @@ ${String(target.number)}`;
     const t = useMessages();
     const { comment } = props;
     const isTicketAuthor2 = comment.author !== null && props.ticketAuthor !== null && comment.author.login === props.ticketAuthor.login;
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_jsx_runtime16.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: TIMELINE_CONNECTOR_STYLE }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_jsx_runtime17.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: TIMELINE_CONNECTOR_STYLE }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
         TimelineCard,
         {
           testId: "detail-comment",
@@ -31826,7 +32117,7 @@ ${String(target.number)}`;
           ariaLabel: t("detail.commentBy", {
             author: comment.author === null ? t("detail.unnamed") : authorName(comment.author)
           }),
-          children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+          children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
             MarkdownBody,
             {
               source: comment.body,
@@ -31840,11 +32131,11 @@ ${String(target.number)}`;
   function TimelineCard(props) {
     const t = useMessages();
     const header = props.isTicketAuthor ? { ...TIMELINE_CARD_HEADER_STYLE, ...TIMELINE_CARD_AUTHOR_HEADER_STYLE } : TIMELINE_CARD_HEADER_STYLE;
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("article", { "data-testid": props.testId, "aria-label": props.ariaLabel, style: TIMELINE_CARD_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("header", { style: header, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(UserAvatar, { user: props.author, role: props.avatarRole, size: 20 }),
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("span", { "data-testid": props.authorTestId, style: TIMELINE_TIME_STYLE, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("article", { "data-testid": props.testId, "aria-label": props.ariaLabel, style: TIMELINE_CARD_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("header", { style: header, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(UserAvatar, { user: props.author, role: props.avatarRole, size: 20 }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { "data-testid": props.authorTestId, style: TIMELINE_TIME_STYLE, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
             "span",
             {
               style: TIMELINE_NAME_STYLE,
@@ -31854,9 +32145,9 @@ ${String(target.number)}`;
           ),
           props.time === null ? "" : ` ${props.verb} ${formatTime(props.time)}`
         ] }),
-        props.isTicketAuthor ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { "data-testid": "author-badge", style: TIMELINE_AUTHOR_BADGE_STYLE, children: t("detail.authorBadge") }) : null
+        props.isTicketAuthor ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { "data-testid": "author-badge", style: TIMELINE_AUTHOR_BADGE_STYLE, children: t("detail.authorBadge") }) : null
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: TIMELINE_CARD_BODY_STYLE, children: props.children })
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: TIMELINE_CARD_BODY_STYLE, children: props.children })
     ] });
   }
   function formatTime(value) {
@@ -31865,7 +32156,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/ticket-actions.ts
-  var React22 = __toESM(require_react(), 1);
+  var React24 = __toESM(require_react(), 1);
 
   // src/panel/prompts.ts
   function ticketPrompt(ticket, style) {
@@ -31898,9 +32189,9 @@ ${String(target.number)}`;
 
   // src/panel/ticket-actions.ts
   function useTicketActions(workspaceRoot, port, client2) {
-    const [copied, setCopied] = React22.useState(null);
+    const [copied, setCopied] = React24.useState(null);
     const { state, copy, dismiss } = usePromptCopy(port);
-    React22.useEffect(() => {
+    React24.useEffect(() => {
       setCopied(null);
     }, [workspaceRoot]);
     const copyPrompt = async (build) => {
@@ -31920,7 +32211,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/worktree-action.tsx
-  var React23 = __toESM(require_react(), 1);
+  var React25 = __toESM(require_react(), 1);
 
   // src/panel/worktree-text.ts
   function blockedWorktreeReason(openBlockers, t) {
@@ -31939,7 +32230,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/worktree-action.tsx
-  var import_jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
   function worktreeAvailability(ticket, backend, workspaceRoot, t) {
     if (workspaceRoot === void 0) {
       return { visible: false, enabled: false, reason: null };
@@ -31964,20 +32255,21 @@ ${String(target.number)}`;
     return { visible: true, enabled: true, reason: null };
   }
   function useWorktreeCreate(client2, workspaceRoot, ticket) {
-    const [busy, setBusy] = React23.useState(false);
-    const [error, setError] = React23.useState(null);
-    const [result, setResult] = React23.useState(null);
-    const running = React23.useRef(false);
-    const generation = React23.useRef(0);
-    React23.useEffect(() => {
+    const [busy, setBusy] = React25.useState(false);
+    const [error, setError] = React25.useState(null);
+    const [result, setResult] = React25.useState(null);
+    const running = React25.useRef(false);
+    const generation = React25.useRef(0);
+    const ref = ticket?.ref;
+    React25.useEffect(() => {
       generation.current += 1;
       setBusy(false);
       setError(null);
       setResult(null);
       running.current = false;
-    }, [workspaceRoot, ticket.ref]);
+    }, [workspaceRoot, ref]);
     const create = () => {
-      if (running.current || workspaceRoot === void 0) return;
+      if (running.current || workspaceRoot === void 0 || ticket === null) return;
       running.current = true;
       const request = generation.current + 1;
       generation.current = request;
@@ -32007,7 +32299,7 @@ ${String(target.number)}`;
     if (!props.availability.visible) return null;
     const label = worktreeButtonLabel(props.busy, props.compact === true, t);
     const hint = worktreeButtonHint(props.availability.reason, props.busy, t);
-    return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
       "button",
       {
         type: "button",
@@ -32025,7 +32317,7 @@ ${String(target.number)}`;
           ...props.availability.enabled ? void 0 : DISABLED_LOOK_STYLE
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(PlusIcon, {}),
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(PlusIcon, {}),
           label
         ]
       }
@@ -32035,15 +32327,15 @@ ${String(target.number)}`;
     const t = useMessages();
     if (props.error !== null) {
       const error = props.error;
-      return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
         "div",
         {
           role: "alert",
           "data-testid": "worktree-error",
           style: { ...ERROR_STYLE2, ...props.compact === true ? ERROR_COMPACT_STYLE : void 0 },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { children: errorText(error, t) }),
-            isEnvIssue(error.code) && props.onOpenEnvCheck !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { children: errorText(error, t) }),
+            isEnvIssue(error.code) && props.onOpenEnvCheck !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
               "button",
               {
                 type: "button",
@@ -32061,25 +32353,25 @@ ${String(target.number)}`;
       );
     }
     if (props.result === null) return null;
-    return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(WorktreeSuccess, { result: props.result, compact: props.compact === true });
+    return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(WorktreeSuccess, { result: props.result, compact: props.compact === true });
   }
   function WorktreeSuccess(props) {
     const t = useMessages();
     const { result } = props;
     const copied = useCopyPath(result.path);
-    return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { "data-testid": "worktree-result", style: props.compact ? RESULT_COMPACT_STYLE : RESULT_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { "data-testid": "worktree-notice", style: NOTICE_STYLE2, children: worktreeResultNotice(result.created, t) }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: LINE_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: LABEL_STYLE, children: t("worktree.branch") }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("code", { "data-testid": "worktree-branch", style: CODE_STYLE, children: result.branch })
+    return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { "data-testid": "worktree-result", style: props.compact ? RESULT_COMPACT_STYLE : RESULT_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { "data-testid": "worktree-notice", style: NOTICE_STYLE2, children: worktreeResultNotice(result.created, t) }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: LINE_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: LABEL_STYLE, children: t("worktree.branch") }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("code", { "data-testid": "worktree-branch", style: CODE_STYLE, children: result.branch })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: LINE_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: LABEL_STYLE, children: t("worktree.path") }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("code", { "data-testid": "worktree-path", style: CODE_STYLE, children: result.path })
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: LINE_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: LABEL_STYLE, children: t("worktree.path") }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("code", { "data-testid": "worktree-path", style: CODE_STYLE, children: result.path })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: LINE_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: LABEL_STYLE, children: t("worktree.reference") }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: LINE_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: LABEL_STYLE, children: t("worktree.reference") }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
           "a",
           {
             "data-testid": "worktree-reference",
@@ -32090,7 +32382,7 @@ ${String(target.number)}`;
             children: result.reference
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
           "button",
           {
             type: "button",
@@ -32105,13 +32397,13 @@ ${String(target.number)}`;
             children: copied.state === "copied" ? t("worktree.copiedPath") : t("worktree.copyPath")
           }
         ),
-        copied.state === "failed" ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { role: "status", "data-testid": "worktree-copy-error", style: COPY_ERROR_STYLE, children: t("worktree.copyFailed") }) : null
+        copied.state === "failed" ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { role: "status", "data-testid": "worktree-copy-error", style: COPY_ERROR_STYLE, children: t("worktree.copyFailed") }) : null
       ] })
     ] });
   }
   function useCopyPath(path) {
-    const [state, setState] = React23.useState("idle");
-    React23.useEffect(() => {
+    const [state, setState] = React25.useState("idle");
+    React25.useEffect(() => {
       if (state !== "copied") return void 0;
       const timer = window.setTimeout(() => {
         setState("idle");
@@ -32196,88 +32488,106 @@ ${String(target.number)}`;
   };
 
   // src/panel/ticket-detail-view.tsx
-  var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
   function TicketDetailView(props) {
     const t = useMessages();
-    const { client: client2, workspaceRoot, ticket } = props;
-    const ref = ticket.ref;
-    const number = ticket.number;
+    const { client: client2, workspaceRoot } = props;
+    const { ref, number, ticket } = props.target;
     const request = useDetailRequest(client2, workspaceRoot, ref, number);
     const detail = request.detail;
-    const [currentTicket, setCurrentTicket] = React24.useState(ticket);
-    React24.useEffect(() => {
-      setCurrentTicket(ticket);
-    }, [ticket]);
-    const applySnapshot = (snapshot) => {
-      const next = snapshot.tickets.find((item) => item.ref === ref);
-      if (next !== void 0) setCurrentTicket(next);
-    };
+    const blockers = blockerItems(ticket, props.snapshotTickets);
+    const canExpandBlockers = ticket !== null && ticket.skillActionReason === "blocked" && blockers.length > 0;
+    const [expandedRef, setExpandedRef] = React26.useState(null);
+    React26.useEffect(() => {
+      setExpandedRef(null);
+    }, [ref]);
+    const blockersExpanded = expandedRef === ref && canExpandBlockers;
     const mutation = useTicketMutation(client2, {
       workspaceRoot,
       ref,
       number,
       onUpdated: request.replace,
-      onSnapshot: applySnapshot
+      onSnapshot: props.onSnapshot
     });
     const refresh = useDetailRefresh(
       client2,
       { workspaceRoot, ref, number },
       request.replace,
-      applySnapshot
+      props.onSnapshot
     );
     const deletion = useTicketDeletion(client2, {
       workspaceRoot,
       ref,
       number,
+      onSnapshot: props.onSnapshot,
       onDeleted: props.onBack
     });
     const options = useTicketOptions(client2, workspaceRoot, detail?.capabilities.labels === true);
     const actions = useTicketActions(workspaceRoot, props.copy, client2);
-    const worktree = useWorktreeCreate(client2, workspaceRoot, currentTicket);
-    const worktreeState = detail === null ? { visible: false, enabled: false, reason: null } : worktreeAvailability(currentTicket, detail.backend, workspaceRoot, t);
+    const worktree = useWorktreeCreate(client2, workspaceRoot, ticket);
+    const worktreeState = detail === null || ticket === null ? { visible: false, enabled: false, reason: null } : worktreeAvailability(ticket, detail.backend, workspaceRoot, t);
     const link = useCopyLink(detail?.url ?? null);
     const busy = mutation.busy || deletion.deleting || refresh.refreshing;
     useEscapeKey(props.onBack);
-    return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { "data-testid": "ticket-detail", style: DETAIL_ROOT_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(DetailHeader, { refText: ref, detail, onBack: props.onBack, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
-          SkillActionBadge,
-          {
-            ticket: currentTicket,
-            copied: actions.copied === currentTicket.ref && currentTicket.skillAction !== "none",
-            onSkillAction: actions.onSkillAction
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
-          WorktreeCreateButton,
-          {
-            availability: worktreeState,
-            busy: worktree.busy,
-            onClick: worktree.create
-          }
-        ),
-        detail === null ? null : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
-          HeaderActions,
-          {
-            detail,
-            busy,
-            onApply: mutation.apply,
-            copy: link.copy,
-            onCopy: link.onCopy,
-            afterState: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
-              RefreshButton,
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { "data-testid": "ticket-detail", style: DETAIL_ROOT_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
+        DetailHeader,
+        {
+          refText: ref,
+          detail,
+          backRef: props.backRef,
+          onBack: props.onBack,
+          children: [
+            ticket === null ? null : canExpandBlockers ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+              BlockersToggle,
               {
-                refreshing: refresh.refreshing,
-                disabled: mutation.busy || deletion.deleting || deletion.confirming,
-                onRefresh: refresh.refresh
+                label: actionBadgeLabel(ticket, t),
+                hint: actionHint(ticket, t),
+                expanded: blockersExpanded,
+                onToggle: () => {
+                  setExpandedRef(blockersExpanded ? null : ref);
+                }
               }
-            )
-          }
-        ),
-        detail?.capabilities.delete === true ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(MoreMenu, { onDelete: deletion.open }) : null
-      ] }),
-      refresh.error === null ? null : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { role: "alert", "data-testid": "detail-refresh-error", style: ERROR_STYLE, children: t("detail.refreshFailed", { detail: errorText(refresh.error, t) }) }),
-      detail !== null ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+            ) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+              SkillActionBadge,
+              {
+                ticket,
+                copied: actions.copied === ticket.ref && ticket.skillAction !== "none",
+                onSkillAction: actions.onSkillAction
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+              WorktreeCreateButton,
+              {
+                availability: worktreeState,
+                busy: worktree.busy,
+                onClick: worktree.create
+              }
+            ),
+            detail === null ? null : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+              HeaderActions,
+              {
+                detail,
+                busy,
+                onApply: mutation.apply,
+                copy: link.copy,
+                onCopy: link.onCopy,
+                afterState: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+                  RefreshButton,
+                  {
+                    refreshing: refresh.refreshing,
+                    disabled: mutation.busy || deletion.deleting || deletion.confirming,
+                    onRefresh: refresh.refresh
+                  }
+                )
+              }
+            ),
+            detail?.capabilities.delete === true ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(MoreMenu, { onDelete: deletion.open }) : null
+          ]
+        }
+      ),
+      refresh.error === null ? null : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { role: "alert", "data-testid": "detail-refresh-error", style: ERROR_STYLE, children: t("detail.refreshFailed", { detail: errorText(refresh.error, t) }) }),
+      detail !== null ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
         DetailContent,
         {
           detail,
@@ -32288,18 +32598,21 @@ ${String(target.number)}`;
           onDismissCopy: actions.dismiss,
           options,
           deletion,
+          blockers,
+          blockersExpanded,
+          onOpenBlocker: props.onOpenBlocker,
           onApply: mutation.apply,
           worktreeError: worktree.error,
           worktreeResult: worktree.result,
           onOpenEnvCheck: props.onOpenEnvCheck
         }
-      ) : request.phase === "error" ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(LoadError, { error: request.error, onRetry: request.reload }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { "data-testid": "detail-loading", style: EMPTY_STYLE, children: t("detail.loading") })
+      ) : request.phase === "error" ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(LoadError, { error: request.error, onRetry: request.reload }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { "data-testid": "detail-loading", style: EMPTY_STYLE, children: t("detail.loading") })
     ] });
   }
   function RefreshButton(props) {
     const t = useMessages();
     const label = props.refreshing ? t("detail.refreshing") : t("detail.refresh");
-    return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
       "button",
       {
         type: "button",
@@ -32310,31 +32623,33 @@ ${String(target.number)}`;
         title: label,
         onClick: props.onRefresh,
         style: props.refreshing ? { ...HEADER_ICON_BUTTON_STYLE, opacity: 0.5 } : HEADER_ICON_BUTTON_STYLE,
-        children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(RefreshIcon, {})
+        children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(RefreshIcon, {})
       }
     );
   }
   function DetailHeader(props) {
     const t = useMessages();
-    const { detail } = props;
+    const { detail, backRef } = props;
     const url = detail?.url ?? null;
-    return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("header", { style: DETAIL_HEADER_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+    const backLabel = backRef === null ? t("detail.back") : t("detail.backTo", { ref: backRef });
+    const backTitle = backRef === null ? t("detail.backHint") : t("detail.backToTitle", { ref: backRef });
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("header", { style: DETAIL_HEADER_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
         "button",
         {
           type: "button",
           "data-testid": "detail-back",
           "data-hover": "soft",
-          title: t("detail.backHint"),
+          title: backTitle,
           onClick: props.onBack,
           style: DETAIL_BACK_STYLE,
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ChevronLeftIcon, {}),
-            t("detail.back")
+            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ChevronLeftIcon, {}),
+            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: DETAIL_BACK_LABEL_STYLE, children: backLabel })
           ]
         }
       ),
-      url === null ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { "data-testid": "detail-ref", title: props.refText, style: DETAIL_REF_STYLE, children: props.refText }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+      url === null ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { "data-testid": "detail-ref", title: props.refText, style: DETAIL_REF_STYLE, children: props.refText }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
         "a",
         {
           "data-testid": "detail-ref",
@@ -32347,8 +32662,8 @@ ${String(target.number)}`;
           children: props.refText
         }
       ),
-      detail === null ? null : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { "data-testid": "detail-backend", style: BACKEND_BADGE_STYLE, children: backendLabel(detail.backend, t) }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: { flex: 1 } }),
+      detail === null ? null : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { "data-testid": "detail-backend", style: BACKEND_BADGE_STYLE, children: backendLabel(detail.backend, t) }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { flex: 1 } }),
       props.children
     ] });
   }
@@ -32356,8 +32671,9 @@ ${String(target.number)}`;
     const t = useMessages();
     const { detail, deletion } = props;
     const fieldProps = { detail, busy: props.busy, onApply: props.onApply };
-    return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { "data-testid": "detail-content", "aria-busy": props.busy, style: DETAIL_SCROLL_STYLE, children: [
-      deletion.confirming ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { "data-testid": "detail-content", "aria-busy": props.busy, style: DETAIL_SCROLL_STYLE, children: [
+      props.blockersExpanded && props.blockers.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(BlockersSection, { items: props.blockers, onOpen: props.onOpenBlocker }) : null,
+      deletion.confirming ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
         DeleteConfirm,
         {
           refText: detail.ref,
@@ -32369,8 +32685,8 @@ ${String(target.number)}`;
           onConfirm: deletion.confirm
         }
       ) : null,
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CopyFailure, { copy: props.copy, url: detail.url }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CopyFailure, { copy: props.copy, url: detail.url }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
         WorktreeOutcome,
         {
           error: props.worktreeError,
@@ -32378,45 +32694,45 @@ ${String(target.number)}`;
           onOpenEnvCheck: props.onOpenEnvCheck
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(PromptCopyArea, { state: props.copyState, onDismiss: props.onDismissCopy }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(TitleBlock, { detail }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(PropertyStrip, { ...fieldProps, options: props.options }),
-      props.mutationError === null ? null : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { role: "alert", "data-testid": "detail-error", style: DETAIL_ERROR_STYLE, children: errorText(props.mutationError, t) }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(Timeline, { detail })
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PromptCopyArea, { state: props.copyState, onDismiss: props.onDismissCopy }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(TitleBlock, { detail }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PropertyStrip, { ...fieldProps, options: props.options }),
+      props.mutationError === null ? null : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { role: "alert", "data-testid": "detail-error", style: DETAIL_ERROR_STYLE, children: errorText(props.mutationError, t) }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Timeline, { detail })
     ] });
   }
   var NOWRAP_STYLE = { whiteSpace: "nowrap" };
   function TitleBlock(props) {
     const t = useMessages();
     const { detail } = props;
-    return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: DETAIL_STACK_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("h2", { "data-testid": "detail-title", title: detail.title, style: DETAIL_TITLE_STYLE, children: detail.title }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { "data-testid": "detail-meta", style: TITLE_META_ROW_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("span", { "data-testid": "detail-state", style: STATE_PILL_STYLES[detail.state], children: [
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: STATUS_DOT_STYLE, "aria-hidden": "true" }),
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: DETAIL_STACK_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("h2", { "data-testid": "detail-title", title: detail.title, style: DETAIL_TITLE_STYLE, children: detail.title }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { "data-testid": "detail-meta", style: TITLE_META_ROW_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { "data-testid": "detail-state", style: STATE_PILL_STYLES[detail.state], children: [
+          /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: STATUS_DOT_STYLE, "aria-hidden": "true" }),
           detail.state === "open" ? t("status.open") : t("status.closed")
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("span", { style: NOWRAP_STYLE, children: [
-          detail.author === null ? null : /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("span", { style: TITLE_META_NAME_STYLE, title: authorTitle(detail.author, t), children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { style: NOWRAP_STYLE, children: [
+          detail.author === null ? null : /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { style: TITLE_META_NAME_STYLE, title: authorTitle(detail.author, t), children: [
             authorName(detail.author),
             " "
           ] }),
           t("detail.createdAt", { time: formatTime(detail.createdAt) }),
           " \xB7"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("span", { style: NOWRAP_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { style: NOWRAP_STYLE, children: [
           t("detail.updatedAt", { time: formatTime(detail.updatedAt) }),
           " \xB7"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: NOWRAP_STYLE, children: t("detail.commentCount", { n: detail.comments.length }) })
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: NOWRAP_STYLE, children: t("detail.commentCount", { n: detail.comments.length }) })
       ] })
     ] });
   }
   function LoadError(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: DETAIL_SCROLL_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { role: "alert", "data-testid": "detail-load-error", style: ERROR_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { children: props.error === null ? t("detail.loadFailed") : errorText(props.error, t) }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: DETAIL_SCROLL_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { role: "alert", "data-testid": "detail-load-error", style: ERROR_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { children: props.error === null ? t("detail.loadFailed") : errorText(props.error, t) }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
         "button",
         {
           type: "button",
@@ -32431,7 +32747,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/tickets-view.tsx
-  var React29 = __toESM(require_react(), 1);
+  var React31 = __toESM(require_react(), 1);
 
   // src/panel/hierarchy-text.ts
   function hierarchyAvailability(backend, hierarchy, t) {
@@ -32454,15 +32770,15 @@ ${String(target.number)}`;
   }
 
   // src/panel/hierarchy-notice.tsx
-  var React25 = __toESM(require_react(), 1);
-  var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
+  var React27 = __toESM(require_react(), 1);
+  var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
   function HierarchyNotice(props) {
     const t = useMessages();
     if (props.preference.layout === "hierarchy" && props.layout !== "hierarchy") {
-      return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { "data-testid": "hierarchy-fallback", style: NOTICE_STYLE3, children: t("tickets.layout.fallback") });
+      return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { "data-testid": "hierarchy-fallback", style: NOTICE_STYLE3, children: t("tickets.layout.fallback") });
     }
     if (props.layout === "hierarchy" && props.snapshot.total > props.snapshot.loaded) {
-      return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { "data-testid": "hierarchy-coverage", style: NOTICE_STYLE3, children: t("tickets.layout.coverage", {
+      return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { "data-testid": "hierarchy-coverage", style: NOTICE_STYLE3, children: t("tickets.layout.coverage", {
         loaded: props.snapshot.loaded,
         total: props.snapshot.total
       }) });
@@ -32477,12 +32793,12 @@ ${String(target.number)}`;
   };
 
   // src/panel/layout-toggle.tsx
-  var React26 = __toESM(require_react(), 1);
-  var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
+  var React28 = __toESM(require_react(), 1);
+  var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
   function LayoutToggle(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { role: "group", "aria-label": t("tickets.layoutGroup"), style: GROUP_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { role: "group", "aria-label": t("tickets.layoutGroup"), style: GROUP_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
         LayoutButton,
         {
           testId: "layout-flat",
@@ -32491,10 +32807,10 @@ ${String(target.number)}`;
           onClick: () => {
             props.onLayout("flat");
           },
-          children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(FlatListIcon, {})
+          children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(FlatListIcon, {})
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
         LayoutButton,
         {
           testId: "layout-hierarchy",
@@ -32504,14 +32820,14 @@ ${String(target.number)}`;
           onClick: () => {
             props.onLayout("hierarchy");
           },
-          children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(HierarchyIcon, {})
+          children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(HierarchyIcon, {})
         }
       )
     ] });
   }
   function LayoutButton(props) {
     const disabled = props.disabled === true;
-    return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
       "button",
       {
         type: "button",
@@ -32565,16 +32881,16 @@ ${String(target.number)}`;
   };
 
   // src/panel/ticket-list.tsx
-  var React27 = __toESM(require_react(), 1);
-  var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
+  var React29 = __toESM(require_react(), 1);
+  var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
   var REF_DISPLAY_LIMIT = 40;
   var MAX_EXTRA_LABELS = 3;
   function TicketList(props) {
     if (props.rows.length === 0) {
-      return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { "data-testid": "empty", style: EMPTY_STYLE, children: props.emptyText });
+      return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { "data-testid": "empty", style: EMPTY_STYLE, children: props.emptyText });
     }
     const reserveCollapseSlot = props.layout === "hierarchy" && props.rows.some((row) => row.hasChildren);
-    return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { role: "list", "data-testid": "ticket-list", style: LIST_STYLE, children: props.rows.map((row) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { role: "list", "data-testid": "ticket-list", style: LIST_STYLE, children: props.rows.map((row) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
       TicketRow,
       {
         row,
@@ -32604,7 +32920,7 @@ ${String(target.number)}`;
     const availability = worktreeAvailability(ticket, props.backend, props.workspaceRoot, t);
     const hierarchy = props.layout === "hierarchy";
     const indent = hierarchy ? props.row.depth * INDENT_STEP : 0;
-    return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
       "div",
       {
         role: "listitem",
@@ -32613,7 +32929,7 @@ ${String(target.number)}`;
         "data-parent-outside": hierarchy && props.row.parentOutsideView ? "true" : void 0,
         style: indent === 0 ? void 0 : { paddingLeft: indent },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
             "div",
             {
               "data-hover": "card",
@@ -32622,8 +32938,8 @@ ${String(target.number)}`;
               },
               style: { ...CARD_ROW_STYLE, ...props.focused ? CARD_FOCUSED_STYLE : void 0 },
               children: [
-                props.reserveCollapseSlot ? /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: CARD_MAIN_STYLE, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+                props.reserveCollapseSlot ? /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: CARD_MAIN_STYLE, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
                     CollapseControl,
                     {
                       row: props.row,
@@ -32632,7 +32948,7 @@ ${String(target.number)}`;
                       }
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
                     RowContent,
                     {
                       ticket,
@@ -32648,7 +32964,7 @@ ${String(target.number)}`;
                       }
                     }
                   )
-                ] }) : /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+                ] }) : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
                   RowContent,
                   {
                     ticket,
@@ -32664,8 +32980,8 @@ ${String(target.number)}`;
                     }
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: ACTION_COLUMN_STYLE, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: ACTION_COLUMN_STYLE, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
                     SkillActionBadge,
                     {
                       ticket,
@@ -32674,7 +32990,7 @@ ${String(target.number)}`;
                       style: CARD_ACTION_BADGE_STYLE
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
                     WorktreeCreateButton,
                     {
                       availability,
@@ -32687,7 +33003,7 @@ ${String(target.number)}`;
               ]
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
             WorktreeOutcome,
             {
               error: worktree.error,
@@ -32696,7 +33012,7 @@ ${String(target.number)}`;
               compact: true
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
             CopyFailure,
             {
               copy: link.copy,
@@ -32710,9 +33026,9 @@ ${String(target.number)}`;
     );
   }
   function RowContent(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: CARD_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: CARD_TITLE_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: CARD_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: CARD_TITLE_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
           TicketRef,
           {
             ticket: props.ticket,
@@ -32721,7 +33037,7 @@ ${String(target.number)}`;
             onCopy: props.onCopy
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
           "span",
           {
             role: "button",
@@ -32739,14 +33055,14 @@ ${String(target.number)}`;
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(MetaRow, { ticket: props.ticket, now: props.now, row: props.row, hierarchy: props.hierarchy })
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(MetaRow, { ticket: props.ticket, now: props.now, row: props.row, hierarchy: props.hierarchy })
     ] });
   }
   function TicketRef(props) {
     const t = useMessages();
     const url = props.ticket.url;
     if (url === void 0) {
-      return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
         "span",
         {
           "data-testid": "ticket-ref",
@@ -32757,8 +33073,8 @@ ${String(target.number)}`;
       );
     }
     const copied = props.copy.status === "copied";
-    return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
         "button",
         {
           type: "button",
@@ -32775,14 +33091,14 @@ ${String(target.number)}`;
           children: copied ? t("common.copied") : props.display.text
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { role: "status", "data-testid": "ticket-ref-copied", style: VISUALLY_HIDDEN_STYLE, children: copied ? t("tickets.refCopiedNotice", { ref: props.ticket.ref }) : "" })
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { role: "status", "data-testid": "ticket-ref-copied", style: VISUALLY_HIDDEN_STYLE, children: copied ? t("tickets.refCopiedNotice", { ref: props.ticket.ref }) : "" })
     ] });
   }
   function CollapseControl(props) {
     const t = useMessages();
-    if (!props.row.hasChildren) return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { "data-testid": "ticket-collapse-spacer", "aria-hidden": "true", style: COLLAPSE_SPACER_STYLE });
+    if (!props.row.hasChildren) return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "ticket-collapse-spacer", "aria-hidden": "true", style: COLLAPSE_SPACER_STYLE });
     const label = props.row.expanded ? t("tickets.collapse") : t("tickets.expand");
-    return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
       "button",
       {
         type: "button",
@@ -32815,14 +33131,14 @@ ${String(target.number)}`;
     const { shown, hidden } = pickRowLabels(extra, MAX_EXTRA_LABELS);
     const parent = ticket.parent;
     const parentDisplay = parent === void 0 ? void 0 : clipRef(parent);
-    return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: CARD_META_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: STATUS_BADGES[ticket.status], children: [
-        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: STATUS_DOT_STYLE }),
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: CARD_META_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: STATUS_BADGES[ticket.status], children: [
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: STATUS_DOT_STYLE }),
         t(STATUS_LABEL_KEYS[ticket.status])
       ] }),
-      ticket.category === null ? null : /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: CATEGORY_BADGES[ticket.category], children: ticket.category }),
-      props.hierarchy && props.row.hasChildren ? /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { "data-testid": "ticket-children", style: LABEL_BADGE_STYLE, children: t("tickets.childCount", { count: props.row.descendantCount }) }) : null,
-      props.hierarchy && props.row.parentOutsideView && parentDisplay !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+      ticket.category === null ? null : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: CATEGORY_BADGES[ticket.category], children: ticket.category }),
+      props.hierarchy && props.row.hasChildren ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "ticket-children", style: LABEL_BADGE_STYLE, children: t("tickets.childCount", { count: props.row.descendantCount }) }) : null,
+      props.hierarchy && props.row.parentOutsideView && parentDisplay !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
         "span",
         {
           "data-testid": "ticket-parent",
@@ -32831,12 +33147,12 @@ ${String(target.number)}`;
           children: t("tickets.parentOutside", { parent: parentDisplay.text })
         }
       ) : null,
-      shown.map((label) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { "data-testid": "ticket-label", style: LABEL_BADGE_STYLE, children: label }, label)),
-      hidden > 0 ? /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { "data-testid": "ticket-label-more", style: LABEL_BADGE_STYLE, children: [
+      shown.map((label) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "ticket-label", style: LABEL_BADGE_STYLE, children: label }, label)),
+      hidden > 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { "data-testid": "ticket-label-more", style: LABEL_BADGE_STYLE, children: [
         "+",
         String(hidden)
       ] }) : null,
-      ticket.author === null ? null : /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+      ticket.author === null ? null : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
         AuthorMeta,
         {
           author: ticket.author,
@@ -32853,10 +33169,10 @@ ${String(target.number)}`;
     const name = authorName(author);
     const full = authorTitle(author, t);
     const age = formatRelativeTime(props.createdAt, props.now, t);
-    return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_jsx_runtime21.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(UserAvatar, { user: author, role: "creator", size: 16, testId: "ticket-avatar" }),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { "data-testid": "ticket-author", title: full, style: AUTHOR_NAME_STYLE, children: name }),
-      age.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(UserAvatar, { user: author, role: "creator", size: 16, testId: "ticket-avatar" }),
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "ticket-author", title: full, style: AUTHOR_NAME_STYLE, children: name }),
+      age.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
         "span",
         {
           "data-testid": "ticket-age",
@@ -33122,7 +33438,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/view-preference.ts
-  var React28 = __toESM(require_react(), 1);
+  var React30 = __toESM(require_react(), 1);
   var DEFAULT_VIEW = {
     filter: "open",
     sortKey: "status",
@@ -33265,11 +33581,11 @@ ${String(target.number)}`;
     return typeof value === "string" && Object.hasOwn(LAYOUTS, value);
   }
   function useViewPreference(workspaceRoot, snapshot) {
-    const store = React28.useMemo(resolvePreferenceStore, []);
+    const store = React30.useMemo(resolvePreferenceStore, []);
     const key = viewPreferenceKey(snapshot, workspaceRoot);
-    const [preference, setPreference] = React28.useState(DEFAULT_VIEW);
-    const generation = React28.useRef(0);
-    React28.useEffect(() => {
+    const [preference, setPreference] = React30.useState(DEFAULT_VIEW);
+    const generation = React30.useRef(0);
+    React30.useEffect(() => {
       const current = generation.current + 1;
       generation.current = current;
       if (key === void 0 || workspaceRoot === void 0) {
@@ -33285,7 +33601,7 @@ ${String(target.number)}`;
         active = false;
       };
     }, [store, key, workspaceRoot]);
-    const apply = React28.useCallback(
+    const apply = React30.useCallback(
       (next) => {
         generation.current += 1;
         setPreference(next);
@@ -33330,7 +33646,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/tickets-view.tsx
-  var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
   var SECONDARY_BUTTON_STYLE = {
     ...BUTTON_STYLE,
     padding: "2px 6px",
@@ -33354,7 +33670,7 @@ ${String(target.number)}`;
   function TicketsView(props) {
     const t = useMessages();
     const clock = props.now ?? Date.now;
-    const { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore } = useSnapshotRequest(props.client, props.workspaceRoot, props.refreshToken ?? 0);
+    const { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore } = props.request;
     const { preference, setFilter, toggleSort, togglePerson, clearPeople, setLayout } = useViewPreference(props.workspaceRoot, snapshot);
     const nowValue = useNow(clock);
     const actions = useTicketActions(props.workspaceRoot, props.copy, props.client);
@@ -33377,12 +33693,12 @@ ${String(target.number)}`;
     const focused = focusedTicket.ref;
     const hierarchy = snapshot === null ? { available: false, hint: t("tickets.layout.unavailable") } : hierarchyAvailability(snapshot.backend, snapshot.hierarchy, t);
     const layout = preference.layout === "hierarchy" && hierarchy.available ? "hierarchy" : "flat";
-    const [collapsed, setCollapsed] = React29.useState(/* @__PURE__ */ new Set());
-    const expandedFocusToken = React29.useRef(0);
-    React29.useEffect(() => {
+    const [collapsed, setCollapsed] = React31.useState(/* @__PURE__ */ new Set());
+    const expandedFocusToken = React31.useRef(0);
+    React31.useEffect(() => {
       setCollapsed(/* @__PURE__ */ new Set());
     }, [props.workspaceRoot]);
-    React29.useEffect(() => {
+    React31.useEffect(() => {
       if (focusedTicket.ref === null || expandedFocusToken.current === focusedTicket.token) return;
       if (!tickets.some((ticket) => ticket.ref === focusedTicket.ref)) return;
       expandedFocusToken.current = focusedTicket.token;
@@ -33397,13 +33713,13 @@ ${String(target.number)}`;
         return next;
       });
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
       "div",
       {
         "data-testid": "tickets-view",
         style: { display: "flex", flexDirection: "column", flex: 1, minHeight: 0 },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
             Header,
             {
               snapshot,
@@ -33415,7 +33731,7 @@ ${String(target.number)}`;
               onRefreshFull: refreshFull
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
             ActionBar,
             {
               counts: snapshot === null ? null : counts,
@@ -33427,9 +33743,9 @@ ${String(target.number)}`;
               }
             }
           ),
-          error !== null ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(ErrorBanner, { error, onOpenEnvCheck: props.onOpenEnvCheck }) : null,
-          snapshot !== null ? /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          error !== null ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(ErrorBanner, { error, onOpenEnvCheck: props.onOpenEnvCheck }) : null,
+          snapshot !== null ? /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
               Toolbar,
               {
                 filter: preference.filter,
@@ -33439,7 +33755,7 @@ ${String(target.number)}`;
                 onSort: toggleSort
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
               PeopleFilterRow,
               {
                 viewer: snapshot.viewer,
@@ -33449,8 +33765,8 @@ ${String(target.number)}`;
                 onClear: clearPeople
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(HierarchyNotice, { snapshot, preference, layout }),
-            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(HierarchyNotice, { snapshot, preference, layout }),
+            /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
               TicketRows,
               {
                 snapshot,
@@ -33472,23 +33788,23 @@ ${String(target.number)}`;
                 onLayout: setLayout
               }
             )
-          ] }) : phase === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { "data-testid": "loading", style: EMPTY_STYLE, children: t("common.loadingTickets") }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(PromptCopyArea, { state: actions.copyState, onDismiss: actions.dismiss })
+          ] }) : phase === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { "data-testid": "loading", style: EMPTY_STYLE, children: t("common.loadingTickets") }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(PromptCopyArea, { state: actions.copyState, onDismiss: actions.dismiss })
         ]
       }
     );
   }
   function useFocusedTicket(focusRef, onFocusHandled, workspaceRoot) {
-    const [focused, setFocused] = React29.useState({ ref: null, token: 0 });
-    const token = React29.useRef(0);
-    React29.useEffect(() => {
+    const [focused, setFocused] = React31.useState({ ref: null, token: 0 });
+    const token = React31.useRef(0);
+    React31.useEffect(() => {
       if (focusRef === null || focusRef === void 0) return;
       token.current += 1;
       setFocused({ ref: focusRef, token: token.current });
       onFocusHandled?.();
     }, [focusRef, onFocusHandled]);
-    const previousRoot = React29.useRef(workspaceRoot);
-    React29.useEffect(() => {
+    const previousRoot = React31.useRef(workspaceRoot);
+    React31.useEffect(() => {
       if (previousRoot.current === workspaceRoot) return;
       previousRoot.current = workspaceRoot;
       setFocused((current) => current.ref === null ? current : { ref: null, token: token.current });
@@ -33498,13 +33814,13 @@ ${String(target.number)}`;
   function TicketRows(props) {
     const t = useMessages();
     const remaining = Math.max(0, props.snapshot.total - props.snapshot.loaded);
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: LOADED_ROW_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "loaded-total", style: LOADED_STYLE, children: t("tickets.loadedTotal", {
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: LOADED_ROW_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "loaded-total", style: LOADED_STYLE, children: t("tickets.loadedTotal", {
           loaded: props.snapshot.loaded,
           total: props.snapshot.total
         }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
           LayoutToggle,
           {
             layout: props.layout,
@@ -33513,7 +33829,7 @@ ${String(target.number)}`;
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         TicketList,
         {
           rows: props.rows,
@@ -33531,7 +33847,7 @@ ${String(target.number)}`;
           onToggleCollapse: props.onToggleCollapse
         }
       ),
-      props.snapshot.hasMore ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: LOAD_MORE_ROW_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      props.snapshot.hasMore ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: LOAD_MORE_ROW_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         "button",
         {
           type: "button",
@@ -33548,7 +33864,7 @@ ${String(target.number)}`;
   }
   function SourceBadge2(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
       "span",
       {
         "data-testid": "snapshot-source",
@@ -33562,11 +33878,11 @@ ${String(target.number)}`;
   }
   function Header(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("header", { style: HEADER_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, minWidth: 0 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: REPO_CHIP_STYLE, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(FolderIcon, {}),
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("header", { style: HEADER_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, minWidth: 0 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: REPO_CHIP_STYLE, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(FolderIcon, {}),
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
             "span",
             {
               "data-testid": "repo-name",
@@ -33576,9 +33892,9 @@ ${String(target.number)}`;
             }
           )
         ] }),
-        props.snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "backend-badge", style: BACKEND_BADGE_STYLE, children: backendLabel(props.snapshot.backend, t) }),
-        props.snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(SourceBadge2, { source: props.snapshot.source }),
-        props.snapshot?.backend === "gitea" && props.snapshot.repositoryHost !== null ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+        props.snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "backend-badge", style: BACKEND_BADGE_STYLE, children: backendLabel(props.snapshot.backend, t) }),
+        props.snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SourceBadge2, { source: props.snapshot.source }),
+        props.snapshot?.backend === "gitea" && props.snapshot.repositoryHost !== null ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
           "span",
           {
             "data-testid": "repo-host",
@@ -33588,10 +33904,10 @@ ${String(target.number)}`;
           }
         ) : null
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4, flex: "none" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "snapshot-age", style: AGE_STYLE, children: props.snapshot === null ? t("common.noSnapshot") : formatRelativeTime(props.snapshot.fetchedAt, props.now, t) }),
-        props.notice === null ? null : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "refresh-error", title: props.notice, style: REFRESH_ERROR_STYLE2, children: props.notice }),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4, flex: "none" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "snapshot-age", style: AGE_STYLE, children: props.snapshot === null ? t("common.noSnapshot") : formatRelativeTime(props.snapshot.fetchedAt, props.now, t) }),
+        props.notice === null ? null : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "refresh-error", title: props.notice, style: REFRESH_ERROR_STYLE2, children: props.notice }),
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
           "button",
           {
             type: "button",
@@ -33601,12 +33917,12 @@ ${String(target.number)}`;
             onClick: props.onRefresh,
             style: { ...REFRESH_BUTTON_STYLE, opacity: props.busy ? 0.6 : 1 },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(RefreshIcon, {}),
+              /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(RefreshIcon, {}),
               props.busy ? t("common.refreshBusy") : t("common.refresh")
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
           "button",
           {
             type: "button",
@@ -33623,10 +33939,10 @@ ${String(target.number)}`;
   }
   function ActionBar(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: ACTION_BAR_STYLE, children: [
-      props.counts === null ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", {}) : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(StatsRow, { counts: props.counts }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { display: "flex", gap: 6, marginLeft: "auto" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: ACTION_BAR_STYLE, children: [
+      props.counts === null ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", {}) : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(StatsRow, { counts: props.counts }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { display: "flex", gap: 6, marginLeft: "auto" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
           IntakeAction,
           {
             testId: "new-feature",
@@ -33638,7 +33954,7 @@ ${String(target.number)}`;
             onCopy: props.onNewFeature
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
           IntakeAction,
           {
             testId: "new-bug",
@@ -33654,7 +33970,7 @@ ${String(target.number)}`;
     ] });
   }
   function IntakeAction(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
       "button",
       {
         type: "button",
@@ -33665,7 +33981,7 @@ ${String(target.number)}`;
         onClick: props.onCopy,
         style: { ...props.style, flex: "none" },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(PlusIcon, {}),
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(PlusIcon, {}),
           props.label
         ]
       }
@@ -33673,8 +33989,8 @@ ${String(target.number)}`;
   }
   function StatsRow(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: STATS_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: STATS_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         Stat,
         {
           testId: "stat-ready",
@@ -33683,7 +33999,7 @@ ${String(target.number)}`;
           color: COLORS.success
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         Stat,
         {
           testId: "stat-blocked",
@@ -33692,7 +34008,7 @@ ${String(target.number)}`;
           color: COLORS.warn
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         Stat,
         {
           testId: "stat-open",
@@ -33701,7 +34017,7 @@ ${String(target.number)}`;
           color: COLORS.secondary
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         Stat,
         {
           testId: "stat-closed",
@@ -33713,30 +34029,30 @@ ${String(target.number)}`;
     ] });
   }
   function Stat(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { "data-testid": props.testId, style: STAT_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { "data-testid": props.testId, style: STAT_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         "span",
         {
           "aria-hidden": "true",
           style: { width: 7, height: 7, borderRadius: "50%", background: props.color, flex: "none" }
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("strong", { style: STAT_VALUE_STYLE, children: props.value }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { children: props.label })
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("strong", { style: STAT_VALUE_STYLE, children: props.value }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { children: props.label })
     ] });
   }
   function Toolbar(props) {
     const t = useMessages();
     const ascending = props.direction === "asc";
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: TOOLBAR_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: TOOLBAR_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         "div",
         {
           role: "group",
           "aria-label": t("tickets.filterGroup"),
           "data-scroll-x": "",
           style: FILTER_SEGMENTED_STYLE,
-          children: FILTERS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          children: FILTERS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
             Chip,
             {
               testId: `filter-${item}`,
@@ -33750,8 +34066,8 @@ ${String(target.number)}`;
           ))
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { role: "group", "aria-label": t("tickets.sortGroup"), style: SORT_GROUP_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { role: "group", "aria-label": t("tickets.sortGroup"), style: SORT_GROUP_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
           "select",
           {
             "data-testid": "sort-key",
@@ -33761,10 +34077,10 @@ ${String(target.number)}`;
               props.onSort(event.target.value);
             },
             style: SORT_SELECT_STYLE,
-            children: SORT_OPTIONS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("option", { value: item, children: t(SORT_LABELS[item]) }, item))
+            children: SORT_OPTIONS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("option", { value: item, children: t(SORT_LABELS[item]) }, item))
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
           "button",
           {
             type: "button",
@@ -33797,7 +34113,7 @@ ${String(target.number)}`;
     title: "tickets.sort.title"
   };
   function Chip(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
       "button",
       {
         type: "button",
@@ -33819,7 +34135,7 @@ ${String(target.number)}`;
     const t = useMessages();
     const anyActive = props.people.assignedToMe || props.people.createdByMe;
     const viewerHint = t("tickets.people.viewerHint", { login: viewer });
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
       "div",
       {
         role: "group",
@@ -33827,8 +34143,8 @@ ${String(target.number)}`;
         "data-testid": "people-filter",
         style: PEOPLE_ROW_STYLE,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "aria-hidden": "true", style: { color: COLORS.tertiary, display: "inline-flex" }, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(PeopleIcon, {}) }),
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "aria-hidden": "true", style: { color: COLORS.tertiary, display: "inline-flex" }, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(PeopleIcon, {}) }),
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
             PersonChip,
             {
               testId: "people-assigned",
@@ -33841,7 +34157,7 @@ ${String(target.number)}`;
               }
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
             PersonChip,
             {
               testId: "people-created",
@@ -33854,7 +34170,7 @@ ${String(target.number)}`;
               }
             }
           ),
-          anyActive ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          anyActive ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
             "button",
             {
               type: "button",
@@ -33865,13 +34181,13 @@ ${String(target.number)}`;
               children: t("tickets.people.clear")
             }
           ) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "people-viewer", title: viewerHint, style: PEOPLE_VIEWER_STYLE, children: t("tickets.people.viewer", { login: viewer }) })
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "people-viewer", title: viewerHint, style: PEOPLE_VIEWER_STYLE, children: t("tickets.people.viewer", { login: viewer }) })
         ]
       }
     );
   }
   function PersonChip(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
       "button",
       {
         type: "button",
@@ -33883,7 +34199,7 @@ ${String(target.number)}`;
         style: { ...PEOPLE_CHIP_STYLE, ...props.active ? PEOPLE_CHIP_ACTIVE_STYLE : void 0 },
         children: [
           props.label,
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
             "span",
             {
               style: {
@@ -33899,32 +34215,33 @@ ${String(target.number)}`;
   }
 
   // src/panel/task-panel.tsx
-  var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
   var NO_CAPABILITIES = () => [];
   function TaskPanel(props) {
-    const [view, setView] = React30.useState("tickets");
-    const [focusBackend, setFocusBackend] = React30.useState(null);
-    const [openTicket, setOpenTicket] = React30.useState(null);
-    const [focusTicket, setFocusTicket] = React30.useState(null);
-    const previousView = React30.useRef("tickets");
+    const [view, setView] = React32.useState("tickets");
+    const [focusBackend, setFocusBackend] = React32.useState(null);
+    const navigation2 = useDetailNavigation(props.workspaceRoot);
+    const [focusTicket, setFocusTicket] = React32.useState(null);
+    const previousView = React32.useRef("tickets");
     const clientCapabilities = props.clientCapabilities ?? NO_CAPABILITIES;
-    const open = openTicket !== null && openTicket.workspaceRoot === props.workspaceRoot ? openTicket : null;
+    const request = useSnapshotRequest(props.client, props.workspaceRoot, props.refreshToken ?? 0);
+    const open = navigation2.open;
     const openHelp = () => {
       if (view !== "help") previousView.current = view;
       setView("help");
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { "data-testid": "task-panel", "data-mattwf-panel": "", style: PANEL_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("style", { children: PANEL_SHEET }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { "data-testid": "task-panel", "data-mattwf-panel": "", style: PANEL_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("style", { children: PANEL_SHEET }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         ViewTabs,
         {
           view,
           onOpenTickets: () => {
             setView("tickets");
-            setOpenTicket(null);
+            navigation2.close();
           },
           onOpenOverview: () => {
-            setOpenTicket(null);
+            navigation2.close();
             setView("overview");
           },
           onOpenEnvCheck: () => {
@@ -33934,12 +34251,14 @@ ${String(target.number)}`;
           onOpenHelp: openHelp
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         PanelContent,
         {
           panel: props,
+          request,
           view,
           open,
+          backRef: navigation2.backRef,
           focusBackend,
           focusTicket,
           clientCapabilities,
@@ -33948,18 +34267,18 @@ ${String(target.number)}`;
             setView("env");
           },
           onOpenTicket: (ticket) => {
-            if (props.workspaceRoot === void 0) return;
-            setOpenTicket({ workspaceRoot: props.workspaceRoot, ticket });
+            navigation2.openFromList(ticket);
+          },
+          onOpenBlocker: (ref) => {
+            navigation2.openBlocker(ref, request.snapshot);
           },
           onFocusHandled: () => {
             setFocusTicket(null);
           },
-          onCloseDetail: () => {
-            setOpenTicket(null);
-          },
+          onBackDetail: navigation2.back,
           onLocateTicket: (ref) => {
             setFocusTicket(ref);
-            setOpenTicket(null);
+            navigation2.close();
             setView("tickets");
           },
           onBack: () => {
@@ -33972,38 +34291,39 @@ ${String(target.number)}`;
   function PanelContent(props) {
     const panel = props.panel;
     if (props.view === "tickets") {
-      return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         TicketsPane,
         {
           client: panel.client,
+          request: props.request,
           workspaceRoot: panel.workspaceRoot,
           copy: panel.copy,
           now: panel.now,
-          refreshToken: panel.refreshToken,
           open: props.open,
+          backRef: props.backRef,
           focusTicket: props.focusTicket,
           onOpenEnvCheck: props.onOpenEnvCheck,
           onOpenTicket: props.onOpenTicket,
+          onOpenBlocker: props.onOpenBlocker,
           onFocusHandled: props.onFocusHandled,
-          onCloseDetail: props.onCloseDetail
+          onBackDetail: props.onBackDetail
         }
       );
     }
     if (props.view === "overview") {
-      return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         OverviewPane,
         {
-          client: panel.client,
+          request: props.request,
           workspaceRoot: panel.workspaceRoot,
           now: panel.now,
-          refreshToken: panel.refreshToken,
           onOpenTicket: props.onLocateTicket,
           onOpenEnvCheck: props.onOpenEnvCheck
         }
       );
     }
     if (props.view === "env") {
-      return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         EnvCheckView,
         {
           client: panel.client,
@@ -34014,16 +34334,15 @@ ${String(target.number)}`;
         }
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(HelpView, { onBack: props.onBack });
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(HelpView, { onBack: props.onBack });
   }
   function OverviewPane(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
       OverviewView,
       {
-        client: props.client,
+        request: props.request,
         workspaceRoot: props.workspaceRoot,
         now: props.now,
-        refreshToken: props.refreshToken,
         onOpenTicket: props.onOpenTicket,
         onOpenEnvCheck: props.onOpenEnvCheck
       }
@@ -34031,26 +34350,34 @@ ${String(target.number)}`;
   }
   function TicketsPane(props) {
     if (props.workspaceRoot !== void 0 && props.open !== null) {
-      return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      const open = props.open;
+      const snapshot = props.request.snapshot;
+      const current = findSnapshotTicket(snapshot?.tickets, open.target.ref) ?? open.target.ticket;
+      return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         TicketDetailView,
         {
           client: props.client,
           workspaceRoot: props.workspaceRoot,
-          ticket: props.open.ticket,
+          target: { ...open.target, ticket: current },
+          snapshotTickets: snapshot?.tickets ?? [],
           copy: props.copy,
-          onBack: props.onCloseDetail,
+          backRef: props.backRef,
+          onBack: props.onBackDetail,
+          onOpenBlocker: props.onOpenBlocker,
+          onSnapshot: props.request.apply,
           onOpenEnvCheck: props.onOpenEnvCheck
-        }
+        },
+        open.target.ref
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
       TicketsView,
       {
         client: props.client,
+        request: props.request,
         workspaceRoot: props.workspaceRoot,
         copy: props.copy,
         now: props.now,
-        refreshToken: props.refreshToken,
         focusRef: props.focusTicket,
         onFocusHandled: props.onFocusHandled,
         onOpenEnvCheck: props.onOpenEnvCheck,
@@ -34060,9 +34387,9 @@ ${String(target.number)}`;
   }
   function ViewTabs(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: VIEW_BAR_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { role: "group", "aria-label": t("common.viewGroup"), style: VIEW_TABS_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: VIEW_BAR_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { role: "group", "aria-label": t("common.viewGroup"), style: VIEW_TABS_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
           ViewChip,
           {
             testId: "view-tickets",
@@ -34071,7 +34398,7 @@ ${String(target.number)}`;
             onClick: props.onOpenTickets
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
           ViewChip,
           {
             testId: "view-overview",
@@ -34080,7 +34407,7 @@ ${String(target.number)}`;
             onClick: props.onOpenOverview
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
           ViewChip,
           {
             testId: "view-env",
@@ -34090,9 +34417,9 @@ ${String(target.number)}`;
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: VIEW_ACTIONS_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(LanguageSelect, {}),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(TipsButton, { label: t("view.help"), onClick: props.onOpenHelp })
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: VIEW_ACTIONS_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(LanguageSelect, {}),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(TipsButton, { label: t("view.help"), onClick: props.onOpenHelp })
       ] })
     ] });
   }
@@ -34106,7 +34433,7 @@ ${String(target.number)}`;
     const t = useMessages();
     const { setting, setSetting, locale } = useLocale();
     const languageName = locale === "zh-CN" ? t("language.zhCN") : t("language.en");
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
       "select",
       {
         "data-testid": "language-select",
@@ -34118,9 +34445,9 @@ ${String(target.number)}`;
         },
         style: LANGUAGE_SELECT_STYLE,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("option", { value: "auto", children: t("language.autoEffective", { language: languageName }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("option", { value: "zh-CN", children: t("language.zhCN") }),
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("option", { value: "en", children: t("language.en") })
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("option", { value: "auto", children: t("language.autoEffective", { language: languageName }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("option", { value: "zh-CN", children: t("language.zhCN") }),
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("option", { value: "en", children: t("language.en") })
         ]
       }
     );
@@ -34141,7 +34468,7 @@ ${String(target.number)}`;
     fontSize: 12
   };
   function ViewChip(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
       "button",
       {
         type: "button",
@@ -34155,7 +34482,7 @@ ${String(target.number)}`;
     );
   }
   function TipsButton(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
       "button",
       {
         type: "button",
@@ -34164,12 +34491,12 @@ ${String(target.number)}`;
         title: props.label,
         onClick: props.onClick,
         style: ICON_BUTTON_STYLE,
-        children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(TipsIcon, {})
+        children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(TipsIcon, {})
       }
     );
   }
   function TipsIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
       "svg",
       {
         width: 14,
@@ -34182,17 +34509,17 @@ ${String(target.number)}`;
         strokeLinecap: "round",
         strokeLinejoin: "round",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("path", { d: "M8 1.8a4.1 4.1 0 0 0-2.5 7.4c.3.2.5.5.5.9v.4h4v-.4c0-.4.2-.7.5-.9A4.1 4.1 0 0 0 8 1.8Z" }),
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("path", { d: "M6.4 12.6h3.2" }),
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("path", { d: "M7.2 14.4h1.6" })
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("path", { d: "M8 1.8a4.1 4.1 0 0 0-2.5 7.4c.3.2.5.5.5.9v.4h4v-.4c0-.4.2-.7.5-.9A4.1 4.1 0 0 0 8 1.8Z" }),
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("path", { d: "M6.4 12.6h3.2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("path", { d: "M7.2 14.4h1.6" })
         ]
       }
     );
   }
 
   // src/panel/workspace-picker.tsx
-  var React31 = __toESM(require_react(), 1);
-  var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
+  var React33 = __toESM(require_react(), 1);
+  var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
   var PICKER_STYLE = {
     display: "flex",
     flexDirection: "column",
@@ -34248,9 +34575,9 @@ ${String(target.number)}`;
   };
   function WorkspacePicker(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { "data-testid": "workspace-picker", style: PICKER_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { style: PICKER_TITLE_STYLE, children: t("workspace.pickerTitle") }),
-      props.candidates.map((candidate) => /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { "data-testid": "workspace-picker", style: PICKER_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: PICKER_TITLE_STYLE, children: t("workspace.pickerTitle") }),
+      props.candidates.map((candidate) => /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
         "button",
         {
           type: "button",
@@ -34262,11 +34589,11 @@ ${String(target.number)}`;
           },
           style: PICKER_BUTTON_STYLE,
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("span", { style: PICKER_ROW_STYLE, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { style: PICKER_LABEL_STYLE, children: candidateLabel(candidate) }),
-              /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { "data-testid": "workspace-candidate-use", style: PICKER_USE_STYLE, children: t("workspace.use") })
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: PICKER_ROW_STYLE, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: PICKER_LABEL_STYLE, children: candidateLabel(candidate) }),
+              /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { "data-testid": "workspace-candidate-use", style: PICKER_USE_STYLE, children: t("workspace.use") })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { style: PICKER_PATH_STYLE, children: candidate.path })
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: PICKER_PATH_STYLE, children: candidate.path })
           ]
         },
         candidate.id
@@ -34278,7 +34605,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/main.tsx
-  var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
   var hostState = {
     candidates: null,
     workspaceRoot: "",
@@ -34345,10 +34672,10 @@ ${String(target.number)}`;
     });
   }
   function App(props) {
-    const host = React32.useSyncExternalStore(subscribeHost, getHostState);
-    const [probe, setProbe] = React32.useState(null);
-    const [workerReachable, setWorkerReachable] = React32.useState(false);
-    React32.useEffect(() => {
+    const host = React34.useSyncExternalStore(subscribeHost, getHostState);
+    const [probe, setProbe] = React34.useState(null);
+    const [workerReachable, setWorkerReachable] = React34.useState(false);
+    React34.useEffect(() => {
       let active = true;
       void probePanelCapabilities().then((next) => {
         if (active) setProbe(next);
@@ -34357,7 +34684,7 @@ ${String(target.number)}`;
         active = false;
       };
     }, []);
-    React32.useEffect(() => {
+    React34.useEffect(() => {
       let active = true;
       void props.client.cache("").then(
         () => {
@@ -34371,22 +34698,22 @@ ${String(target.number)}`;
         active = false;
       };
     }, [props.client]);
-    const capabilities = React32.useMemo(
+    const capabilities = React34.useMemo(
       () => probe === null ? [] : panelCapabilityDiagnostics(probe, workerReachable),
       [probe, workerReachable]
     );
-    const loadAvatar = React32.useMemo(
+    const loadAvatar = React34.useMemo(
       () => createAvatarSourceLoader(props.client),
       [props.client]
     );
     const candidates = host.candidates;
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(
       "div",
       {
         "data-mattwf-panel": "",
         style: { display: "flex", flexDirection: "column", height: "100%", minHeight: 0 },
         children: [
-          candidates === null || candidates.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+          candidates === null || candidates.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
             WorkspacePicker,
             {
               candidates,
@@ -34395,7 +34722,7 @@ ${String(target.number)}`;
               }
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(AvatarSourceProvider, { loader: loadAvatar, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(AvatarSourceProvider, { loader: loadAvatar, children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
             TaskPanel,
             {
               client: props.client,
@@ -34429,7 +34756,7 @@ ${String(target.number)}`;
   injectTheme();
   void syncWorkspaceClaim(client);
   (0, import_client.createRoot)(container).render(
-    /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(LocaleProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(App, { client }) })
+    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(LocaleProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(App, { client }) })
   );
 })();
 /*! Bundled license information:

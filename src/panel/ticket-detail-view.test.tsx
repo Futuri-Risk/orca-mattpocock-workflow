@@ -56,13 +56,18 @@ function view(
   client: PanelClient,
   overrides: Partial<TicketDetailViewProps> = {},
 ): ReactElement {
+  const ticket = makeTicket()
   return (
     <TicketDetailView
       client={client}
       workspaceRoot="/ws"
-      ticket={makeTicket()}
+      target={{ ref: ticket.ref, number: ticket.number, ticket }}
+      snapshotTickets={[ticket]}
       copy={COPY}
+      backRef={null}
       onBack={() => undefined}
+      onOpenBlocker={() => undefined}
+      onSnapshot={() => undefined}
       onOpenEnvCheck={() => undefined}
       {...overrides}
     />
@@ -257,10 +262,16 @@ describe('工单详情刷新按钮', () => {
       .mockReturnValueOnce(stale.promise)
       .mockResolvedValueOnce(ok(makeDetail({ ref: '#19', number: 19, title: '新票' })))
     const client = clientWith({ getDetail })
-    await render(view(client, { ticket: makeTicket({ ref: '#18', number: 18, title: '旧票' }) }))
+    const first = makeTicket({ ref: '#18', number: 18, title: '旧票' })
+    await render(
+      view(client, { target: { ref: first.ref, number: first.number, ticket: first } }),
+    )
 
     await click(button('detail-refresh'))
-    await render(view(client, { ticket: makeTicket({ ref: '#19', number: 19, title: '新票' }) }))
+    const second = makeTicket({ ref: '#19', number: 19, title: '新票' })
+    await render(
+      view(client, { target: { ref: second.ref, number: second.number, ticket: second } }),
+    )
     expect(mustFind('detail-title').textContent).toBe('新票')
 
     await settleWith(() => {

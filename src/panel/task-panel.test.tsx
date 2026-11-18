@@ -3,7 +3,12 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { MESSAGES } from '../protocol/i18n.ts'
-import type { RpcResult, TicketDetail, WorkspaceSnapshot } from '../protocol/tracker.ts'
+import {
+  TICKET_DELETE_CONFIRMATION,
+  type RpcResult,
+  type TicketDetail,
+  type WorkspaceSnapshot,
+} from '../protocol/tracker.ts'
 import {
   click,
   find,
@@ -35,6 +40,7 @@ interface PanelClientOptions {
   readonly get: PanelClient['get']
   readonly getDetail: PanelClient['getDetail']
   readonly refresh: PanelClient['refresh']
+  readonly deleteTicket?: PanelClient['deleteTicket']
 }
 
 /** 只实现面板用例会走到的入口。 */
@@ -45,6 +51,24 @@ function clientWith(options: PanelClientOptions): PanelClient {
     loadMore: async () => ok(makeSnapshot()),
     resolveBlockers: async () => ok(makeSnapshot()),
   } as unknown as PanelClient
+}
+
+/** 按引用找列表行。 */
+function rowFor(ref: string): HTMLElement {
+  const row = [...document.querySelectorAll<HTMLElement>('[data-testid="ticket-row"]')].find(
+    (element) => element.getAttribute('data-ref') === ref,
+  )
+  if (row === undefined) throw new Error(`缺少 ${ref} 的工单行`)
+  return row
+}
+
+/** 把输入框改成指定值；绕开 React 对实例 value 的追踪。 */
+async function typeInto(input: HTMLInputElement, value: string): Promise<void> {
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+  await settleWith(() => {
+    setter?.call(input, value)
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  })
 }
 
 beforeEach(() => {
@@ -123,6 +147,61 @@ describe('任务面板的详情刷新', () => {
     expect(document.body.textContent).not.toContain('STALE 旧仓库')
     expect(document.body.textContent).toContain('B 票')
     expect(document.body.textContent).not.toContain('A 票')
+  })
+})
+
+describe('删除后的共享快照', () => {
+  it('删除工单后回到列表，已删除的行不再出现', async () => {
+    const doomed = makeTicket({ ref: '#18', number: 18, title: '要删的票' })
+    const kept = makeTicket({ ref: '#19', number: 19, title: '留下的票' })
+    const get = vi.fn<PanelClient['get']>(async () =>
+      ok(makeSnapshot({ tickets: [doomed, kept] })),
+    )
+    const getDetail = vi.fn<PanelClient['getDetail']>(async () =>
+      ok(
+        makeDetail({
+          ref: '#18',
+          number: 18,
+          title: '要删的票',
+          capabilities: {
+            labels: false,
+            assignees: false,
+            state: false,
+            link: false,
+            delete: true,
+          },
+        }),
+      ),
+    )
+    const refresh = vi.fn<PanelClient['refresh']>(async () =>
+      ok(makeSnapshot({ tickets: [kept] })),
+    )
+    const deleteTicket = vi.fn<PanelClient['deleteTicket']>(async () =>
+      ok({ deleted: true as const }),
+    )
+    await render(
+      <TaskPanel
+        client={clientWith({ get, getDetail, refresh, deleteTicket })}
+        workspaceRoot="/ws"
+        copy={COPY}
+      />,
+    )
+
+    await click(rowFor('#18'))
+    await click(mustFind('detail-more'))
+    await click(mustFind('detail-delete'))
+    await typeInto(
+      mustFind('delete-confirm-input') as HTMLInputElement,
+      TICKET_DELETE_CONFIRMATION,
+    )
+    await click(mustFind('delete-submit'))
+    await settle()
+
+    expect(deleteTicket).toHaveBeenCalledWith('/ws', '#18', 18)
+    expect(refresh).toHaveBeenCalledWith('/ws')
+    expect(find('ticket-detail')).toBeNull()
+    expect(rowFor('#19')).not.toBeNull()
+    expect(document.querySelector('[data-testid="ticket-row"][data-ref="#18"]')).toBeNull()
   })
 })
 

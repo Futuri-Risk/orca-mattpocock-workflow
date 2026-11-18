@@ -26,7 +26,7 @@ import { PromptCopyArea } from './prompt-copy.tsx'
 import { formatRelativeTime } from './relative-time.ts'
 import type { PanelClient } from './transport.ts'
 import { useNow } from './snapshot-age.ts'
-import { snapshotRefreshNotice, useSnapshotRequest } from './snapshot-request.ts'
+import { snapshotRefreshNotice, type SnapshotRequestState } from './snapshot-request.ts'
 import { useTicketActions } from './ticket-actions.ts'
 import { TicketList } from './ticket-list.tsx'
 import {
@@ -117,8 +117,8 @@ export interface TicketsViewProps {
   /** 面板的提示词复制端口。 */
   readonly copy: PromptCopy
   readonly now?: (() => number) | undefined
-  /** 外部推送的刷新信号：变了就重新读一次快照。 */
-  readonly refreshToken?: number | undefined
+  /** 面板层取到的快照：切视图、进详情都不重新拉，回到列表时筛选与数据原样保留。 */
+  readonly request: SnapshotRequestState
   /** 环境问题导致列表失败时，跳到环境检查视图并带上错误码定位后端。 */
   readonly onOpenEnvCheck: (code: ErrorCode) => void
   /** 点击工单行：打开这张票的详情，不做提示词复制。 */
@@ -134,7 +134,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
   const t = useMessages()
   const clock = props.now ?? Date.now
   const { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore } =
-    useSnapshotRequest(props.client, props.workspaceRoot, props.refreshToken ?? 0)
+    props.request
   const { preference, setFilter, toggleSort, togglePerson, clearPeople, setLayout } =
     useViewPreference(props.workspaceRoot, snapshot)
   const nowValue = useNow(clock)

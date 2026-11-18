@@ -385,6 +385,16 @@ const ZH_CN = {
   'detail.loading': '正在读取工单详情…',
   'detail.back': '返回列表',
   'detail.backHint': '返回列表（Esc）',
+  'detail.backTo': '返回 {ref}',
+  'detail.backToTitle': '返回 {ref}（Esc）',
+  'detail.blockers.title': '阻塞项',
+  'detail.blockers.expand': '展开查看阻塞项',
+  'detail.blockers.collapse': '收起阻塞项',
+  'detail.blockers.unloaded': '未加载',
+  'detail.blockers.unloadedTitle': '这张阻塞票不在当前列表快照里',
+  'detail.blockers.hint': '{hint}；{action}',
+  'detail.blockers.openTitle': '打开 {ref}：{title}',
+  'detail.blockers.toggle': '{label}：{hint}',
   'detail.openInBrowser': '在浏览器打开 {url}',
   'detail.createdAt': '创建于 {time}',
   'detail.updatedAt': '更新于 {time}',
@@ -961,6 +971,16 @@ const EN = {
   'detail.loading': 'Loading ticket details…',
   'detail.back': 'Back to list',
   'detail.backHint': 'Back to list (Esc)',
+  'detail.backTo': 'Back to {ref}',
+  'detail.backToTitle': 'Back to {ref} (Esc)',
+  'detail.blockers.title': 'Blocking tickets',
+  'detail.blockers.expand': 'Show blocking tickets',
+  'detail.blockers.collapse': 'Hide blocking tickets',
+  'detail.blockers.unloaded': 'Not loaded',
+  'detail.blockers.unloadedTitle': 'This blocking ticket is outside the current list snapshot',
+  'detail.blockers.hint': '{hint}; {action}',
+  'detail.blockers.openTitle': 'Open {ref}: {title}',
+  'detail.blockers.toggle': '{label}: {hint}',
   'detail.openInBrowser': 'Open {url} in the browser',
   'detail.createdAt': 'Created {time}',
   'detail.updatedAt': 'Updated {time}',
@@ -1271,6 +1291,11 @@ export interface MessageParams {
   'detail.createdAt': { readonly time: string }
   'detail.updatedAt': { readonly time: string }
   'detail.commentCount': { readonly n: number }
+  'detail.backTo': { readonly ref: string }
+  'detail.backToTitle': { readonly ref: string }
+  'detail.blockers.openTitle': { readonly ref: string; readonly title: string }
+  'detail.blockers.hint': { readonly hint: string; readonly action: string }
+  'detail.blockers.toggle': { readonly label: string; readonly hint: string }
   'detail.refreshFailed': { readonly detail: string }
   'detail.copyLinkWithUrl': { readonly url: string }
   'detail.removeLabel': { readonly value: string }

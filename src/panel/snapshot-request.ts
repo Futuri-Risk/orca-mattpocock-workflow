@@ -1,6 +1,6 @@
 /**
- * 两个视图共用的快照请求：首屏只等列表，阻塞信息由后台补齐。
- * 列表与概览都要在两阶段之间保持可用，这里只实现一次。
+ * 面板共用的快照请求：首屏只等列表，阻塞信息由后台补齐。
+ * 列表、概览与详情读同一份状态，这里只实现一次。
  *
  * 数据来自本地快照库时先把缓存显示出来，再自动发起一次增量刷新；
  * 刷新失败保留已有数据，只把失败原因记在状态里，不把整屏切成错误页。
@@ -25,6 +25,8 @@ export interface SnapshotRequestState {
   readonly refresh: () => void
   /** 全量刷新：忽略本地快照库重拉一次。 */
   readonly refreshFull: () => void
+  /** 详情刷新或写操作已经拿到的快照：写回面板，列表、概览与详情共用同一份。 */
+  readonly apply: (snapshot: WorkspaceSnapshot) => void
   /** 正在取下一页；界面据此禁用「加载更多」。 */
   readonly appending: boolean
   /** 取下一页并追加到当前列表；没有更多时宿主原样返回。 */
@@ -63,6 +65,7 @@ interface Loader {
   readonly phase: SnapshotPhase
   readonly appending: boolean
   readonly load: (mode: RequestMode) => Promise<WorkspaceSnapshot | null>
+  readonly apply: (snapshot: WorkspaceSnapshot) => void
   readonly append: () => Promise<void>
 }
 
@@ -78,10 +81,8 @@ export function useSnapshotRequest(
   workspaceRoot: string | undefined,
   reloadToken = 0,
 ): SnapshotRequestState {
-  const { snapshot, error, refreshError, phase, appending, load, append } = useSnapshotLoader(
-    client,
-    workspaceRoot,
-  )
+  const { snapshot, error, refreshError, phase, appending, load, apply, append } =
+    useSnapshotLoader(client, workspaceRoot)
   // 一轮缓存只自动刷新一次：刷新失败时不再反复打宿主。
   const autoRefreshed = React.useRef(false)
 
@@ -122,7 +123,17 @@ export function useSnapshotRequest(
     void append()
   }, [appending, append, phase])
 
-  return { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore }
+  return {
+    snapshot,
+    error,
+    refreshError,
+    phase,
+    refresh,
+    refreshFull,
+    apply,
+    appending,
+    loadMore,
+  }
 }
 
 /**
@@ -141,6 +152,9 @@ function useSnapshotLoader(client: PanelClient, workspaceRoot: string | undefine
   const sequence = React.useRef(0)
   // 已经拿到过数据：刷新失败时要靠它决定是保留列表还是切错误页。
   const hasData = React.useRef(false)
+  // 详情里的异步刷新可能在换工作区之后才落地；旧仓库的快照不能写进新仓库。
+  const workspace = React.useRef(workspaceRoot)
+  workspace.current = workspaceRoot
   // 防连点：state 更新是异步的，用 ref 立即拦住第二次点击。
   const appendingRef = React.useRef(false)
 
@@ -237,5 +251,29 @@ function useSnapshotLoader(client: PanelClient, workspaceRoot: string | undefine
     }
   }, [client, workspaceRoot])
 
-  return { snapshot, error, refreshError, phase, appending, load, append }
+  /**
+   * 写回别处已经拿到的快照（详情刷新、写操作或删除后的快照）。
+   * 不推进请求序号：在途的刷新仍是有效的最新结果。
+   * 快照还没定稿时在这里补做一次阻塞补齐，否则列表阶段的阻塞边会覆盖已定稿结果。
+   */
+  const apply = React.useCallback(
+    (applied: WorkspaceSnapshot): void => {
+      if (workspaceRoot === undefined || workspace.current !== workspaceRoot) return
+      const started = sequence.current
+      setSnapshot(applied)
+      hasData.current = true
+      setError(null)
+      setRefreshError(null)
+      setPhase('ready')
+      if (applied.blockersFinalized) return
+      void client.resolveBlockers(workspaceRoot).then((finalized) => {
+        if (!finalized.ok) return
+        if (workspace.current !== workspaceRoot || sequence.current !== started) return
+        setSnapshot(finalized.result)
+      })
+    },
+    [client, workspaceRoot],
+  )
+
+  return { snapshot, error, refreshError, phase, appending, load, apply, append }
 }

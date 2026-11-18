@@ -48,6 +48,17 @@ The MattWorkflow panel in Orca's right sidebar (`ui: "html"`, a React app runnin
   The manual refresh in the header re-reads the ticket while keeping loaded content, and
   concurrently refreshes the list snapshot; a failure is reported under the header without clearing
   the detail.
+- `ticket-blockers.tsx`: the detail header's "Blocked N" disclosure and expanded blocker rows. It
+  only consumes `blockedBy` from the snapshot row: deduplicated in backend order, known-closed refs
+  excluded; clicking a row hands the ref to the panel without injecting a prompt.
+- `ticket-ref.ts`: pure helpers to find a snapshot row by ref and to turn a blocker ref into a
+  numeric number; shared by the list, detail and back stack.
+- `detail-navigation.ts`: detail target and back stack. Opening from the list clears the stack,
+  opening a blocker pushes the current target, and Back/Esc pops it; opening by ref still works when
+  the snapshot has no row, it just renders no skill badge or blocker entry.
+- The panel-level `snapshot-request.ts` instance: list, overview and detail share one snapshot;
+  detail refresh, write or delete results are written back with `apply`, unfinalized snapshots keep
+  resolving blockers, so blocker titles and list data update together.
 - `ticket-tree.ts`: pure functions for list layout. Turns the filtered, sorted visible tickets into
   render rows: in the tree layout it gives depth, whether the row has children, expand state, whether
   the parent is outside the list and the descendant count; cycles and self-references fall back to
