@@ -5405,6 +5405,13 @@ async function directoryExists(path) {
   }
 }
 
+// src/protocol/skill-command.ts
+var SKILL_COMMAND_STYLES = ["claude", "omp", "codex"];
+var DEFAULT_SKILL_COMMAND_STYLE = "claude";
+var SKILL_COMMAND_SETTING_KEY = "skillCommand";
+var SKILL_COMMAND_SETTING_VALUES = ["auto", ...SKILL_COMMAND_STYLES];
+var SKILL_COMMAND_METHOD = "skill.command";
+
 // src/worker/rpc-params.ts
 function readWorkspaceRoot2(params) {
   if (typeof params !== "object" || params === null) return void 0;
@@ -5636,6 +5643,19 @@ function registerRpcHandlers(orca, deps) {
     AVATAR_READ_METHOD,
     (input, context) => deps.avatar.read(input, context.signal)
   );
+  orca.panels.handle(SKILL_COMMAND_METHOD, async () => {
+    try {
+      return { ok: true, result: await deps.skillCommand.resolve() };
+    } catch (error) {
+      return {
+        ok: false,
+        error: {
+          code: ERROR_CODES.internal,
+          message: error instanceof Error ? error.message : String(error)
+        }
+      };
+    }
+  });
   orca.panels.handle(WORKSPACE_CURRENT_REQUEST, async () => {
     deps.workspace.invalidate();
     const resolution = await deps.workspace.resolve();
@@ -5740,6 +5760,75 @@ async function resolveWorkspaceTarget(orca, deps, path) {
   const resolution = await deps.workspace.resolve();
   if (resolution.status !== "resolved") return void 0;
   return { id: resolution.candidate.id, path: resolution.root };
+}
+
+// src/core/skill-command.ts
+var AGENT_KIND_STYLE = {
+  claude: "claude",
+  openclaude: "claude",
+  opencode: "claude",
+  opencode2: "claude",
+  zcode: "claude",
+  grok: "claude",
+  codex: "codex",
+  omp: "omp",
+  pi: "omp"
+};
+function resolveSkillCommand(inputs) {
+  const setting = toSkillCommandStyle(inputs.setting);
+  if (setting !== null) return { style: setting, source: "setting" };
+  if (inputs.detected !== null) return { style: inputs.detected, source: "detected" };
+  if (inputs.remembered !== null) return { style: inputs.remembered, source: "remembered" };
+  return { style: DEFAULT_SKILL_COMMAND_STYLE, source: "default" };
+}
+function styleForAgents(agents) {
+  const known = agents.filter((agent) => AGENT_KIND_STYLE[agent.kind] !== void 0);
+  if (known.length === 0) return null;
+  const live = known.filter((agent) => agent.state !== "done");
+  const pool = live.length > 0 ? live : known;
+  const styles = new Set(pool.map((agent) => AGENT_KIND_STYLE[agent.kind]));
+  if (styles.size !== 1) return null;
+  const [style] = styles;
+  return style ?? null;
+}
+function toSkillCommandStyle(value) {
+  if (value === null || value === void 0) return null;
+  return SKILL_COMMAND_STYLES.find((style) => style === value) ?? null;
+}
+
+// src/worker/skill-command-service.ts
+var SKILL_COMMAND_STORAGE_KEY = "skillCommand.style";
+function createSkillCommandService(host) {
+  return {
+    async resolve() {
+      const setting = await readOrNull(() => host.getSetting(SKILL_COMMAND_SETTING_KEY));
+      const detected = await detect(host);
+      const remembered = toSkillCommandStyle(await readOrNull(() => host.readRemembered()));
+      const resolution = resolveSkillCommand({ setting, detected, remembered });
+      if (resolution.source === "detected") {
+        await write(() => host.writeRemembered(resolution.style));
+      }
+      return resolution;
+    }
+  };
+}
+async function detect(host) {
+  const agents = await readOrNull(() => host.listAgents());
+  if (agents === null) return null;
+  return styleForAgents(agents);
+}
+async function readOrNull(read) {
+  try {
+    return await read();
+  } catch {
+    return null;
+  }
+}
+async function write(writeStep) {
+  try {
+    await writeStep();
+  } catch {
+  }
 }
 
 // src/core/blockers.ts
@@ -7671,7 +7760,46 @@ function activate(orca) {
     log
   });
   const workspace = createWorkspaceResolver(orca.host, orca.storage);
-  registerRpcHandlers(orca, { snapshot, ticket, worktree, envCheck, workspace, avatar, log });
+  const skillCommand = createSkillCommandService({
+    getSetting: async (key) => {
+      const result = await orca.host.call("settings.get");
+      const settings = isRecord(result) ? result["settings"] : void 0;
+      const value = isRecord(settings) ? settings[key] : void 0;
+      return typeof value === "string" ? value : null;
+    },
+    listAgents: async () => {
+      if (!orca.grantedCapabilities.includes("agent:read")) return [];
+      if (!orca.host.has("agents.list")) return [];
+      const result = await orca.host.call("agents.list");
+      const agents = isRecord(result) ? result["agents"] : void 0;
+      if (!Array.isArray(agents)) return [];
+      return agents.flatMap((agent) => {
+        if (!isRecord(agent)) return [];
+        const kind = agent["agent"];
+        const state = agent["state"];
+        if (typeof kind !== "string" || typeof state !== "string") return [];
+        return [{ kind, state }];
+      });
+    },
+    readRemembered: async () => {
+      const result = await orca.host.call("storage.get", { key: SKILL_COMMAND_STORAGE_KEY });
+      const value = isRecord(result) ? result["value"] : void 0;
+      return typeof value === "string" ? value : null;
+    },
+    writeRemembered: async (style) => {
+      await orca.host.call("storage.set", { key: SKILL_COMMAND_STORAGE_KEY, value: style });
+    }
+  });
+  registerRpcHandlers(orca, {
+    snapshot,
+    ticket,
+    worktree,
+    envCheck,
+    workspace,
+    avatar,
+    skillCommand,
+    log
+  });
   orca.commands.register(REFRESH_COMMAND_ID, async () => {
     workspace.invalidate();
     const result = await refreshWorkspace(orca, { snapshot, workspace, log });

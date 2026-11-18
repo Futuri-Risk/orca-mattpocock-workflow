@@ -134,7 +134,7 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
     onDeleted: props.onBack,
   })
   const options = useTicketOptions(client, workspaceRoot, detail?.capabilities.labels === true)
-  const actions = useTicketActions(workspaceRoot, props.copy)
+  const actions = useTicketActions(workspaceRoot, props.copy, client)
   const worktree = useWorktreeCreate(client, workspaceRoot, currentTicket)
   const worktreeState =
     detail === null

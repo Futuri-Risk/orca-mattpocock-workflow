@@ -11,6 +11,7 @@ import { createGithubEnvProbe } from '../adapters/github/env.ts'
 import { createGitlabEnvProbe } from '../adapters/gitlab/env.ts'
 import { createLocalIssuesProbe } from '../adapters/markdown/env.ts'
 import { createNodeWorkspaceFiles } from '../adapters/markdown/files.ts'
+import { isRecord } from '../core/json.ts'
 import { TRACKER_LABELS } from '../protocol/labels.ts'
 import { LOG_EVENTS } from '../protocol/log-events.ts'
 import { ERROR_CODES, RPC_METHODS, type RpcResult } from '../protocol/tracker.ts'
@@ -28,6 +29,10 @@ import {
   workspaceFailureMessage,
 } from './rpc-bridge.ts'
 import { createSkillCatalog } from './skill-catalog.ts'
+import {
+  createSkillCommandService,
+  SKILL_COMMAND_STORAGE_KEY,
+} from './skill-command-service.ts'
 import { createSnapshotService, type SnapshotService } from './snapshot-service.ts'
 import { createBinaryCommandRunner, createCommandRunner } from './subprocess-runner.ts'
 import { createTicketService } from './ticket-service.ts'
@@ -92,7 +97,49 @@ export default function activate(orca: OrcaWorkerApi): void {
 
   const workspace = createWorkspaceResolver(orca.host, orca.storage)
 
-  registerRpcHandlers(orca, { snapshot, ticket, worktree, envCheck, workspace, avatar, log })
+  // 技能命令写法：手动设置优先，其次探测宿主里在跑的 agent，最后用记住的写法。
+  // 探测要 agent:read 能力，没授权时只降级，不影响复制提示词。
+  const skillCommand = createSkillCommandService({
+    getSetting: async (key) => {
+      const result = await orca.host.call('settings.get')
+      const settings = isRecord(result) ? result['settings'] : undefined
+      const value = isRecord(settings) ? settings[key] : undefined
+      return typeof value === 'string' ? value : null
+    },
+    listAgents: async () => {
+      if (!orca.grantedCapabilities.includes('agent:read')) return []
+      if (!orca.host.has('agents.list')) return []
+      const result = await orca.host.call('agents.list')
+      const agents = isRecord(result) ? result['agents'] : undefined
+      if (!Array.isArray(agents)) return []
+      return agents.flatMap((agent) => {
+        if (!isRecord(agent)) return []
+        const kind = agent['agent']
+        const state = agent['state']
+        if (typeof kind !== 'string' || typeof state !== 'string') return []
+        return [{ kind, state }]
+      })
+    },
+    readRemembered: async () => {
+      const result = await orca.host.call('storage.get', { key: SKILL_COMMAND_STORAGE_KEY })
+      const value = isRecord(result) ? result['value'] : undefined
+      return typeof value === 'string' ? value : null
+    },
+    writeRemembered: async (style) => {
+      await orca.host.call('storage.set', { key: SKILL_COMMAND_STORAGE_KEY, value: style })
+    },
+  })
+
+  registerRpcHandlers(orca, {
+    snapshot,
+    ticket,
+    worktree,
+    envCheck,
+    workspace,
+    avatar,
+    skillCommand,
+    log,
+  })
 
   orca.commands.register(REFRESH_COMMAND_ID, async () => {
     // 主动刷新时重新认领一次：工作区可能刚被重命名、新建或关闭。

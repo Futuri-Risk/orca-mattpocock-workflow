@@ -202,9 +202,34 @@ orca plugin install cnzgray/orca-mattpocock-workflow@v0.2.1
 - Orca 清单 schema 没有按语言分字段的能力，清单描述与命令标题用英文；面板内部渲染的内容
   全部跟随语言设置。文档索引与语言约定见 [docs/README.zh-CN.md](docs/README.zh-CN.md)。
 
+## 技能命令写法
+
+面板复制出去的技能手势按当前客户端的写法来；不同客户端的手势不一样，写错了技能不会加载
+（`disable-model-invocation` 的技能只能由用户显式敲手势）：
+
+| 客户端     | 手势           | 例子               |
+| ---------- | -------------- | ------------------ |
+| Claude Code | `/技能名`      | `/implement #40`   |
+| omp        | `/skill:技能名` | `/skill:implement #40` |
+| Codex      | `$技能名`      | `$implement #40`   |
+
+写法按下面的顺序定：
+
+1. `skillCommand` 插件设置（`auto` / `claude` / `omp` / `codex`），在 Orca 设置里选；
+   选了具体写法就以它为准，`auto` 才往下走。
+2. 自动探测：读 Orca 聚焦工作区里正在跑的 agent。`omp` / `pi` 记成 omp，`codex` 记成 codex，
+   `claude` / `openclaude` / `opencode` / `grok` 等记成 Claude Code；认不出的类型不投票，
+   同时跑着两种写法算歧义。探测要 `agent:read` 能力，插件更新后要重新批准一次。
+3. 上次探测到的写法（存在插件私有存储里）：一个 agent 都没开时用它。
+4. 默认 Claude Code 写法：与上游 matt 技能一致，存量用户看到的输出不变。
+
+探测发生在复制那一刻：刚开起另一个客户端，手势就跟着换，不用重开面板。
+
 ## 已知限制
 
 - 提示词只能复制，不能直接写进会话：Orca 插件没有会话草稿接口。
+- 上游 matt 技能（`mattpocock/skills`）的正文里写死了 `/命令` 手势；插件只管自己产出的手势，
+  上游正文里的写法要改得去那个仓库改。
 - 入池技能（`mattwf-feature`、`mattwf-bug`）靠环境检查里的安装动作写进 agent 技能目录，
   插件本身不能注册运行时技能。
 - 后端 CLI（`gh` / `glab` / `tea`）在 worker 进程里直接调用，走的是用户 PATH，

@@ -138,7 +138,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
   const { preference, setFilter, toggleSort, togglePerson, clearPeople, setLayout } =
     useViewPreference(props.workspaceRoot, snapshot)
   const nowValue = useNow(clock)
-  const actions = useTicketActions(props.workspaceRoot, props.copy)
+  const actions = useTicketActions(props.workspaceRoot, props.copy, props.client)
 
   const tickets = snapshot?.tickets ?? []
   const counts = countTickets(tickets)
@@ -209,11 +209,11 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
       />
       <ActionBar
         counts={snapshot === null ? null : counts}
-        onNewFeature={(prompt) => {
-          void actions.copy(prompt)
+        onNewFeature={() => {
+          void actions.copyPrompt((style) => newFeaturePrompt(t, style))
         }}
-        onNewBug={(prompt) => {
-          void actions.copy(prompt)
+        onNewBug={() => {
+          void actions.copyPrompt((style) => newBugPrompt(t, style))
         }}
       />
       {error !== null ? <ErrorBanner error={error} onOpenEnvCheck={props.onOpenEnvCheck} /> : null}
@@ -480,8 +480,8 @@ function Header(props: {
 
 function ActionBar(props: {
   readonly counts: TicketCounts | null
-  readonly onNewFeature: (prompt: string) => void
-  readonly onNewBug: (prompt: string) => void
+  readonly onNewFeature: () => void
+  readonly onNewBug: () => void
 }): React.ReactElement {
   const t = useMessages()
 
@@ -496,9 +496,7 @@ function ActionBar(props: {
           ariaLabel={t('tickets.newFeatureLabel')}
           style={FEATURE_ACTION_STYLE}
           hover="primary"
-          onCopy={() => {
-            props.onNewFeature(newFeaturePrompt(t))
-          }}
+          onCopy={props.onNewFeature}
         />
         <IntakeAction
           testId="new-bug"
@@ -507,9 +505,7 @@ function ActionBar(props: {
           ariaLabel={t('tickets.newBugLabel')}
           style={BUG_ACTION_STYLE}
           hover="secondary"
-          onCopy={() => {
-            props.onNewBug(newBugPrompt(t))
-          }}
+          onCopy={props.onNewBug}
         />
       </div>
     </div>

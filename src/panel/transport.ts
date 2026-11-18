@@ -7,6 +7,13 @@
  * 界面仍按错误码给提示。
  */
 import type { EnvCheckReport } from '../protocol/env-check.ts'
+import {
+  SKILL_COMMAND_METHOD,
+  SKILL_COMMAND_SOURCES,
+  SKILL_COMMAND_STYLES,
+  type SkillCommandResolution,
+  type SkillCommandStyle,
+} from '../protocol/skill-command.ts'
 import { activeTranslate, type Translate } from './i18n.ts'
 import { readFrame } from './host.ts'
 import {
@@ -109,6 +116,11 @@ export interface PanelClient {
    * 由 worker 下载后转成 `data:image/…`，界面才加载得出来。
    */
   readAvatar(url: string): Promise<RpcResult<AvatarReadResult>>
+  /**
+   * 读取当前生效的技能命令写法。复制手势前问一次，
+   * 复制出去的命令要和用户当前客户端一致（`/技能名`、`/skill:技能名` 或 `$技能名`）。
+   */
+  skillCommand(): Promise<RpcResult<SkillCommandResolution>>
 }
 
 /** worker 当前认领的工作区；认领不到时带上候选。 */
@@ -212,6 +224,7 @@ export function createPanelClient(request: RequestLike = defaultRequest): PanelC
       const params: AvatarReadParams = { url }
       return call(request, AVATAR_READ_METHOD, params, isAvatarReadResult)
     },
+    skillCommand: () => call(request, SKILL_COMMAND_METHOD, {}, isSkillCommandResolutionResult),
   }
 }
 
@@ -580,4 +593,27 @@ function isSkillsInstallResultPayload(value: unknown): value is SkillsInstallRes
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
+}
+
+function isSkillCommandResolutionResult(
+  value: unknown,
+): value is RpcResult<SkillCommandResolution> {
+  return isRpcResult(value, isSkillCommandResolution)
+}
+
+/** 写法结果：写法与来源都必须是已知值，别的形状当作没解析出来。 */
+function isSkillCommandResolution(value: unknown): value is SkillCommandResolution {
+  return (
+    isObject(value) &&
+    isSkillCommandStyle(value['style']) &&
+    isSkillCommandSource(value['source'])
+  )
+}
+
+function isSkillCommandStyle(value: unknown): value is SkillCommandStyle {
+  return SKILL_COMMAND_STYLES.some((style) => style === value)
+}
+
+function isSkillCommandSource(value: unknown): value is SkillCommandResolution['source'] {
+  return SKILL_COMMAND_SOURCES.some((source) => source === value)
 }

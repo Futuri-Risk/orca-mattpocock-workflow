@@ -238,9 +238,39 @@ a new approval. Listing status:
   English; everything rendered inside the panel is localized. The documentation index and language
   policy are in [docs/README.md](docs/README.md).
 
+## Skill command style
+
+Copied skill gestures follow the style of the client they are pasted into. Clients disagree on the
+gesture, and a wrong one means the skill never loads (skills with `disable-model-invocation` can
+only be invoked explicitly by the user):
+
+| Client      | Gesture          | Example               |
+| ----------- | ---------------- | --------------------- |
+| Claude Code | `/skill-name`    | `/implement #40`      |
+| omp         | `/skill:skill-name` | `/skill:implement #40` |
+| Codex       | `$skill-name`    | `$implement #40`      |
+
+The style is decided in this order:
+
+1. The `skillCommand` plugin setting (`auto` / `claude` / `omp` / `codex`), picked in Orca's
+   settings. A concrete choice wins; `auto` falls through.
+2. Automatic detection: the agents running in Orca's focused workspace. `omp` / `pi` count as omp,
+   `codex` as codex, `claude` / `openclaude` / `opencode` / `grok` and friends as Claude Code.
+   Unknown agent kinds do not vote, and two styles running at once count as ambiguous. Detection
+   needs the `agent:read` capability, so the plugin asks for approval once after an update.
+3. The style detected last time (kept in the plugin's private storage): used when no agent is open.
+4. The default Claude Code style, matching the upstream matt skills, so existing users see no
+   change.
+
+Detection happens at copy time: start another client and the gesture follows, without reopening the
+panel.
+
 ## Known limitations
 
 - Prompts can only be copied, not written into a session: Orca plugins have no session draft API.
+- The upstream matt skills (`mattpocock/skills`) hardcode `/command` gestures in their own bodies.
+  The plugin only owns the gestures it produces; changing the upstream bodies is a change in that
+  repository.
 - Intake skills (`mattwf-feature`, `mattwf-bug`) are written into agent skill directories by the
   environment check's install action; the plugin cannot register runtime skills itself.
 - Backend CLIs (`gh` / `glab` / `tea`) are invoked directly inside the worker process using the

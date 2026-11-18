@@ -138,7 +138,7 @@ function intakeContent(intake: IntakeCommandDefinition, labels: TrackerLabelName
     '',
     '## 建完之后',
     '- 只输出票的链接和一行下一步建议，然后停下，不要开始处理。',
-    '- 建议写成 `/<命令> <票的引用> —— <一句理由>`；远端后端用 #N，本地 Markdown 用文件路径。',
+    '- 建议写成一行：`<客户端手势><命令名> <票的引用> —— <一句理由>`，`<客户端手势>` 按用户当前客户端写（Claude Code 是 `/`，omp 是 `/skill:`，Codex 是 `$`）；远端后端用 #N，本地 Markdown 用文件路径。',
     '- 只从下面的候选里选一个推荐，最多再给一个备选：',
     ...intake.nextSteps.map(nextStepLine),
   ].join('\n')
@@ -148,5 +148,6 @@ function nextStepLine(id: IntakeCommandDefinition['nextSteps'][number]): string 
   const step = NEXT_STEPS[id]
   const name = FLOW_COMMANDS[step.command].name
   const reminder = step.reminderKey === null ? '' : `（${ZH[step.reminderKey]}）`
-  return `- /${name} ${ZH['flow.skill.ticketReference']} —— ${ZH[step.whenKey]}${reminder}`
+  // 只写命令名：客户端手势由用户当前客户端决定，正文不替它选。
+  return `- ${name} ${ZH['flow.skill.ticketReference']} —— ${ZH[step.whenKey]}${reminder}`
 }

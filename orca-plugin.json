@@ -46,6 +46,20 @@
         "title": "Language",
         "type": "string",
         "default": "auto"
+      },
+      {
+        "key": "skillCommand",
+        "title": "Skill command style",
+        "description": "How copied skill commands are written. Auto detects the agent running in Orca.",
+        "type": "string",
+        "default": "auto",
+        "enum": ["auto", "claude", "omp", "codex"],
+        "enumLabels": [
+          "Auto detect",
+          "Claude Code (/name)",
+          "omp (/skill:name)",
+          "Codex ($name)"
+        ]
       }
     ]
   },
@@ -64,6 +78,9 @@
     },
     {
       "kind": "notifications:show"
+    },
+    {
+      "kind": "agent:read"
     }
   ]
 }

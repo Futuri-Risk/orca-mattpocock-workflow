@@ -15,8 +15,15 @@ The MattWorkflow panel in Orca's right sidebar (`ui: "html"`, a React app runnin
   branch and path, and "Use" selects it; multiple workspaces on one branch are distinguished by these
   fields.
 - `transport.ts`: the only channel between the panel and the worker. Method names and input/output
-  shapes follow `src/protocol/tracker.ts`; the transport is `orca.plugin.request`, plus the two extra
-  handlers `skills.install` and `workspace.current`.
+  shapes follow `src/protocol/tracker.ts`; the transport is `orca.plugin.request`, plus the three
+  extra handlers `skills.install`, `workspace.current` and `skill.command`.
+- `skill-command.ts`: reads the skill command style in effect right before a gesture is copied, so
+  the copied text matches the client the user pastes into. An unreachable worker falls back to the
+  Claude Code style instead of blocking the copy.
+- `prompts.ts`: the prompt texts the panel copies. `ticketPrompt` and the intake prompts take the
+  style and prefix the gesture with it: Claude Code reads `/name`, omp only expands
+  `/skill:name <args>` (the name must be followed by a space, the arguments come after it), and
+  Codex reads `$name`.
 - `clipboard.ts`: the two-level clipboard write path (Clipboard API → hidden textarea +
   `execCommand('copy')`), shared by prompt, command and ticket-link copies.
 - `worktree-action.tsx`: the "Create worktree" entry on ticket list rows and the detail header, plus

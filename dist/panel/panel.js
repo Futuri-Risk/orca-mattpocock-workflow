@@ -25178,6 +25178,18 @@
     return { state, copy, showManual, dismiss };
   }
 
+  // src/protocol/skill-command.ts
+  var SKILL_COMMAND_STYLES = ["claude", "omp", "codex"];
+  var SKILL_COMMAND_PREFIX = {
+    claude: "/",
+    omp: "/skill:",
+    codex: "$"
+  };
+  var DEFAULT_SKILL_COMMAND_STYLE = "claude";
+  var SKILL_COMMAND_SETTING_VALUES = ["auto", ...SKILL_COMMAND_STYLES];
+  var SKILL_COMMAND_SOURCES = ["setting", "detected", "remembered", "default"];
+  var SKILL_COMMAND_METHOD = "skill.command";
+
   // src/protocol/labels.ts
   var TRACKER_LABELS = {
     /** 规格完整、可以直接交给 agent 的票。 */
@@ -25319,7 +25331,8 @@
       readAvatar: (url) => {
         const params = { url };
         return call(request, AVATAR_READ_METHOD, params, isAvatarReadResult);
-      }
+      },
+      skillCommand: () => call(request, SKILL_COMMAND_METHOD, {}, isSkillCommandResolutionResult)
     };
   }
   function installSkills(request = defaultRequest) {
@@ -25581,6 +25594,18 @@
   }
   function isObject(value) {
     return typeof value === "object" && value !== null;
+  }
+  function isSkillCommandResolutionResult(value) {
+    return isRpcResult(value, isSkillCommandResolution);
+  }
+  function isSkillCommandResolution(value) {
+    return isObject(value) && isSkillCommandStyle(value["style"]) && isSkillCommandSource(value["source"]);
+  }
+  function isSkillCommandStyle(value) {
+    return SKILL_COMMAND_STYLES.some((style) => style === value);
+  }
+  function isSkillCommandSource(value) {
+    return SKILL_COMMAND_SOURCES.some((source) => source === value);
   }
 
   // src/panel/task-panel.tsx
@@ -31843,37 +31868,55 @@ ${String(target.number)}`;
   var React22 = __toESM(require_react(), 1);
 
   // src/panel/prompts.ts
-  function ticketPrompt(ticket) {
+  function ticketPrompt(ticket, style) {
     if (ticket.skillAction === "none") return null;
-    return `/${SKILL_ACTION_SKILLS[ticket.skillAction]} ${ticket.ref}`;
+    return `${SKILL_COMMAND_PREFIX[style]}${SKILL_ACTION_SKILLS[ticket.skillAction]} ${ticket.ref}`;
   }
-  function newFeaturePrompt(t) {
-    return intakePrompt(INTAKE_COMMANDS.feature, t);
+  function newFeaturePrompt(t, style) {
+    return intakePrompt(INTAKE_COMMANDS.feature, t, style);
   }
-  function newBugPrompt(t) {
-    return intakePrompt(INTAKE_COMMANDS.bug, t);
+  function newBugPrompt(t, style) {
+    return intakePrompt(INTAKE_COMMANDS.bug, t, style);
   }
-  function intakePrompt(intake, t) {
-    return [`/${FLOW_COMMANDS[intake.command].name}`, "", ...intake.slots.map((slot) => t(slot))].join(
-      "\n"
-    );
+  function intakePrompt(intake, t, style) {
+    const command = `${SKILL_COMMAND_PREFIX[style]}${FLOW_COMMANDS[intake.command].name}`;
+    const slots = intake.slots.map((slot) => t(slot));
+    if (style === "omp") return [command + " ", ...slots].join("\n");
+    return [command, "", ...slots].join("\n");
+  }
+
+  // src/panel/skill-command.ts
+  async function resolveSkillCommandStyle(client2) {
+    try {
+      const result = await client2.skillCommand();
+      if (!result.ok) return DEFAULT_SKILL_COMMAND_STYLE;
+      return result.result.style;
+    } catch {
+      return DEFAULT_SKILL_COMMAND_STYLE;
+    }
   }
 
   // src/panel/ticket-actions.ts
-  function useTicketActions(workspaceRoot, port) {
+  function useTicketActions(workspaceRoot, port, client2) {
     const [copied, setCopied] = React22.useState(null);
     const { state, copy, dismiss } = usePromptCopy(port);
     React22.useEffect(() => {
       setCopied(null);
     }, [workspaceRoot]);
-    const onSkillAction = (ticket) => {
-      const prompt = ticketPrompt(ticket);
-      if (prompt === null) return;
-      void copy(prompt).then((result) => {
-        setCopied(result.outcome === "copied" ? ticket.ref : null);
-      });
+    const copyPrompt = async (build) => {
+      const style = await resolveSkillCommandStyle(client2);
+      await copy(build(style));
     };
-    return { copied, copyState: state, copy, dismiss, onSkillAction };
+    const onSkillAction = (ticket) => {
+      void (async () => {
+        const style = await resolveSkillCommandStyle(client2);
+        const prompt = ticketPrompt(ticket, style);
+        if (prompt === null) return;
+        const result = await copy(prompt);
+        setCopied(result.outcome === "copied" ? ticket.ref : null);
+      })();
+    };
+    return { copied, copyState: state, copy, dismiss, onSkillAction, copyPrompt };
   }
 
   // src/panel/worktree-action.tsx
@@ -32189,7 +32232,7 @@ ${String(target.number)}`;
       onDeleted: props.onBack
     });
     const options = useTicketOptions(client2, workspaceRoot, detail?.capabilities.labels === true);
-    const actions = useTicketActions(workspaceRoot, props.copy);
+    const actions = useTicketActions(workspaceRoot, props.copy, client2);
     const worktree = useWorktreeCreate(client2, workspaceRoot, currentTicket);
     const worktreeState = detail === null ? { visible: false, enabled: false, reason: null } : worktreeAvailability(currentTicket, detail.backend, workspaceRoot, t);
     const link = useCopyLink(detail?.url ?? null);
@@ -33314,7 +33357,7 @@ ${String(target.number)}`;
     const { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore } = useSnapshotRequest(props.client, props.workspaceRoot, props.refreshToken ?? 0);
     const { preference, setFilter, toggleSort, togglePerson, clearPeople, setLayout } = useViewPreference(props.workspaceRoot, snapshot);
     const nowValue = useNow(clock);
-    const actions = useTicketActions(props.workspaceRoot, props.copy);
+    const actions = useTicketActions(props.workspaceRoot, props.copy, props.client);
     const tickets = snapshot?.tickets ?? [];
     const counts = countTickets(tickets);
     const view = viewTickets(tickets, {
@@ -33376,11 +33419,11 @@ ${String(target.number)}`;
             ActionBar,
             {
               counts: snapshot === null ? null : counts,
-              onNewFeature: (prompt) => {
-                void actions.copy(prompt);
+              onNewFeature: () => {
+                void actions.copyPrompt((style) => newFeaturePrompt(t, style));
               },
-              onNewBug: (prompt) => {
-                void actions.copy(prompt);
+              onNewBug: () => {
+                void actions.copyPrompt((style) => newBugPrompt(t, style));
               }
             }
           ),
@@ -33592,9 +33635,7 @@ ${String(target.number)}`;
             ariaLabel: t("tickets.newFeatureLabel"),
             style: FEATURE_ACTION_STYLE,
             hover: "primary",
-            onCopy: () => {
-              props.onNewFeature(newFeaturePrompt(t));
-            }
+            onCopy: props.onNewFeature
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
@@ -33606,9 +33647,7 @@ ${String(target.number)}`;
             ariaLabel: t("tickets.newBugLabel"),
             style: BUG_ACTION_STYLE,
             hover: "secondary",
-            onCopy: () => {
-              props.onNewBug(newBugPrompt(t));
-            }
+            onCopy: props.onNewBug
           }
         )
       ] })

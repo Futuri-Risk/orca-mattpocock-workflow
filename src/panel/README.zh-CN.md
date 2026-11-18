@@ -13,7 +13,12 @@ Orca 右侧栏里的 MattWorkflow 面板（`ui: "html"`，独立 frame 里跑的
 - `workspace-picker.tsx`：面板顶部的候选选择区。每行显示项目、名称、分支与路径，点「使用」
   选定；同一分支上的多个工作区靠这些字段区分。
 - `transport.ts`：面板与 worker 的唯一通道。方法名与入参出参沿用 `src/protocol/tracker.ts`，
-  底层是 `orca.plugin.request`；另外提供 `skills.install` 与 `workspace.current` 两个额外处理器。
+  底层是 `orca.plugin.request`；另外提供 `skills.install`、`workspace.current` 与 `skill.command`
+  三个额外处理器。
+- `skill-command.ts`：复制手势前读一次当前生效的技能命令写法，复制出去的文本才和用户要粘贴
+  进去的客户端对得上。worker 读不到时回落到 Claude Code 写法，不挡着复制。
+- `prompts.ts`：面板复制出去的提示词文本。工单手势与入池提示词都按写法加前缀：Claude Code 认
+  `/名字`，omp 只展开 `/skill:名字 <参数>`（名字后必须紧跟一个空格，参数在它之后），Codex 认 `$名字`。
 - `clipboard.ts`：剪贴板写入的两级路径（剪贴板 API → 隐藏 textarea + `execCommand('copy')`），
   提示词、命令与工单链接的复制共用。
 - `worktree-action.tsx`：工单列表行与详情头部的「建 worktree」入口，以及创建结果的原地回报；

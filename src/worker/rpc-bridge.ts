@@ -6,6 +6,7 @@
  */
 import { isRecord } from '../core/json.ts'
 import { LOG_EVENTS } from '../protocol/log-events.ts'
+import { SKILL_COMMAND_METHOD } from '../protocol/skill-command.ts'
 import {
   AVATAR_READ_METHOD,
   ERROR_CODES,
@@ -18,6 +19,7 @@ import type { LogSink } from './log.ts'
 import type { OrcaWorkerApi } from './orca-types.ts'
 import { readWorkspaceRoot } from './rpc-params.ts'
 import type { SnapshotService } from './snapshot-service.ts'
+import type { SkillCommandService } from './skill-command-service.ts'
 import { installPoolSkills } from './skill-installer.ts'
 import type { TicketService } from './ticket-service.ts'
 import type { TicketWorktreeService } from './ticket-worktree-service.ts'
@@ -67,6 +69,7 @@ export interface RpcBridgeDeps {
   readonly envCheck: EnvCheckService
   readonly workspace: WorkspaceResolver
   readonly avatar: AvatarService
+  readonly skillCommand: SkillCommandService
   readonly log: LogSink
 }
 
@@ -120,6 +123,21 @@ export function registerRpcHandlers(orca: OrcaWorkerApi, deps: RpcBridgeDeps): v
   orca.panels.handle(AVATAR_READ_METHOD, (input, context) =>
     deps.avatar.read(input, context.signal),
   )
+
+  // 技能命令写法：面板复制手势前问一次，拿到的写法要和用户当前客户端一致。
+  orca.panels.handle(SKILL_COMMAND_METHOD, async () => {
+    try {
+      return { ok: true, result: await deps.skillCommand.resolve() }
+    } catch (error) {
+      return {
+        ok: false,
+        error: {
+          code: ERROR_CODES.internal,
+          message: error instanceof Error ? error.message : String(error),
+        },
+      }
+    }
+  })
 
   orca.panels.handle(WORKSPACE_CURRENT_REQUEST, async () => {
     // 面板每次启动或聚焦上下文变化都问一次：重新按当前线索认领，

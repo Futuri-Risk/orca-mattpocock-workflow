@@ -10,11 +10,15 @@
  * 步骤由技能正文负责：会话发送时按手势加载技能，`implement` 会自己取票、复述标题、
  * 按 tdd 实现、跑检查、过 code-review 再提交。面板再写一遍是第二份规则，
  * 技能升级后就会和正文分叉。
- * 技能名取自 protocol 的面板技能常量，环境检查不会和这里脱节。
+ *
+ * 手势的写法随客户端而不同：Claude Code 认 `/技能名`，omp 只展开
+ * `/skill:技能名`，Codex 认 `$技能名`。写法由 worker 解析后传进来，
+ * 这里只负责按写法拼出命令。
  */
 import { SKILL_ACTION_SKILLS } from '../protocol/env-check.ts'
 import { FLOW_COMMANDS, INTAKE_COMMANDS, type IntakeCommandDefinition } from '../protocol/flow.ts'
 import type { TicketSkillAction } from '../protocol/labels.ts'
+import { SKILL_COMMAND_PREFIX, type SkillCommandStyle } from '../protocol/skill-command.ts'
 import type { Translate } from './i18n.ts'
 
 /** 生成某张票的提示词所需的最小信息。 */
@@ -27,38 +31,52 @@ export interface TicketPromptTarget {
 /**
  * 按工单的技能动作生成提示词。
  *
- * 技能必须写成 `/技能名` 手势：会话只扫描用户消息里空白包围的 `/name`
- * 来加载技能，写成“使用 X 技能”只是普通文字，技能不会被加载。
+ * 技能必须写成客户端认的手势：Claude Code 只扫描用户消息里空白包围的 `/name`，
+ * omp 只展开消息开头的 `/skill:name <参数>`，Codex 认 `$name`。
+ * 写成“使用 X 技能”只是普通文字，技能不会被加载。
  * 手势后面只跟工单引用，工作流由技能正文提供——`implement` 取票并复述标题，
  * `diagnosing-bugs` 先建反馈回路，`triage` 按状态机评估并在缺信息时追问。
  * @param ticket - 工单引用与技能动作。
+ * @param style - 当前客户端认的技能命令写法。
  * @returns 可复制的提示词；不可开工的票返回 null。
  */
-export function ticketPrompt(ticket: TicketPromptTarget): string | null {
+export function ticketPrompt(
+  ticket: TicketPromptTarget,
+  style: SkillCommandStyle,
+): string | null {
   if (ticket.skillAction === 'none') return null
-  return `/${SKILL_ACTION_SKILLS[ticket.skillAction]} ${ticket.ref}`
+  return `${SKILL_COMMAND_PREFIX[style]}${SKILL_ACTION_SKILLS[ticket.skillAction]} ${ticket.ref}`
 }
 
 /**
  * 「+ 新建需求」的开场提示词：进入需求入池。
  * @param t - 当前语言的翻译函数。
+ * @param style - 当前客户端认的技能命令写法。
  * @returns 以 mattwf-feature 手势开头、后面是槽位的提示词。
  */
-export function newFeaturePrompt(t: Translate): string {
-  return intakePrompt(INTAKE_COMMANDS.feature, t)
+export function newFeaturePrompt(t: Translate, style: SkillCommandStyle): string {
+  return intakePrompt(INTAKE_COMMANDS.feature, t, style)
 }
 
 /**
  * 「+ bug」填入的开场提示词：进入缺陷入池。
  * @param t - 当前语言的翻译函数。
+ * @param style - 当前客户端认的技能命令写法。
  * @returns 以 mattwf-bug 手势开头、后面是槽位的提示词。
  */
-export function newBugPrompt(t: Translate): string {
-  return intakePrompt(INTAKE_COMMANDS.bug, t)
+export function newBugPrompt(t: Translate, style: SkillCommandStyle): string {
+  return intakePrompt(INTAKE_COMMANDS.bug, t, style)
 }
 
-function intakePrompt(intake: IntakeCommandDefinition, t: Translate): string {
-  return [`/${FLOW_COMMANDS[intake.command].name}`, '', ...intake.slots.map((slot) => t(slot))].join(
-    '\n',
-  )
+function intakePrompt(
+  intake: IntakeCommandDefinition,
+  t: Translate,
+  style: SkillCommandStyle,
+): string {
+  const command = `${SKILL_COMMAND_PREFIX[style]}${FLOW_COMMANDS[intake.command].name}`
+  const slots = intake.slots.map((slot) => t(slot))
+  // omp 只展开消息开头、命令名后紧跟一个空格的那一条：`/skill:名字 <参数>`。
+  // 空格必须紧贴命令名，槽位在它之后换行展开。
+  if (style === 'omp') return [command + ' ', ...slots].join('\n')
+  return [command, '', ...slots].join('\n')
 }

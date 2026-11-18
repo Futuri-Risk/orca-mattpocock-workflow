@@ -7,6 +7,9 @@ Message types and constants exchanged by the worker and the panel.
 - Types and constants only; no logic.
 - `i18n.ts` is the message catalog shared by the panel and worker (`zh-CN` / `en`, keys one-to-one).
   Language resolution and interpolation live in `src/panel/i18n.ts`.
+- `skill-command.ts` holds the skill command styles (`claude` / `omp` / `codex`), their gesture
+  prefixes, the `skillCommand` setting key and the `skill.command` method name. The styles are
+  constants; the rule that picks one lives in `src/core/skill-command.ts`.
 - No dependency on any other directory (a convention, not a tool-enforced rule).
 - The panel may talk to the worker only through the types defined here; it must not import `core`,
   `adapters` or `worker` directly.
@@ -37,6 +40,14 @@ same-named handler):
 - `avatar.read`: reads an http(s) avatar URL supplied by a backend into `data:image/…`. The panel
   frame's CSP allows only `data:` images, so remote URLs are blocked by the host; the worker proxies
   the download, accepting only `image/*` with a 1 MiB cap.
+
+Besides the ticket RPC methods, the plugin has three extra handlers:
+
+- `workspace.current`: the workspace the worker claimed, plus candidates when it cannot claim one.
+- `skills.install`: writes the intake skills into the agent skill directories.
+- `skill.command`: the skill command style in effect (style and where it came from). The panel asks
+  for it right before copying a gesture, so the copied text matches the client the user pastes
+  into.
 
 The worker resolves `workspaceRoot` itself: the panel never sends a path. When the worker cannot
 claim a workspace it pushes candidates once through the `workspace.candidates` event (with the owning

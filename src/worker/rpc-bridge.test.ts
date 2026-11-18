@@ -14,6 +14,7 @@ import {
   WORKSPACE_CURRENT_REQUEST,
 } from './rpc-bridge.ts'
 import type { SnapshotService } from './snapshot-service.ts'
+import type { SkillCommandService } from './skill-command-service.ts'
 import type { TicketService } from './ticket-service.ts'
 import type { TicketWorktreeService } from './ticket-worktree-service.ts'
 import { createWorkspaceResolver } from './workspace-resolver.ts'
@@ -56,6 +57,7 @@ function recordingServices(): {
   readonly worktree: TicketWorktreeService
   readonly envCheck: EnvCheckService
   readonly avatar: AvatarService
+  readonly skillCommand: SkillCommandService
   readonly seen: { method: string; params: unknown }[]
 } {
   const seen: { method: string; params: unknown }[] = []
@@ -73,6 +75,9 @@ function recordingServices(): {
     worktree: { handle: (method, params) => record(method, params) },
     envCheck: { handle: (method, params) => record(method, params) },
     avatar: { read: (params) => record('avatar.read', params) },
+    skillCommand: {
+      resolve: () => Promise.resolve({ style: 'claude' as const, source: 'default' as const }),
+    },
   }
 }
 
@@ -119,6 +124,7 @@ describe('面板 RPC 桥', () => {
       worktree: services.worktree,
       envCheck: services.envCheck,
       avatar: services.avatar,
+      skillCommand: services.skillCommand,
       workspace: createWorkspaceResolver(orca.host),
       log,
     })
@@ -136,6 +142,7 @@ describe('面板 RPC 桥', () => {
       worktree: services.worktree,
       envCheck: services.envCheck,
       avatar: services.avatar,
+      skillCommand: services.skillCommand,
       workspace: createWorkspaceResolver(orca.host),
       log,
     })
@@ -168,6 +175,7 @@ describe('面板 RPC 桥', () => {
       worktree: services.worktree,
       envCheck: services.envCheck,
       avatar: services.avatar,
+      skillCommand: services.skillCommand,
       workspace: createWorkspaceResolver(host),
       log,
     })
@@ -194,6 +202,7 @@ describe('面板 RPC 桥', () => {
       worktree: services.worktree,
       envCheck: services.envCheck,
       avatar: services.avatar,
+      skillCommand: services.skillCommand,
       workspace: createWorkspaceResolver(orca.host),
       log,
     })
@@ -221,6 +230,7 @@ describe('面板 RPC 桥', () => {
       worktree: services.worktree,
       envCheck: services.envCheck,
       avatar: services.avatar,
+      skillCommand: services.skillCommand,
       workspace,
       log,
     })
@@ -257,6 +267,7 @@ describe('面板 RPC 桥', () => {
       worktree: services.worktree,
       envCheck: services.envCheck,
       avatar: services.avatar,
+      skillCommand: services.skillCommand,
       workspace: createWorkspaceResolver(ambiguousHost()),
       log: recordingLog,
     })
@@ -291,6 +302,7 @@ describe('面板 RPC 桥', () => {
       worktree: services.worktree,
       envCheck: services.envCheck,
       avatar: services.avatar,
+      skillCommand: services.skillCommand,
       workspace: createWorkspaceResolver(ambiguousHost()),
       log,
     })

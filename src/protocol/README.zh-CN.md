@@ -7,6 +7,8 @@ worker 与面板之间的消息类型和常量。
 - 只放类型和常量，不放逻辑；
 - `i18n.ts` 是面板与 worker 共用的消息目录（`zh-CN` / `en` 两份，键一一对应），
   语言解析与插值在 `src/panel/i18n.ts`；
+- `skill-command.ts` 放技能命令写法（`claude` / `omp` / `codex`）、各自的手势前缀、`skillCommand`
+  设置键与 `skill.command` 方法名；写法是常量，挑写法的规则在 `src/core/skill-command.ts`；
 - 不依赖任何其他目录（这是约定，不是工具强制）；
 - 面板只能通过这里定义的类型与 worker 通信，不能直接导入 `core`、`adapters`、`worker`。
 
@@ -26,6 +28,13 @@ RPC 方法（面板用 `orca.plugin.request(方法名, 参数)` 调用，worker 
   链接取自后端详情，Orca 认不出时不挂载、只写进注释，面板仍显示原链接；
 - `avatar.read`：把后端给出的 http(s) 头像地址读成 `data:image/…`。面板 frame 的 CSP 只放行
   `data:` 图片，远程地址会被宿主拦掉；worker 代理下载，响应只接受 `image/*`、上限 1 MiB。
+
+工单 RPC 之外，插件还有三个额外处理器：
+
+- `workspace.current`：worker 认领到的工作区；认领不到时一并给出候选；
+- `skills.install`：把入池技能写进 agent 的技能目录；
+- `skill.command`：当前生效的技能命令写法（写法与来源）。面板在复制手势前问一次，
+  复制出去的文本才和用户要粘贴进去的客户端对得上。
 
 `workspaceRoot` 由 worker 自己解析：面板不填路径，worker 认领不到工作区时通过
 `workspace.candidates` 事件把候选推一次（附带所属聚焦上下文键，面板据此判断选择是否还有效）；

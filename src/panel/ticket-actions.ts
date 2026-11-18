@@ -5,9 +5,12 @@
  */
 import * as React from 'react'
 
+import type { SkillCommandStyle } from '../protocol/skill-command.ts'
 import type { TicketSnapshot } from '../protocol/tracker.ts'
 import { usePromptCopy, type CopyResult, type PromptCopyState, type PromptCopy } from './injection.ts'
 import { ticketPrompt } from './prompts.ts'
+import { resolveSkillCommandStyle } from './skill-command.ts'
+import type { PanelClient } from './transport.ts'
 
 /** 列表与详情视图需要的复制状态与回调。 */
 export interface TicketActionsState {
@@ -21,17 +24,24 @@ export interface TicketActionsState {
   readonly dismiss: () => void
   /** 复制这张票的提示词。 */
   readonly onSkillAction: (ticket: TicketSnapshot) => void
+  /**
+   * 按当前生效的写法复制一段提示词。
+   * 写法在点击时解析：用户刚开起别的客户端时，复制到手势也跟着变。
+   */
+  readonly copyPrompt: (build: (style: SkillCommandStyle) => string) => Promise<void>
 }
 
 /**
  * 管理工单提示词的复制。
  * @param workspaceRoot - 工作区变化时清空复制标记。
  * @param port - 面板的复制端口。
+ * @param client - 面板客户端：读当前生效的技能命令写法。
  * @returns 状态与回调。
  */
 export function useTicketActions(
   workspaceRoot: string | undefined,
   port: PromptCopy,
+  client: PanelClient,
 ): TicketActionsState {
   const [copied, setCopied] = React.useState<string | null>(null)
   const { state, copy, dismiss } = usePromptCopy(port)
@@ -40,13 +50,20 @@ export function useTicketActions(
     setCopied(null)
   }, [workspaceRoot])
 
-  const onSkillAction = (ticket: TicketSnapshot): void => {
-    const prompt = ticketPrompt(ticket)
-    if (prompt === null) return
-    void copy(prompt).then((result) => {
-      setCopied(result.outcome === 'copied' ? ticket.ref : null)
-    })
+  const copyPrompt = async (build: (style: SkillCommandStyle) => string): Promise<void> => {
+    const style = await resolveSkillCommandStyle(client)
+    await copy(build(style))
   }
 
-  return { copied, copyState: state, copy, dismiss, onSkillAction }
+  const onSkillAction = (ticket: TicketSnapshot): void => {
+    void (async () => {
+      const style = await resolveSkillCommandStyle(client)
+      const prompt = ticketPrompt(ticket, style)
+      if (prompt === null) return
+      const result = await copy(prompt)
+      setCopied(result.outcome === 'copied' ? ticket.ref : null)
+    })()
+  }
+
+  return { copied, copyState: state, copy, dismiss, onSkillAction, copyPrompt }
 }

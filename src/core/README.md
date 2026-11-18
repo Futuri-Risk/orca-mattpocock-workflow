@@ -51,6 +51,11 @@ Ticket details:
 - `orca-cli.ts` decides the Orca CLI candidate order and validates the `--version` output; on Linux a
   same-named screen reader is excluded.
 
+Skill command style (`skill-command.ts`): decides which gesture prefix the panel copies. The rule
+is pure — a manual setting wins, then the detected style, then the style detected last time, then
+the Claude Code default. The agent-kind-to-style mapping lives here too: unknown kinds do not vote,
+and two styles running at once count as ambiguous.
+
 ## Metrics and pressure tiers (`metrics.ts`)
 
 `computeMetrics` takes classified tickets, the snapshot time, totals, time-data availability and
