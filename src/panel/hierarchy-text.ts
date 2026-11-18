@@ -2,7 +2,7 @@
  * 父子布局的可用性与来源说明。
  *
  * 只有快照声明了父子能力时父子布局才生效；`none` 时禁用切换并说明原因。
- * 说明同时写出能力来源：GitHub 原生、GitLab 工作项或本地 `Parent:` 约定。
+ * 说明同时写出能力来源：GitHub 原生、GitLab 工作项、本地 `Parent:` 或 Gitea 首行 `Part of` 约定。
  */
 import type { BackendKind } from '../protocol/backend.ts'
 import type { TicketHierarchy } from '../protocol/tracker.ts'
@@ -28,9 +28,7 @@ export function hierarchyAvailability(
   t: Translate,
 ): HierarchyAvailability {
   if (hierarchy === 'none') {
-    if (backend === 'gitea') {
-      return { available: false, hint: t('tickets.layout.unavailableGitea') }
-    }
+    // Gitea 的「无」只来自升级前的旧缓存，刷新后即为正文约定；退回通用说明。
     if (backend === 'gitlab') {
       return { available: false, hint: t('tickets.layout.unavailableGitlab') }
     }
@@ -38,6 +36,9 @@ export function hierarchyAvailability(
   }
 
   if (hierarchy === 'convention') {
+    if (backend === 'gitea') {
+      return { available: true, hint: t('tickets.layout.giteaHint') }
+    }
     return { available: true, hint: t('tickets.layout.conventionHint') }
   }
   if (backend === 'gitlab') {

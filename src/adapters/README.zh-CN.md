@@ -7,7 +7,9 @@
 - `github/`：通过 `git` 与 `gh` 读取 `github.com` 仓库的 issue；
 - `gitlab/`：通过 `git` 与 `glab` 读取 GitLab issue；列表带 `blocking_issues_count` 时直接判定支持原生阻塞，原生阻塞数在 `resolveBlockers` 补齐阶段读取：否则按实例主机只探测一次，支持时用一次批量 GraphQL 取回阻塞数，失败或空数组时退回 `Blocked by:` 行；要求 `glab` >= 1.126，更早版本未验证；
 - `gitea/`：通过 `git` 与 `tea` 读取 Gitea issue 与原生 issue 依赖（只读 `tea api --include`）；
-  依赖功能关闭时退回 `Blocked by:` 行。宿主选择后端时探测 `tea logins list --output json`；
+  依赖功能关闭时退回 `Blocked by:` 行。宿主选择后端时探测 `tea logins list --output json`。
+  Gitea 没有原生子工单：父级来自子票正文第一个非空行单独写的 `Part of #编号`，
+  在已有列表响应里解析、不新增请求，父子能力为约定；
 - `markdown/`：读取工作区里 `.scratch/<feature>/issues/*.md` 的本地工单；`env.ts` 供环境检查确认工单目录与文件可解析；
 - `fs/`：环境检查用的文件系统能力（解析用户主目录、判断文件是否存在）与本地快照库
   （`~/.orca-mattpocock-workflow/cache`，主目录不可写时退回系统临时目录）；
@@ -36,8 +38,8 @@
 - 父子能力由每个后端显式声明：GitHub 从列表查询一并取 `parent`（同仓库存 `#编号`，跨仓库存
   `owner/name#编号`）；GitLab 在列表返回后按每批 100 个 iid 查工作项层级（issue / task 父级存
   `#iid`，epic 存 `&iid`，失败只降级能力、不影响列表）；本地 Markdown 解析同一 feature 内的
-  `Parent:` 行；Gitea 声明为无。共用契约套件会断言能力声明与父级引用一致，声明为无的后端
-  不得出现 `parent`。
+  `Parent:` 行；Gitea 解析子票正文第一个非空行的 `Part of #编号`，不新增请求，能力为约定。
+  共用契约套件会断言能力声明与父级引用一致，声明为无的后端不得出现 `parent`。
 - 详情只在打开详情时请求，不进入列表快照；创建人、评论作者与分配人都是结构化用户
   （登录名 / 展示名 / 头像地址），与列表的创建人同源同形：GitHub 的 `author.login` + `avatarUrl`、
   GitLab 的 `username` + `avatar_url`、Gitea 的 `login` + `avatar_url`（相对地址按实例基准补全）；

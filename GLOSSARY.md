@@ -107,11 +107,17 @@ Code: `src/panel/ticket-tree.ts` (tree building, cycle and missing-parent fallba
 Where the parent-child relations declared by a snapshot come from:
 
 - `native`: the backend has native child tickets (GitHub sub-issues, GitLab work-item hierarchy);
-- `convention`: derived from a body convention (the `Parent:` line in local Markdown);
-- `none`: Gitea has no native child tickets, or this refresh could not fetch the hierarchy.
+- `convention`: derived from a body convention (the `Parent:` line in local Markdown, the
+  `Part of #number` first line in a Gitea child ticket);
+- `none`: the backend provides no hierarchy, or this refresh could not fetch it (Gitea also reads
+  `none` from a pre-upgrade cache).
 
 With `none`, the panel disables the tree layout and explains why; the flat layout works as usual.
 The field is `hierarchy`. Introduced in #14.
+
+Gitea has no native sub-issues; `to-tickets` puts `Part of #<spec>` on the first non-empty line of a
+child body, and the panel reads only that line from the list response already in hand. Other forms
+and blocking dependencies produce no parent-child relation.
 
 ## Parent-child relation
 

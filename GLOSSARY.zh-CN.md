@@ -86,10 +86,14 @@ _避免_：把仓库作用域叫成「仓库根」「repo root」——那容易
 快照声明的父子关系来源：
 
 - `native`：后端提供原生父子工单（GitHub 子工单、GitLab 工作项层级）；
-- `convention`：按正文约定推导（本地 Markdown 的 `Parent:` 行）；
-- `none`：Gitea 没有原生子工单，或本次刷新取不到层级。
+- `convention`：按正文约定推导（本地 Markdown 的 `Parent:` 行、Gitea 子票正文首个非空行的
+  `Part of #编号`）；
+- `none`：后端不提供父子关系，或本次刷新取不到层级（Gitea 的旧缓存也会是 `none`）。
 
 为 `none` 时面板禁用父子模式并说明原因，平铺照常。字段是 `hierarchy`。引入于 #14。
+
+Gitea 没有原生子工单；`to-tickets` 在子工单正文第一个非空行写 `Part of #<来源 spec>`，
+面板只认这一行、在已有列表响应里解析。其余写法与阻塞依赖都不产生父子关系。
 
 ## 父子关系
 

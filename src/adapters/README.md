@@ -13,7 +13,9 @@ Adapters for external systems, one subdirectory per backend:
   are untested.
 - `gitea/`: reads Gitea issues and native issue dependencies through `git` and `tea` (read-only
   `tea api --include`); falls back to `Blocked by:` lines when the dependency feature is off. When
-  the host selects the backend it probes `tea logins list --output json`.
+  the host selects the backend it probes `tea logins list --output json`. Gitea has no native
+  sub-issues: the parent comes from a standalone `Part of #number` on the first non-empty line of the
+  child body, parsed from the list response with no extra request, and the capability is `convention`.
 - `markdown/`: reads local tickets from `.scratch/<feature>/issues/*.md` in the workspace; `env.ts`
   lets the environment check confirm that the ticket directory and files can be parsed.
 - `fs/`: filesystem capabilities for the environment check (resolving the user's home directory,
@@ -50,7 +52,8 @@ They share repository detection, command execution and error mapping in `shared.
   query (`#number` in the same repository, `owner/name#number` across repositories); GitLab queries
   the work-item hierarchy after the list returns, in batches of 100 iids (issue / task parents stored
   as `#iid`, epics as `&iid`; a failure only downgrades the capability and does not affect the list);
-  local Markdown parses `Parent:` lines within the same feature; Gitea declares none. The shared
+  local Markdown parses `Parent:` lines within the same feature; Gitea parses the first non-empty
+  line of the body for `Part of #number` (no extra request) and declares `convention`. The shared
   contract suite asserts that the declared capability and parent references agree, and a backend that
   declares none must not emit `parent`.
 - Details are requested only when a detail is opened and never enter the list snapshot. Creators,

@@ -10,7 +10,8 @@ export type TicketState = 'open' | 'closed'
  * 父子关系的来源：原生、约定或没有。
  *
  * - `native`：后端提供原生父子工单（GitHub 子工单、GitLab 工作项层级）；
- * - `convention`：按正文约定推导（本地 Markdown 的 `Parent:` 行）；
+ * - `convention`：按正文约定推导（本地 Markdown 的 `Parent:` 行、Gitea 子票正文首行的
+ *   `Part of #编号`）；
  * - `none`：当前后端或本次刷新没有父子关系。
  *
  * 父子关系只用于组织与展示，不参与开工判定。

@@ -16,12 +16,14 @@ The interaction is designed around the capabilities Orca plugins actually expose
   the union). The list switches between a **flat** layout (default) and a **tree** layout: the tree
   layout indents child tickets under their parent, and a parent row can collapse its whole subtree and
   shows its visible child count. When a parent is filtered out or not loaded yet, the child moves to
-  the top level and shows a parent-reference badge. Every ticket gets skill-action
-  badges; "Copy prompt" puts gestures such as `/implement #40` on the clipboard. Clicking a ticket
-  number copies that ticket's page URL on the code-hosting service (local Markdown has no remote
-  link, so its number stays plain text); clicking the title still opens the detail. A remote ticket
-  that can be started also gets a "Create worktree" action that creates an Orca-managed worktree in
-  one click.
+  the top level and shows a parent-reference badge. The tree layout uses native sub-issues on GitHub,
+  work-item hierarchy on GitLab, the `Parent:` line in local Markdown, and the first-line `Part of
+  #number` convention in Gitea (parsed from the list response without extra requests). Every ticket
+  gets skill-action badges; "Copy prompt" puts gestures such as `/implement #40` on the clipboard.
+  Clicking a ticket number copies that ticket's page URL on the code-hosting service (local Markdown
+  has no remote link, so its number stays plain text); clicking the title still opens the detail. A
+  remote ticket that can be started also gets a "Create worktree" action that creates an
+  Orca-managed worktree in one click.
 - **Overview**: pressure at a glance (size / blocking / staleness), key numbers, status and category
   composition, and the tickets to look at first.
 - **Detail**: timeline, fields and native blocking relations for one ticket. The header can refresh
@@ -118,8 +120,13 @@ they do not change verdicts, statistics or write operations:
 |---|---|---|
 | GitHub | Native sub-issues | The list query also fetches parents; cross-repository parents keep `owner/name#number` and are never matched to a same-numbered ticket |
 | GitLab | Work-item hierarchy | Tasks under an issue use `#iid`; epics keep only an `&iid` reference and get no epic row; if the hierarchy query fails the tree layout is disabled and a refresh retries |
-| Gitea | None | No native child tickets; the tree layout is disabled with an explanation; the flat layout works as usual |
+| Gitea | First-line `Part of` convention | No native child tickets; `/to-tickets` puts `Part of #number` on the first non-empty line of each ticket, parsed from the list response with no extra request; malformed lines count as no parent |
 | Local Markdown | `Parent:` convention | Only tickets in the same feature; see below |
+
+Gitea reads only a standalone `Part of #<spec>` on the first non-empty line: a line elsewhere,
+quote/heading prefixes or extra text, a cross-repository reference or a self-reference counts as no
+parent. The task list in the spec body is not parsed, and `Blocked by:` lines stay independent, so
+blocking never becomes a parent. The capability is `convention`.
 
 The front matter of a local Markdown ticket body (before `## Comments`) supports these lines:
 

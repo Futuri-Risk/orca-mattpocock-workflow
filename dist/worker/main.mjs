@@ -768,6 +768,7 @@ var GITEA_AUTHOR_FIELDS = {
   displayName: "full_name",
   avatarUrl: "avatar_url"
 };
+var PART_OF_LINE = /^part of #(\d+)$/i;
 var STATUS_LINE = /^HTTP\/\S+\s+(\d{3})/m;
 var TOTAL_LINE = /^x-total-count:\s*(\d+)\s*$/im;
 function parseApiResponse(stdout, stderr) {
@@ -819,6 +820,8 @@ function parseIssue(value, index, avatarBaseUrl2) {
   const state = readState2(value.state, number);
   const closedAt = readClosedAt(value.closed_at, number);
   const url = readOptionalString(value.html_url);
+  const body = typeof value.body === "string" ? value.body : "";
+  const parent = readParent(body, number);
   return {
     ticket: {
       ref: `#${String(number)}`,
@@ -833,10 +836,20 @@ function parseIssue(value, index, avatarBaseUrl2) {
       openBlockers: 0,
       blockedBy: [],
       ...closedAt === void 0 ? {} : { closedAt },
-      ...url === null ? {} : { url }
+      ...url === null ? {} : { url },
+      ...parent === void 0 ? {} : { parent }
     },
-    body: typeof value.body === "string" ? value.body : ""
+    body
   };
+}
+function readParent(body, number) {
+  const first = body.split(/\r?\n/).find((line) => line.trim().length > 0);
+  if (first === void 0) return void 0;
+  const match = PART_OF_LINE.exec(first.trim());
+  if (match === null) return void 0;
+  const parent = Number(match[1]);
+  if (!Number.isSafeInteger(parent) || parent <= 0 || parent === number) return void 0;
+  return `#${String(parent)}`;
 }
 function readState2(value, number) {
   if (value === "open") return "open";
@@ -2331,8 +2344,8 @@ function createGiteaTracker(deps) {
         total: Math.max(issues.total ?? tickets.length, tickets.length),
         tickets,
         viewer: await viewer,
-        // Gitea 没有原生子工单能力；不发明正文约定，父子布局禁用。
-        hierarchy: "none"
+        // Gitea 没有原生子工单；父级来自子票正文首行的 `Part of #<n>` 约定。
+        hierarchy: "convention"
       };
     },
     async fetchChanges(workspaceRoot, since) {
@@ -2379,7 +2392,7 @@ async function readGiteaChanges(deps, workspaceRoot, pageSize, since, concurrenc
     truncated: issues.truncated,
     // 身份查询失败时省略，宿主沿用基准数据里的身份。
     ...login === null ? {} : { viewer: login },
-    hierarchy: "none"
+    hierarchy: "convention"
   };
 }
 async function readCurrentViewer(deps, workspaceRoot) {
@@ -2677,7 +2690,7 @@ function parseIssueNode(value, index, repository) {
   const title = readString4(value.title, `\u7B2C ${String(number)} \u5F20\u7968\u7684\u6807\u9898`);
   const state = readState5(value.state, number);
   const closedAt = readClosedAt3(value.closedAt, number);
-  const parent = readParent(value.parent, repository);
+  const parent = readParent2(value.parent, repository);
   const url = readOptionalString(value.url);
   return {
     ref: `#${String(number)}`,
@@ -2703,7 +2716,7 @@ function readRepositoryName(repository) {
   const name = repository.nameWithOwner;
   return typeof name === "string" && name.length > 0 ? name : void 0;
 }
-function readParent(value, repository) {
+function readParent2(value, repository) {
   if (repository === void 0 || !isRecord(value)) return void 0;
   const number = value.number;
   if (typeof number !== "number" || !Number.isInteger(number) || number <= 0) return void 0;

@@ -103,8 +103,8 @@ const ZH_CN = {
   'tickets.layout.flatHint': '平铺：所有票按当前排序排成一条线',
   'tickets.layout.nativeHint': '父子：父子关系来自 GitHub 原生子工单',
   'tickets.layout.conventionHint': '父子：父子关系来自本地工单的 Parent: 行',
+  'tickets.layout.giteaHint': '父子：父子关系来自 Gitea 工单正文首行的 Part of 约定',
   'tickets.layout.gitlabHint': '父子：父子关系来自 GitLab 工作项层级；epic 分组不在列表里',
-  'tickets.layout.unavailableGitea': 'Gitea 没有原生子工单，父子布局不可用；平铺照常',
   'tickets.layout.unavailableGitlab':
     '这次没有取到 GitLab 工作项层级，父子布局暂不可用；下次刷新会重试',
   'tickets.layout.unavailable': '当前后端不提供父子关系，父子布局不可用',
@@ -670,10 +670,10 @@ const EN = {
   'tickets.layout.nativeHint': 'Hierarchy: relationships come from GitHub sub-issues',
   'tickets.layout.conventionHint':
     'Hierarchy: relationships come from the Parent: line in local tickets',
+  'tickets.layout.giteaHint':
+    'Hierarchy: relationships come from the first-line Part of convention in Gitea issue bodies',
   'tickets.layout.gitlabHint':
     'Hierarchy: relationships come from GitLab work item hierarchy; epic groups are not in the list',
-  'tickets.layout.unavailableGitea':
-    'Gitea has no native sub-issues, so hierarchy layout is unavailable; flat layout still works',
   'tickets.layout.unavailableGitlab':
     'This refresh could not read the GitLab work item hierarchy, so hierarchy layout is unavailable; the next refresh retries',
   'tickets.layout.unavailable':

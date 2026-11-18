@@ -40,6 +40,7 @@ function render(
   tickets: readonly TicketSnapshot[],
   layout: TicketLayout,
   collapsed: ReadonlySet<string> = new Set(),
+  backend: 'github' | 'gitea' = 'github',
 ): string {
   const rows = buildTicketRows(tickets, layout, collapsed)
   return renderToStaticMarkup(
@@ -49,7 +50,7 @@ function render(
       emptyText={ZH['tickets.emptyRepo']}
       copied={null}
       now={NOW}
-      backend="github"
+      backend={backend}
       workspaceRoot="/workspace"
       client={createPanelClient(() => Promise.reject(new Error('渲染时不应发请求')))}
       onOpenEnvCheck={() => undefined}
@@ -186,5 +187,45 @@ describe('工单列表布局渲染', () => {
 
     expect(markup).toContain('<span data-testid="ticket-ref"')
     expect(markup).not.toMatch(/<button[^>]*data-testid="ticket-ref"/)
+  })
+})
+
+describe('Gitea 正文约定的父子布局', () => {
+  /** `to-tickets` 在 Gitea 上发布的一组票：来源 spec 与它的直接子票。 */
+  const SPEC_TICKETS = [
+    ticket('#15'),
+    ticket('#16', '#15'),
+    ticket('#17', '#15'),
+    ticket('#9'),
+  ]
+
+  it('来源 spec 下的子票缩进，父行显示可见子票数', () => {
+    const markup = render(SPEC_TICKETS, 'hierarchy', new Set(), 'gitea')
+
+    expect(rowsOf(markup)).toEqual([
+      { ref: '#15', depth: '0', outside: false },
+      { ref: '#16', depth: '1', outside: false },
+      { ref: '#17', depth: '1', outside: false },
+      { ref: '#9', depth: '0', outside: false },
+    ])
+    expect(markup).toContain(ZH['tickets.childCount'].replace('{count}', '2'))
+    expect(count(markup, 'data-testid="ticket-parent"')).toBe(0)
+  })
+
+  it('来源 spec 被筛掉或还没加载时，子票升到顶层并显示父级徽标', () => {
+    const markup = render(
+      SPEC_TICKETS.filter((item) => item.ref !== '#15'),
+      'hierarchy',
+      new Set(),
+      'gitea',
+    )
+
+    expect(rowsOf(markup)).toEqual([
+      { ref: '#16', depth: '0', outside: true },
+      { ref: '#17', depth: '0', outside: true },
+      { ref: '#9', depth: '0', outside: false },
+    ])
+    expect(count(markup, 'data-testid="ticket-parent"')).toBe(2)
+    expect(markup).toContain(ZH['tickets.parentOutside'].replace('{parent}', '#15'))
   })
 })

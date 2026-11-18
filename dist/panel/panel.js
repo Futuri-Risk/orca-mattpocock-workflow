@@ -24033,8 +24033,8 @@
     "tickets.layout.flatHint": "\u5E73\u94FA\uFF1A\u6240\u6709\u7968\u6309\u5F53\u524D\u6392\u5E8F\u6392\u6210\u4E00\u6761\u7EBF",
     "tickets.layout.nativeHint": "\u7236\u5B50\uFF1A\u7236\u5B50\u5173\u7CFB\u6765\u81EA GitHub \u539F\u751F\u5B50\u5DE5\u5355",
     "tickets.layout.conventionHint": "\u7236\u5B50\uFF1A\u7236\u5B50\u5173\u7CFB\u6765\u81EA\u672C\u5730\u5DE5\u5355\u7684 Parent: \u884C",
+    "tickets.layout.giteaHint": "\u7236\u5B50\uFF1A\u7236\u5B50\u5173\u7CFB\u6765\u81EA Gitea \u5DE5\u5355\u6B63\u6587\u9996\u884C\u7684 Part of \u7EA6\u5B9A",
     "tickets.layout.gitlabHint": "\u7236\u5B50\uFF1A\u7236\u5B50\u5173\u7CFB\u6765\u81EA GitLab \u5DE5\u4F5C\u9879\u5C42\u7EA7\uFF1Bepic \u5206\u7EC4\u4E0D\u5728\u5217\u8868\u91CC",
-    "tickets.layout.unavailableGitea": "Gitea \u6CA1\u6709\u539F\u751F\u5B50\u5DE5\u5355\uFF0C\u7236\u5B50\u5E03\u5C40\u4E0D\u53EF\u7528\uFF1B\u5E73\u94FA\u7167\u5E38",
     "tickets.layout.unavailableGitlab": "\u8FD9\u6B21\u6CA1\u6709\u53D6\u5230 GitLab \u5DE5\u4F5C\u9879\u5C42\u7EA7\uFF0C\u7236\u5B50\u5E03\u5C40\u6682\u4E0D\u53EF\u7528\uFF1B\u4E0B\u6B21\u5237\u65B0\u4F1A\u91CD\u8BD5",
     "tickets.layout.unavailable": "\u5F53\u524D\u540E\u7AEF\u4E0D\u63D0\u4F9B\u7236\u5B50\u5173\u7CFB\uFF0C\u7236\u5B50\u5E03\u5C40\u4E0D\u53EF\u7528",
     "tickets.layout.fallback": "\u5F53\u524D\u5FEB\u7167\u6CA1\u6709\u7236\u5B50\u5173\u7CFB\uFF0C\u5DF2\u6309\u5E73\u94FA\u663E\u793A\uFF1B\u504F\u597D\u5DF2\u4FDD\u7559\uFF0C\u5237\u65B0\u6210\u529F\u6216\u6362\u56DE\u652F\u6301\u7684\u540E\u7AEF\u540E\u81EA\u52A8\u6062\u590D\u3002",
@@ -24554,8 +24554,8 @@
     "tickets.layout.flatHint": "Flat: every ticket follows the current sort in one list",
     "tickets.layout.nativeHint": "Hierarchy: relationships come from GitHub sub-issues",
     "tickets.layout.conventionHint": "Hierarchy: relationships come from the Parent: line in local tickets",
+    "tickets.layout.giteaHint": "Hierarchy: relationships come from the first-line Part of convention in Gitea issue bodies",
     "tickets.layout.gitlabHint": "Hierarchy: relationships come from GitLab work item hierarchy; epic groups are not in the list",
-    "tickets.layout.unavailableGitea": "Gitea has no native sub-issues, so hierarchy layout is unavailable; flat layout still works",
     "tickets.layout.unavailableGitlab": "This refresh could not read the GitLab work item hierarchy, so hierarchy layout is unavailable; the next refresh retries",
     "tickets.layout.unavailable": "This backend does not provide parent-child relationships, so hierarchy layout is unavailable",
     "tickets.layout.fallback": "This snapshot has no parent-child relationships, so the list is flat. Your preference is kept and returns when a refresh succeeds or you switch back to a capable backend.",
@@ -32436,15 +32436,15 @@ ${String(target.number)}`;
   // src/panel/hierarchy-text.ts
   function hierarchyAvailability(backend, hierarchy, t) {
     if (hierarchy === "none") {
-      if (backend === "gitea") {
-        return { available: false, hint: t("tickets.layout.unavailableGitea") };
-      }
       if (backend === "gitlab") {
         return { available: false, hint: t("tickets.layout.unavailableGitlab") };
       }
       return { available: false, hint: t("tickets.layout.unavailable") };
     }
     if (hierarchy === "convention") {
+      if (backend === "gitea") {
+        return { available: true, hint: t("tickets.layout.giteaHint") };
+      }
       return { available: true, hint: t("tickets.layout.conventionHint") };
     }
     if (backend === "gitlab") {

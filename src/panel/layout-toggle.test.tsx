@@ -39,16 +39,26 @@ describe('布局切换', () => {
     expect(markup).toContain(`aria-label="${ZH['tickets.layout.nativeHint']}"`)
   })
 
-  it('Gitea 无父子能力时按钮标为不可用并说明原因', () => {
+  it('Gitea 正文约定时父子可用，说明写明 Part of 来源', () => {
+    const markup = render('gitea', 'convention')
+
+    expect(markup).not.toContain('aria-disabled="true"')
+    expect(markup).toContain(`title="${ZH['tickets.layout.giteaHint']}"`)
+    expect(markup).toContain(`aria-label="${ZH['tickets.layout.giteaHint']}"`)
+    expect(ZH['tickets.layout.giteaHint']).toContain('Part of')
+  })
+
+  it('Gitea 旧缓存的 none 只显示通用说明', () => {
     const markup = render('gitea', 'none')
 
     expect(markup).toContain('aria-disabled="true"')
     expect(markup).toContain('data-disabled="true"')
-    expect(markup).toContain(`title="${ZH['tickets.layout.unavailableGitea']}"`)
+    expect(markup).toContain(`title="${ZH['tickets.layout.unavailable']}"`)
     // 读屏从可访问名称就能听到原因。
-    expect(markup).toContain(`aria-label="${ZH['tickets.layout.unavailableGitea']}"`)
+    expect(markup).toContain(`aria-label="${ZH['tickets.layout.unavailable']}"`)
     // 偏好仍是父子：按钮保持选中，界面由降级提示说明已按平铺显示。
     expect(markup).toContain('aria-pressed="true"')
+    expect(markup).not.toContain('Gitea')
   })
 
   it('GitLab 层级取不到时说明下次刷新会重试', () => {

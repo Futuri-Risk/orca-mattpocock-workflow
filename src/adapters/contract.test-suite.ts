@@ -57,7 +57,8 @@ export type NativeBlockersFixture =
 /**
  * 后端的父子能力，必须由各后端显式声明：
  * - `native`：后端提供原生父子工单；
- * - `convention`：按正文约定推导（本地 Markdown 的 `Parent:`）；
+ * - `convention`：按正文约定推导（本地 Markdown 的 `Parent:`、Gitea 正文首行的
+ *   `Part of #编号`）；
  * - `none`：没有父子能力，所有工单都不得带父级引用。
  *
  * `parents` 给出期望的 `ref → 父级引用`；未列出的票必须没有父级。
