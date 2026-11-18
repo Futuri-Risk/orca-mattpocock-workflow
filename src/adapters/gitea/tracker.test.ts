@@ -17,6 +17,7 @@ import {
   apiCall,
   failedApiCall,
   giteaAuthor,
+  giteaComment,
   giteaIssue,
   giteaIssueDetail,
   includeHeaders,
@@ -504,6 +505,31 @@ function mutableGiteaTracker(issue: MutableGiteaIssue): {
   }
 }
 
+/** 三条时间递增、id 稳定的评论，供页大小 2 的分页边界测试复用。 */
+const PAGED_COMMENTS = [
+  giteaComment({ id: 1, login: 'bob', body: '第一条', createdAt: '2026-11-13T09:00:00Z' }),
+  giteaComment({ id: 2, login: 'carol', body: '第二条', createdAt: '2026-11-13T10:00:00Z' }),
+  giteaComment({ id: 3, login: 'dave', body: '第三条', createdAt: '2026-11-13T11:00:00Z' }),
+]
+
+const FOUR_COMMENTS = [
+  ...PAGED_COMMENTS,
+  giteaComment({ id: 4, login: 'erin', body: '第四条', createdAt: '2026-11-13T12:00:00Z' }),
+]
+
+/** 详情固定成功，评论接口按页码交给调用方；页码从 endpoint 解析。 */
+function detailWithComments(comments: (page: number) => RecordedApiCall): CommandRunner {
+  return (command, args) => {
+    if (command === 'git') return Promise.resolve({ stdout: GITEA_REMOTES_OUTPUT, stderr: '' })
+    const endpoint = args[2] ?? ''
+    if (endpoint === `/repos/${GITEA_REPO}/issues/15`) {
+      return Promise.resolve(giteaDetailCall({ labels: [], assignees: [], state: 'open' }))
+    }
+    const page = Number(/[?&]page=(\d+)/.exec(endpoint)?.[1] ?? '1')
+    return Promise.resolve(comments(page))
+  }
+}
+
 describe('Gitea 工单详情与变更', () => {
   it('读取 issue 与 comments，解析正文、标签、分配人与链接', async () => {
     const { tracker, calls } = mutableGiteaTracker({
@@ -534,20 +560,12 @@ describe('Gitea 工单详情与变更', () => {
     ])
   })
 
-  it('评论按页拉到短页为止', async () => {
+  it('没有总条数时翻到空页为止', async () => {
     const pages = new Map([
       [1, GITEA_COMMENTS.slice(0, 2)],
       [2, GITEA_COMMENTS.slice(2)],
     ])
-    const runner: CommandRunner = (command, args) => {
-      if (command === 'git') return Promise.resolve({ stdout: GITEA_REMOTES_OUTPUT, stderr: '' })
-      const endpoint = args[2] ?? ''
-      if (endpoint === `/repos/${GITEA_REPO}/issues/15`) {
-        return Promise.resolve(giteaDetailCall({ labels: [], assignees: [], state: 'open' }))
-      }
-      const page = Number(/[?&]page=(\d+)/.exec(endpoint)?.[1] ?? '1')
-      return Promise.resolve(apiCall(pages.get(page) ?? [], pages.size))
-    }
+    const runner = detailWithComments((page) => apiCall(pages.get(page) ?? []))
     const tracker = createGiteaTracker({ run: runner, now: () => NOW, pageSize: 2 })
 
     const detail = await tracker.fetchDetail?.('/workspace', { ref: '#15', number: 15 })
@@ -556,6 +574,181 @@ describe('Gitea 工单详情与变更', () => {
       giteaAuthor('bob'),
       giteaAuthor('carol'),
     ])
+  })
+
+  it('服务端忽略分页参数时按总条数收口，不重复追加同一页', async () => {
+    let calls = 0
+    const runner = detailWithComments(() => {
+      calls += 1
+      if (calls > 1) throw new CommandError('failed', '重复请求', '不应请求第二页', 1)
+      // 自建实例忽略 page / limit：每页都返回全部评论，X-Total-Count 仍是真实条数。
+      return apiCall(PAGED_COMMENTS, PAGED_COMMENTS.length)
+    })
+    const tracker = createGiteaTracker({ run: runner, now: () => NOW, pageSize: 2 })
+
+    const detail = await tracker.fetchDetail?.('/workspace', { ref: '#15', number: 15 })
+
+    expect(detail?.comments.map((comment) => comment.body)).toEqual([
+      '第一条',
+      '第二条',
+      '第三条',
+    ])
+    expect(calls).toBe(1)
+  })
+
+  it('没有总条数且服务端重复返回同一页时，没有新增评论就停', async () => {
+    let calls = 0
+    const runner = detailWithComments(() => {
+      calls += 1
+      if (calls > 2) throw new CommandError('failed', '重复请求', '不应继续请求', 1)
+      return apiCall(PAGED_COMMENTS)
+    })
+    const tracker = createGiteaTracker({ run: runner, now: () => NOW, pageSize: 2 })
+
+    const detail = await tracker.fetchDetail?.('/workspace', { ref: '#15', number: 15 })
+
+    expect(detail?.comments).toHaveLength(3)
+    expect(calls).toBe(2)
+  })
+
+  it('评论数正好是页大小整数倍时按总条数收口，不多翻一页', async () => {
+    let calls = 0
+    const runner = detailWithComments((page) => {
+      calls += 1
+      if (page > 2) throw new CommandError('failed', '多余分页', '总条数已满足', 1)
+      return apiCall(FOUR_COMMENTS.slice((page - 1) * 2, page * 2), FOUR_COMMENTS.length)
+    })
+    const tracker = createGiteaTracker({ run: runner, now: () => NOW, pageSize: 2 })
+
+    const detail = await tracker.fetchDetail?.('/workspace', { ref: '#15', number: 15 })
+
+    expect(detail?.comments.map((comment) => comment.body)).toEqual([
+      '第一条',
+      '第二条',
+      '第三条',
+      '第四条',
+    ])
+    expect(calls).toBe(2)
+  })
+
+  it('服务端把 limit 夹得比页大小更小时，有总条数就继续翻页', async () => {
+    let calls = 0
+    const runner = detailWithComments((page) => {
+      calls += 1
+      if (page > 2) throw new CommandError('failed', '多余分页', '总条数已满足', 1)
+      // 实例把每页上限夹到 2 条，小于请求的 pageSize=3；短页不代表没有下一页。
+      return apiCall(FOUR_COMMENTS.slice((page - 1) * 2, page * 2), FOUR_COMMENTS.length)
+    })
+    const tracker = createGiteaTracker({ run: runner, now: () => NOW, pageSize: 3 })
+
+    const detail = await tracker.fetchDetail?.('/workspace', { ref: '#15', number: 15 })
+
+    expect(detail?.comments).toHaveLength(4)
+    expect(calls).toBe(2)
+  })
+
+  it('评论页数超过上限时给出明确失败，而不是半份详情', async () => {
+    let calls = 0
+    const runner = detailWithComments((page) => {
+      calls += 1
+      return apiCall([
+        giteaComment({
+          id: page,
+          login: 'bob',
+          body: `第 ${String(page)} 条`,
+          createdAt: '2026-11-13T09:00:00Z',
+        }),
+      ])
+    })
+    const tracker = createGiteaTracker({ run: runner, now: () => NOW, pageSize: 1 })
+
+    await expect(
+      tracker.fetchDetail?.('/workspace', { ref: '#15', number: 15 }),
+    ).rejects.toMatchObject({ code: 'fetch-failed' })
+    expect(calls).toBe(200)
+  })
+
+  it('跨页重叠的评论按 id 去重', async () => {
+    let calls = 0
+    const runner = detailWithComments((page) => {
+      calls += 1
+      if (page > 2) throw new CommandError('failed', '多余分页', '总条数已满足', 1)
+      return page === 1
+        ? apiCall([PAGED_COMMENTS[0], PAGED_COMMENTS[1]], PAGED_COMMENTS.length)
+        : apiCall([PAGED_COMMENTS[1], PAGED_COMMENTS[2]], PAGED_COMMENTS.length)
+    })
+    const tracker = createGiteaTracker({ run: runner, now: () => NOW, pageSize: 2 })
+
+    const detail = await tracker.fetchDetail?.('/workspace', { ref: '#15', number: 15 })
+
+    expect(detail?.comments.map((comment) => comment.body)).toEqual([
+      '第一条',
+      '第二条',
+      '第三条',
+    ])
+    expect(calls).toBe(2)
+  })
+
+  it('空正文评论被过滤，但仍按原始条数推进分页', async () => {
+    const first = giteaComment({
+      id: 1,
+      login: 'bob',
+      body: '第一条',
+      createdAt: '2026-11-13T09:00:00Z',
+    })
+    const empty = giteaComment({
+      id: 2,
+      login: 'carol',
+      body: '',
+      createdAt: '2026-11-13T10:00:00Z',
+    })
+    const second = giteaComment({
+      id: 3,
+      login: 'dave',
+      body: '第三条',
+      createdAt: '2026-11-13T11:00:00Z',
+    })
+    const runner = detailWithComments((page) => {
+      if (page === 1) return apiCall([first, empty])
+      if (page === 2) return apiCall([second])
+      throw new CommandError('failed', '多余分页', '不应继续请求', 1)
+    })
+    const tracker = createGiteaTracker({ run: runner, now: () => NOW, pageSize: 2 })
+
+    const detail = await tracker.fetchDetail?.('/workspace', { ref: '#15', number: 15 })
+
+    expect(detail?.comments.map((comment) => comment.body)).toEqual(['第一条', '第三条'])
+  })
+
+  it('整页都是空正文评论时仍继续翻页', async () => {
+    const emptyFirst = giteaComment({
+      id: 1,
+      login: 'bob',
+      body: '',
+      createdAt: '2026-11-13T09:00:00Z',
+    })
+    const emptySecond = giteaComment({
+      id: 2,
+      login: 'carol',
+      body: '',
+      createdAt: '2026-11-13T10:00:00Z',
+    })
+    const visible = giteaComment({
+      id: 3,
+      login: 'dave',
+      body: '第三条',
+      createdAt: '2026-11-13T11:00:00Z',
+    })
+    const runner = detailWithComments((page) => {
+      if (page === 1) return apiCall([emptyFirst, emptySecond])
+      if (page === 2) return apiCall([visible])
+      throw new CommandError('failed', '多余分页', '不应继续请求', 1)
+    })
+    const tracker = createGiteaTracker({ run: runner, now: () => NOW, pageSize: 2 })
+
+    const detail = await tracker.fetchDetail?.('/workspace', { ref: '#15', number: 15 })
+
+    expect(detail?.comments.map((comment) => comment.body)).toEqual(['第三条'])
   })
 
   it('标签用 --add-labels / --remove-labels 增量落地', async () => {

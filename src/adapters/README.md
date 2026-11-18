@@ -34,7 +34,7 @@ They share repository detection, command execution and error mapping in `shared.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | GitHub | Yes | GraphQL (comments page by `hasNextPage`, 100 per page) | Yes | Yes | Yes | Yes | `gh label list`; `gh api .../assignees --paginate --slurp` | `gh issue delete --yes`; `viewerPermission` is `ADMIN` |
 | GitLab | Yes | notes API (system notes skipped) | Yes | Yes | Yes (full replacement; prefix `!` to clear) | Yes | labels and members/all paging (only active members kept) | `glab api --method DELETE`; Owner (access_level ≥ 50) or instance admin |
-| Gitea | Yes | comments API | Yes | Yes | Yes (`--set-assignees`) | Yes | labels paging (50 per page) and assignees | `tea api --method DELETE`; `permissions.admin` |
+| Gitea | Yes | comments API (stopped by `X-Total-Count`, deduped by comment id) | Yes | Yes | Yes (`--set-assignees`) | Yes | labels paging (50 per page) and assignees | `tea api --method DELETE`; `permissions.admin` |
 | Local Markdown | Yes (file body) | `## Comments` sections split by blank lines | No | No | No | No | No | No (never rewrites files the user wrote) |
 
 - List pagination: GitHub fetches one page at a time (GraphQL `first` is capped at 100) and returns
