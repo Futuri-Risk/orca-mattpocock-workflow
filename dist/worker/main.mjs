@@ -2090,6 +2090,7 @@ function invalidPermission(message) {
 }
 
 // src/adapters/gitea/detail.ts
+var MAX_PAGES = 200;
 async function readGiteaDetail(deps, workspaceRoot, reference) {
   const number = requireTicketNumber(reference);
   const repository = await readRepository(deps.run, workspaceRoot);
@@ -2156,14 +2157,41 @@ async function readIssue(deps, workspaceRoot, repository, number) {
   return parseIssue3(response.body, repository.avatarBaseUrl);
 }
 async function readComments(deps, workspaceRoot, repository, number) {
+  const seen = /* @__PURE__ */ new Set();
   const comments = [];
-  for (let page = 1; ; page += 1) {
+  let total;
+  let complete = false;
+  for (let page = 1; page <= MAX_PAGES; page += 1) {
     const endpoint = `/repos/${repository.owner}/${repository.name}/issues/${String(number)}/comments?page=${String(page)}&limit=${String(deps.pageSize)}`;
     const response = await callGiteaApi(deps.run, workspaceRoot, endpoint);
     ensureDetailSuccess(response, "\u8BFB\u53D6 Gitea \u5DE5\u5355\u8BC4\u8BBA");
+    total ??= response.total;
     const parsed = parseCommentsPage(response.body, repository.avatarBaseUrl);
-    comments.push(...parsed);
-    if (parsed.length < deps.pageSize) break;
+    let added = 0;
+    for (const entry of parsed.comments) {
+      if (seen.has(entry.key)) continue;
+      seen.add(entry.key);
+      added += 1;
+      if (entry.comment !== null) comments.push(entry.comment);
+    }
+    if (added === 0) {
+      complete = true;
+      break;
+    }
+    if (total !== void 0 && seen.size >= total) {
+      complete = true;
+      break;
+    }
+    if (total === void 0 && parsed.received < deps.pageSize) {
+      complete = true;
+      break;
+    }
+  }
+  if (!complete) {
+    throw new TrackerError(
+      "fetch-failed",
+      `Gitea \u5DE5\u5355\u8BC4\u8BBA\u8D85\u8FC7 ${String(MAX_PAGES)} \u9875\uFF0C\u65E0\u6CD5\u53D6\u5168\u3002`
+    );
   }
   return sortCommentsByTime(comments);
 }
@@ -2202,14 +2230,21 @@ function parseCommentsPage(body, avatarBaseUrl2) {
   for (const entry of payload) {
     if (!isRecord(entry)) continue;
     const text = typeof entry.body === "string" ? entry.body : "";
-    if (text.length === 0) continue;
-    comments.push({
+    const comment = {
       author: readAuthor2(entry.user, GITEA_AUTHOR_FIELDS, avatarBaseUrl2),
       body: text,
       createdAt: readOptionalString(entry.created_at)
+    };
+    comments.push({
+      key: commentKey(entry.id, comment),
+      comment: text.length === 0 ? null : comment
     });
   }
-  return comments;
+  return { received: payload.length, comments };
+}
+function commentKey(id, comment) {
+  if (typeof id === "number" && Number.isInteger(id)) return `id:${String(id)}`;
+  return ["body", comment.createdAt ?? "", comment.author?.login ?? "", comment.body].join("\0");
 }
 function readState4(value) {
   if (value === "open") return "open";
@@ -2226,7 +2261,7 @@ function parseJson4(body) {
 
 // src/adapters/gitea/options.ts
 var LABEL_PAGE_SIZE = 50;
-var MAX_PAGES = 200;
+var MAX_PAGES2 = 200;
 async function readGiteaOptions(deps, workspaceRoot) {
   const repository = await readRepository(deps.run, workspaceRoot);
   return {
@@ -2237,7 +2272,7 @@ async function readGiteaOptions(deps, workspaceRoot) {
 async function readLabels3(deps, workspaceRoot, repository) {
   const labels = [];
   let total;
-  for (let page = 1; page <= MAX_PAGES; page += 1) {
+  for (let page = 1; page <= MAX_PAGES2; page += 1) {
     const endpoint = `/repos/${repository.owner}/${repository.name}/labels?limit=${String(LABEL_PAGE_SIZE)}&page=${String(page)}`;
     const response = await callGiteaApi(deps.run, workspaceRoot, endpoint);
     ensureSuccess(response, "\u8BFB\u53D6 Gitea \u6807\u7B7E");
@@ -2303,7 +2338,7 @@ function invalidOptions(message) {
 // src/adapters/gitea/tracker.ts
 var DEFAULT_PAGE_SIZE = 50;
 var DEFAULT_CONCURRENCY = 4;
-var MAX_PAGES2 = 200;
+var MAX_PAGES3 = 200;
 function createGiteaTracker(deps) {
   const pageSize = normalizePositive(deps.pageSize ?? DEFAULT_PAGE_SIZE, DEFAULT_PAGE_SIZE);
   const concurrency = normalizePositive(
@@ -2407,7 +2442,7 @@ async function readIssues(deps, workspaceRoot, repository, pageSize, since) {
   const items = [];
   let total;
   let truncated = false;
-  for (let page = 1; page <= MAX_PAGES2; page += 1) {
+  for (let page = 1; page <= MAX_PAGES3; page += 1) {
     const response = await callGiteaApi(
       deps.run,
       workspaceRoot,
@@ -2419,7 +2454,7 @@ async function readIssues(deps, workspaceRoot, repository, pageSize, since) {
     total ??= response.total;
     if (total !== void 0 && items.length >= total) break;
     if (parsed.length === 0) break;
-    if (page === MAX_PAGES2) truncated = true;
+    if (page === MAX_PAGES3) truncated = true;
   }
   return { items, total, truncated };
 }
@@ -2450,7 +2485,7 @@ async function readDependencies(deps, workspaceRoot, repository, index, pageSize
   let received = 0;
   let total;
   const refs = [];
-  for (let page = 1; page <= MAX_PAGES2; page += 1) {
+  for (let page = 1; page <= MAX_PAGES3; page += 1) {
     const response = await callGiteaApi(
       deps.run,
       workspaceRoot,
