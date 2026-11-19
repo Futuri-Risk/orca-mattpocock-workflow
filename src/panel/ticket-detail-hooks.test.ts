@@ -3,13 +3,14 @@ import { describe, expect, it, vi } from 'vitest'
 import type {
   RpcErrorBody,
   RpcResult,
+  SnapshotRefreshResult,
   TicketDetail,
-  WorkspaceSnapshot,
 } from '../protocol/tracker.ts'
 import { refreshTicket, type DetailRefreshHooks } from './ticket-detail-hooks.ts'
 import {
   deferred,
   fail,
+  full,
   makeDetail,
   makeSnapshot,
   makeTicket,
@@ -32,11 +33,11 @@ function clientWith(overrides: {
 function recorder(isCurrent: () => boolean = () => true): {
   readonly hooks: DetailRefreshHooks
   readonly details: TicketDetail[]
-  readonly snapshots: WorkspaceSnapshot[]
+  readonly snapshots: SnapshotRefreshResult[]
   readonly errors: RpcErrorBody[]
 } {
   const details: TicketDetail[] = []
-  const snapshots: WorkspaceSnapshot[] = []
+  const snapshots: SnapshotRefreshResult[] = []
   const errors: RpcErrorBody[] = []
   return {
     hooks: {
@@ -54,7 +55,7 @@ function recorder(isCurrent: () => boolean = () => true): {
 describe('工单详情刷新编排', () => {
   it('一次刷新各发一次读取与列表刷新，两者并行且详情先落地', async () => {
     const detail = deferred<RpcResult<TicketDetail>>()
-    const snapshot = deferred<RpcResult<WorkspaceSnapshot>>()
+    const snapshot = deferred<RpcResult<SnapshotRefreshResult>>()
     const getDetail = vi.fn(() => detail.promise)
     const refresh = vi.fn(() => snapshot.promise)
     const { hooks, details, snapshots, errors } = recorder()
@@ -71,7 +72,7 @@ describe('工单详情刷新编排', () => {
     expect(details.map((item) => item.title)).toEqual(['新标题'])
     expect(snapshots).toEqual([])
 
-    snapshot.resolve(ok(makeSnapshot({ tickets: [makeTicket({ title: '新标题' })] })))
+    snapshot.resolve(ok(full(makeSnapshot({ tickets: [makeTicket({ title: '新标题' })] }))))
     await run
     expect(snapshots).toHaveLength(1)
     expect(errors).toEqual([])
@@ -79,7 +80,7 @@ describe('工单详情刷新编排', () => {
 
   it('详情刷新失败时给出原因，同时列表刷新照常落地', async () => {
     const detail = deferred<RpcResult<TicketDetail>>()
-    const snapshot = deferred<RpcResult<WorkspaceSnapshot>>()
+    const snapshot = deferred<RpcResult<SnapshotRefreshResult>>()
     const { hooks, details, snapshots, errors } = recorder()
     const run = refreshTicket(
       clientWith({
@@ -91,7 +92,7 @@ describe('工单详情刷新编排', () => {
     )
 
     detail.resolve(fail(NOT_FOUND))
-    snapshot.resolve(ok(makeSnapshot()))
+    snapshot.resolve(ok(full(makeSnapshot())))
     await run
 
     expect(details).toEqual([])
@@ -101,7 +102,7 @@ describe('工单详情刷新编排', () => {
 
   it('列表刷新失败不产生详情错误，也不影响详情落地', async () => {
     const detail = deferred<RpcResult<TicketDetail>>()
-    const snapshot = deferred<RpcResult<WorkspaceSnapshot>>()
+    const snapshot = deferred<RpcResult<SnapshotRefreshResult>>()
     const { hooks, details, snapshots, errors } = recorder()
     const run = refreshTicket(
       clientWith({
@@ -123,7 +124,7 @@ describe('工单详情刷新编排', () => {
 
   it('目标已经切走后，在途结果一个都不落地', async () => {
     const detail = deferred<RpcResult<TicketDetail>>()
-    const snapshot = deferred<RpcResult<WorkspaceSnapshot>>()
+    const snapshot = deferred<RpcResult<SnapshotRefreshResult>>()
     let current = true
     const { hooks, details, snapshots, errors } = recorder(() => current)
     const run = refreshTicket(
@@ -137,7 +138,7 @@ describe('工单详情刷新编排', () => {
 
     current = false
     detail.resolve(ok(makeDetail({ title: '旧结果' })))
-    snapshot.resolve(ok(makeSnapshot({ tickets: [makeTicket()] })))
+    snapshot.resolve(ok(full(makeSnapshot({ tickets: [makeTicket()] }))))
     await run
 
     expect(details).toEqual([])

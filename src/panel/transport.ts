@@ -35,6 +35,7 @@ import {
   type SnapshotCacheInfo,
   type SnapshotCacheParams,
   type SnapshotRefreshParams,
+  type SnapshotRefreshResult,
   TICKET_DELETE_CONFIRMATION,
   type TicketAuthor,
   type TicketComment,
@@ -55,11 +56,17 @@ export interface PanelClient {
   get(workspaceRoot: string): Promise<RpcResult<WorkspaceSnapshot>>
   /**
    * 刷新快照。默认走增量；`full` 为 true 时忽略本地快照库，全量重拉一次。
+   * `ifRevision` / `storeRevision` 是客户端手上的远端版本与本地库版本；
+   * 命中 not-modified 时列表与数据时间都不动，命中 delta 时只需合并变化行。
    */
   refresh(
     workspaceRoot: string,
-    options?: { readonly full?: boolean },
-  ): Promise<RpcResult<WorkspaceSnapshot>>
+    options?: {
+      readonly full?: boolean
+      readonly ifRevision?: string
+      readonly storeRevision?: number
+    },
+  ): Promise<RpcResult<SnapshotRefreshResult>>
   /**
    * 按快照给出的游标取下一段工单，追加到已加载的列表。
    * 没有更多时原样返回当前快照。
@@ -74,8 +81,14 @@ export interface PanelClient {
   ): Promise<RpcResult<SnapshotCacheInfo>>
   /** 补齐原生阻塞信息；快照已定稿时 worker 直接返回缓存。 */
   resolveBlockers(workspaceRoot: string): Promise<RpcResult<WorkspaceSnapshot>>
-  /** 重新跑一次环境检查；worker 不缓存结果。 */
-  envCheck(workspaceRoot: string): Promise<RpcResult<EnvCheckReport>>
+  /**
+   * 重新跑一次环境检查；worker 命中 10 分钟内的成功报告时直接返回。
+   * `force` 为 true 时绕过成功缓存与失败退避，用于用户手动「重新检查」。
+   */
+  envCheck(
+    workspaceRoot: string,
+    options?: { readonly force?: boolean },
+  ): Promise<RpcResult<EnvCheckReport>>
   /** 读取单张工单详情；打开详情时按需请求，不进入列表快照。 */
   getDetail(
     workspaceRoot: string,
@@ -175,10 +188,14 @@ export function createPanelClient(request: RequestLike = defaultRequest): PanelC
     get: (workspaceRoot) =>
       call(request, RPC_METHODS.snapshotGet, { workspaceRoot }, isSnapshotResult),
     refresh: (workspaceRoot, options) => {
-      // 只有明确要求全量时才带上 full：缺省时 worker 能用增量就用增量。
-      const params: SnapshotRefreshParams =
-        options?.full === true ? { workspaceRoot, full: true } : { workspaceRoot }
-      return call(request, RPC_METHODS.snapshotRefresh, params, isSnapshotResult)
+      // 只有明确给出的标记才进参数：缺省时 worker 自己用库里的版本做 not-modified。
+      const params: SnapshotRefreshParams = {
+        workspaceRoot,
+        ...(options?.full === true ? { full: true } : {}),
+        ...(options?.ifRevision === undefined ? {} : { ifRevision: options.ifRevision }),
+        ...(options?.storeRevision === undefined ? {} : { storeRevision: options.storeRevision }),
+      }
+      return call(request, RPC_METHODS.snapshotRefresh, params, isSnapshotRefreshResult)
     },
     loadMore: (workspaceRoot) =>
       call(request, RPC_METHODS.snapshotLoadMore, { workspaceRoot }, isSnapshotResult),
@@ -191,8 +208,13 @@ export function createPanelClient(request: RequestLike = defaultRequest): PanelC
     },
     resolveBlockers: (workspaceRoot) =>
       call(request, RPC_METHODS.snapshotResolveBlockers, { workspaceRoot }, isSnapshotResult),
-    envCheck: (workspaceRoot) =>
-      call(request, RPC_METHODS.envCheck, { workspaceRoot }, isEnvCheckResult),
+    envCheck: (workspaceRoot, options) =>
+      call(
+        request,
+        RPC_METHODS.envCheck,
+        options?.force === true ? { workspaceRoot, force: true } : { workspaceRoot },
+        isEnvCheckResult,
+      ),
     getDetail: (workspaceRoot, ref, number) =>
       call(request, RPC_METHODS.ticketGet, { workspaceRoot, ref, number }, isTicketDetailResult),
     updateTicket: (workspaceRoot, ref, number, patch) =>
@@ -305,6 +327,65 @@ function isSnapshotResult(value: unknown): value is RpcResult<WorkspaceSnapshot>
   return isRpcResult(value, isWorkspaceSnapshot)
 }
 
+/**
+ * 刷新回包有三种形状：整份、增量或 not-modified。
+ * 每种都要逐字段核对；增量行与列表行共用同一套字段检查。
+ */
+function isSnapshotRefreshResult(value: unknown): value is RpcResult<SnapshotRefreshResult> {
+  return isRpcResult(value, isRefreshPayload)
+}
+
+function isRefreshPayload(value: unknown): value is SnapshotRefreshResult {
+  if (typeof value !== 'object' || value === null) return false
+  if (!('kind' in value)) return false
+  if (value.kind === 'snapshot') {
+    return 'snapshot' in value && isWorkspaceSnapshot(value.snapshot)
+  }
+  if (value.kind === 'not-modified') {
+    return (
+      'revision' in value &&
+      (value.revision === null || typeof value.revision === 'string') &&
+      'storeRevision' in value &&
+      typeof value.storeRevision === 'number' &&
+      'fetchedAt' in value &&
+      typeof value.fetchedAt === 'number'
+    )
+  }
+  if (value.kind !== 'delta') return false
+  return isDeltaPayload(value)
+}
+
+function isDeltaPayload(value: object): boolean {
+  if (!('backend' in value) || typeof value.backend !== 'string') return false
+  if (!('repository' in value) || typeof value.repository !== 'string') return false
+  if (!('repositoryHost' in value)) return false
+  if (value.repositoryHost !== null && typeof value.repositoryHost !== 'string') return false
+  if (!('revision' in value)) return false
+  if (value.revision !== null && typeof value.revision !== 'string') return false
+  if (!('storeRevision' in value) || typeof value.storeRevision !== 'number') return false
+  if (!('fetchedAt' in value) || typeof value.fetchedAt !== 'number') return false
+  if (!('loaded' in value) || typeof value.loaded !== 'number') return false
+  if (!('total' in value) || typeof value.total !== 'number') return false
+  if (!('hasMore' in value) || typeof value.hasMore !== 'boolean') return false
+  if (!('viewer' in value)) return false
+  if (value.viewer !== null && (typeof value.viewer !== 'string' || value.viewer.length === 0)) {
+    return false
+  }
+  if (!('hierarchy' in value) || typeof value.hierarchy !== 'string') return false
+  if (!('metrics' in value) || typeof value.metrics !== 'object' || value.metrics === null) {
+    return false
+  }
+  if (!('blockersFinalized' in value) || typeof value.blockersFinalized !== 'boolean') return false
+  if (!('source' in value) || !(value.source === 'live' || value.source === 'cache')) return false
+  if (!('stale' in value) || typeof value.stale !== 'boolean') return false
+  if (!('refreshError' in value)) return false
+  if (value.refreshError !== null && !isRpcErrorBody(value.refreshError)) return false
+  if (!('changed' in value) || !Array.isArray(value.changed)) return false
+  if (!value.changed.every(hasTicketFields)) return false
+  if (!('removed' in value) || !Array.isArray(value.removed)) return false
+  return value.removed.every((ref) => typeof ref === 'string' && ref.length > 0)
+}
+
 function isWorkspaceSnapshot(value: unknown): value is WorkspaceSnapshot {
   if (typeof value !== 'object' || value === null) return false
   if (!('backend' in value) || typeof value.backend !== 'string') return false
@@ -331,6 +412,10 @@ function isWorkspaceSnapshot(value: unknown): value is WorkspaceSnapshot {
   if (!('stale' in value) || typeof value.stale !== 'boolean') return false
   if (!('refreshError' in value)) return false
   if (value.refreshError !== null && !isRpcErrorBody(value.refreshError)) return false
+  // 两个版本号是刷新协议的前提：缺任何一个都按版本错配处理。
+  if (!('revision' in value)) return false
+  if (value.revision !== null && typeof value.revision !== 'string') return false
+  if (!('storeRevision' in value) || typeof value.storeRevision !== 'number') return false
   return true
 }
 

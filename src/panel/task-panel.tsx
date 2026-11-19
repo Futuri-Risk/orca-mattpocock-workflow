@@ -19,7 +19,11 @@ import { EnvCheckView } from './env-check-view.tsx'
 import { HelpView } from './help-view.tsx'
 import { OverviewView } from './overview-view.tsx'
 import type { PanelClient } from './transport.ts'
-import { useSnapshotRequest, type SnapshotRequestState } from './snapshot-request.ts'
+import {
+  snapshotBaselineOf,
+  useSnapshotRequest,
+  type SnapshotRequestState,
+} from './snapshot-request.ts'
 import {
   COLORS,
   ICON_BUTTON_STYLE,
@@ -269,7 +273,8 @@ function TicketsPane(props: {
         backRef={props.backRef}
         onBack={props.onBackDetail}
         onOpenBlocker={props.onOpenBlocker}
-        onSnapshot={props.request.apply}
+        onSnapshot={props.request.applyRefresh}
+        baseline={snapshotBaselineOf(snapshot)}
         onOpenEnvCheck={props.onOpenEnvCheck}
       />
     )

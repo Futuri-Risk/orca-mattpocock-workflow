@@ -24,6 +24,7 @@ import type {
 } from '../core/env-check.ts'
 import { buildEnvCheckItems, shouldCheckLocalIssues } from '../core/env-check.ts'
 import { parseLoggedInHosts, parseTeaLoginHosts, type BackendChoice } from '../core/backend.ts'
+import { parseRemotes, pickRemoteAddress } from '../core/remote.ts'
 import type { RepositoryAddress } from '../core/remote.ts'
 import type { CommandRunner } from '../core/ticket.ts'
 import { TrackerError } from '../core/tracker-error.ts'
@@ -40,6 +41,7 @@ import {
   ERROR_CODES,
   RPC_METHODS,
   type ErrorCode,
+  type RpcErrorBody,
   type RpcResult,
 } from '../protocol/tracker.ts'
 import type { BackendResolver } from './backend-resolver.ts'
@@ -51,6 +53,13 @@ import { FLOW_COMMANDS } from '../protocol/flow.ts'
 
 /** 工作区初始化后的工单操作说明；存在即视为已初始化。 */
 const TRACKER_DOC = 'docs/agents/issue-tracker.md'
+
+/** 成功报告缓存多久。失败不缓存，由退避挡重复探测。 */
+const ENV_CHECK_CACHE_TTL_MS = 10 * 60 * 1000
+/** 连续失败后的首档退避。 */
+const ENV_CHECK_BACKOFF_BASE_MS = 8_000
+/** 退避上限。 */
+const ENV_CHECK_BACKOFF_MAX_MS = 5 * 60 * 1000
 
 /**
  * 能力诊断项的 id。界面按 id 渲染标题，这里只给稳定标识。
@@ -98,6 +107,8 @@ export interface EnvCheckServiceDeps {
   readonly skills: SkillCatalog
   /** 命令执行器；能力诊断要自己确认三个 CLI 装没装、登录没登录。 */
   readonly run: CommandRunner
+  /** 查找可执行文件；省略时用真实 PATH，测试可以注入固定结果。 */
+  readonly resolveExecutable?: (command: string) => Promise<string>
   readonly now: () => number
   readonly deadline: ProbeDeadline
   readonly log: LogSink
@@ -114,6 +125,19 @@ export interface EnvCheckService {
   handle(method: string, params: unknown): Promise<RpcResult<EnvCheckReport>>
 }
 
+/** 一份缓存下来的成功报告。 */
+interface CachedEnvCheck {
+  readonly report: EnvCheckReport
+  readonly storedAt: number
+}
+
+/** 连续失败的状态：次数与下一次允许探测的时刻。 */
+interface EnvFailureState {
+  readonly count: number
+  readonly nextAt: number
+  readonly error: RpcErrorBody
+}
+
 /**
  * 创建环境检查服务。
  * @param deps - 探测、文件、技能清单、时钟与日志出口。
@@ -121,6 +145,8 @@ export interface EnvCheckService {
  */
 export function createEnvCheckService(deps: EnvCheckServiceDeps): EnvCheckService {
   const pending = new Map<string, Promise<RpcResult<EnvCheckReport>>>()
+  const cached = new Map<string, CachedEnvCheck>()
+  const failures = new Map<string, EnvFailureState>()
 
   return {
     handle(method, params) {
@@ -134,12 +160,13 @@ export function createEnvCheckService(deps: EnvCheckServiceDeps): EnvCheckServic
           failure(ERROR_CODES.invalidParams, '缺少非空的 workspaceRoot 参数。'),
         )
       }
+      const force = readForce(params)
 
       // 同一工作区已有检查在跑：复用同一个 Promise，避免并发探测。
       const running = pending.get(workspaceRoot)
       if (running !== undefined) return running
 
-      const task = runCheck(deps, workspaceRoot)
+      const task = cachedOrRunCheck(deps, workspaceRoot, force, cached, failures)
       pending.set(workspaceRoot, task)
       void task.then(
         () => {
@@ -151,6 +178,88 @@ export function createEnvCheckService(deps: EnvCheckServiceDeps): EnvCheckServic
       )
       return task
     },
+  }
+}
+
+/**
+ * 按「工作区 + 仓库身份」取缓存；命中失败退避时直接回上次的失败。
+ *
+ * 成功的报告缓存 10 分钟；失败不缓存，连续失败按 8 秒起、翻倍至 5 分钟的间隔退避。
+ * 用户手动重检（`force`）绕过两档缓存，修好环境后能立刻验证。
+ */
+async function cachedOrRunCheck(
+  deps: EnvCheckServiceDeps,
+  workspaceRoot: string,
+  force: boolean,
+  cached: Map<string, CachedEnvCheck>,
+  failures: Map<string, EnvFailureState>,
+): Promise<RpcResult<EnvCheckReport>> {
+  const key = await envCacheKey(deps, workspaceRoot)
+  const now = deps.now()
+
+  if (!force) {
+    const hit = cached.get(key)
+    if (hit !== undefined && now - hit.storedAt < ENV_CHECK_CACHE_TTL_MS) {
+      return { ok: true, result: hit.report }
+    }
+    const blocked = failures.get(key)
+    if (blocked !== undefined && now < blocked.nextAt) {
+      return blockedFailure(blocked, now)
+    }
+  }
+
+  const result = await runCheck(deps, workspaceRoot)
+  if (result.ok) {
+    // 报告里有未通过项仍然是一份可用报告：不缓存，但不按探测失败退避。
+    // 用户装好工具或登录后可以立刻重新检查。
+    failures.delete(key)
+    if (reportPassed(result.result)) {
+      cached.set(key, { report: result.result, storedAt: now })
+    } else {
+      cached.delete(key)
+    }
+    return result
+  }
+
+  // 探测本身失败（超时、异常）：报告不缓存，连续失败按递增间隔退避。
+  cached.delete(key)
+  const previous = failures.get(key)
+  const count = (previous?.count ?? 0) + 1
+  const delay = Math.min(
+    ENV_CHECK_BACKOFF_BASE_MS * 2 ** Math.min(count - 1, 16),
+    ENV_CHECK_BACKOFF_MAX_MS,
+  )
+  failures.set(key, { count, nextAt: now + delay, error: result.error })
+  return result
+}
+
+/** 退避窗口内的请求：回上次的失败，并说清还有多久能重试。 */
+function blockedFailure(blocked: EnvFailureState, now: number): RpcResult<EnvCheckReport> {
+  const seconds = Math.max(1, Math.ceil((blocked.nextAt - now) / 1000))
+  return failure(blocked.error.code, `${blocked.error.message}（${String(seconds)} 秒后可重试）`)
+}
+
+/** 所有检查项都通过才算「成功」；跳过项说明前置没通过，不算成功。 */
+function reportPassed(report: EnvCheckReport): boolean {
+  return report.items.every((item) => item.status === 'pass')
+}
+
+/**
+ * 缓存身份：工作区 + 当前远端地址。换远端后键不同，旧缓存不误用。
+ * `git remote -v` 失败时退到工作区本身，宁可少命中也不串仓库。
+ */
+async function envCacheKey(
+  deps: EnvCheckServiceDeps,
+  workspaceRoot: string,
+): Promise<string> {
+  try {
+    const output = (await deps.run('git', ['remote', '-v'], { cwd: workspaceRoot })).stdout
+    const address = pickRemoteAddress(parseRemotes(output))
+    return address === undefined
+      ? `${workspaceRoot}\0no-remote`
+      : `${workspaceRoot}\0${address.host}/${address.path}`
+  } catch {
+    return `${workspaceRoot}\0unknown`
   }
 }
 
@@ -473,7 +582,7 @@ async function probeTools(deps: EnvCheckServiceDeps): Promise<ToolStates> {
 /** 探测一个 CLI。 */
 async function probeTool(deps: EnvCheckServiceDeps, name: string): Promise<ToolState> {
   try {
-    await resolveExecutable(name)
+    await (deps.resolveExecutable ?? resolveExecutable)(name)
   } catch {
     return { installed: false, loggedIn: false }
   }
@@ -609,6 +718,11 @@ function readWorkspaceRoot(params: unknown): string | undefined {
   if (!('workspaceRoot' in params)) return undefined
   const root = params.workspaceRoot
   return typeof root === 'string' && root.length > 0 ? root : undefined
+}
+
+/** 读出用户手动重检标记。 */
+function readForce(params: unknown): boolean {
+  return typeof params === 'object' && params !== null && 'force' in params && params.force === true
 }
 
 function failure(code: ErrorCode, message: string): RpcResult<EnvCheckReport> {

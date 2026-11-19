@@ -45,6 +45,8 @@ function storedEntry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStore
     total: 1,
     tickets: [ticket(1)],
     hierarchy: 'native',
+    revision: { id: 'one', total: 1 },
+    storeRevision: 1,
     ...overrides,
   }
 }
@@ -59,9 +61,11 @@ function memoryStore(initial: readonly SnapshotStoreEntry[] = []): SnapshotStore
   }
   const read = (key: string): Promise<SnapshotStoreEntry | undefined> =>
     Promise.resolve(entries.get(key))
-  const write = (entry: SnapshotStoreEntry): Promise<void> => {
-    entries.set(storeKeyOf(entry.backend, entry.scopeRoot, entry.workspaceRoot), entry)
-    return Promise.resolve()
+  const write = (entry: SnapshotStoreEntry): Promise<number> => {
+    const key = storeKeyOf(entry.backend, entry.scopeRoot, entry.workspaceRoot)
+    const revision = (entries.get(key)?.storeRevision ?? 0) + 1
+    entries.set(key, { ...entry, loaded: entry.tickets.length, storeRevision: revision })
+    return Promise.resolve(revision)
   }
   return {
     entries,
@@ -80,6 +84,8 @@ function memoryStore(initial: readonly SnapshotStoreEntry[] = []): SnapshotStore
     prune: () => Promise.resolve(0),
     patchTicket: (key, ref, patch) => patchIn(entries, key, ref, patch),
     removeTicket: (key, ref) => removeFrom(entries, key, ref),
+    revision: (key) => Promise.resolve(entries.get(key)?.storeRevision),
+    changesSince: () => Promise.resolve(undefined),
     location: () => '~/.orca-mattpocock-workflow/cache',
   }
 }

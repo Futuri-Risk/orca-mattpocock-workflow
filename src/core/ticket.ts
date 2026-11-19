@@ -83,6 +83,20 @@ export interface SnapshotPage {
   readonly cursor?: string
 }
 
+/**
+ * 远端版本号：后端为「当前仓库工单状态」给出的可比较标识。
+ *
+ * `id` 只用于相等比较，宿主与界面不解析它；`total` 是同一时刻的权威总数，
+ * 刷新时用它判断本地列表是否还能靠增量收敛。本地 Markdown 没有远端版本，
+ * 整个字段为 null。
+ */
+export interface SourceRevision {
+  /** 可比较的版本标识；内容变了就变。 */
+  readonly id: string
+  /** 产生这个版本时的仓库工单车数。 */
+  readonly total: number
+}
+
 /** 后端返回的一次拉取结果。 */
 export interface TrackerSnapshot {
   /** 后端相关的仓库显示名：`owner/name`、含嵌套 group 的项目路径或工作区目录名。 */
@@ -95,6 +109,8 @@ export interface TrackerSnapshot {
   readonly viewer: string | null
   /** 本次快照的父子能力来源；只用于列表布局，不参与判定。 */
   readonly hierarchy: TicketHierarchy
+  /** 这次快照对应的远端版本；本地 Markdown 或后端给不出时为 null。 */
+  readonly revision: SourceRevision | null
   /**
    * 还有下一页时给出的后端游标；缺省表示这份快照已经覆盖全部。
    * 宿主按它请求下一段，界面据此决定要不要显示「加载更多」。
@@ -113,6 +129,16 @@ export interface TrackerChanges {
   readonly truncated: boolean
   /** 变更查询返回的仓库总票数；给出时用它更新总数，没有则沿用上次的。 */
   readonly total?: number
+  /**
+   * 本次查到的远端版本。为 null 时宿主无法判断「有没有变」，
+   * 该次退回全量重拉，计数永远可信。
+   */
+  readonly revision: SourceRevision | null
+  /**
+   * 请求带的 `ifRevision` 与当前远端版本一致：远端没有任何变化，
+   * `tickets` 为空，宿主直接回 not-modified 而不合并。
+   */
+  readonly notModified?: boolean
   /**
    * 增量刷新时顺带刷新的当前登录用户；省略表示这次没查，沿用上一次。
    * 与快照上的 null（查过但没有身份）区分开。
@@ -215,9 +241,15 @@ export interface Tracker {
    * 「上次成功拉取的时刻」向前重叠一小段，重叠部分按工单引用去重。
    * @param workspaceRoot - 工作区根目录。
    * @param since - 毫秒时间戳；后端按「更新时间在此刻之后」过滤。
+   * @param ifRevision - 客户端手上的远端版本标识；后端用一次极小查询比对，
+   *   一致时回 `notModified`，不扫描变更窗口。
    * @returns 变更过的工单与是否被上限截断。
    */
-  fetchChanges?: (workspaceRoot: string, since: number) => Promise<TrackerChanges>
+  fetchChanges?: (
+    workspaceRoot: string,
+    since: number,
+    ifRevision?: string,
+  ) => Promise<TrackerChanges>
   /**
    * 可选能力：读取开放票的未关闭原生阻塞数与阻塞引用。
    *

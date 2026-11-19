@@ -17,8 +17,9 @@ Message types and constants exchanged by the worker and the panel.
 RPC methods (the panel calls `orca.plugin.request(method, params)`; the worker answers with a
 same-named handler):
 
-- `snapshot.get` / `snapshot.refresh` / `snapshot.resolveBlockers`: list snapshots and blocker
-  completion.
+- `snapshot.get` / `snapshot.resolveBlockers`: list snapshots and blocker completion.
+- `snapshot.refresh`: incremental refresh with `ifRevision` / `storeRevision`; returns a full
+  snapshot, a delta, or a not-modified reply.
 - `snapshot.loadMore`: fetches the next slice by the snapshot cursor and appends it to the loaded
   list; the parameter is `{ workspaceRoot }`. Backends that fetch everything at once return the
   current snapshot unchanged.
@@ -76,8 +77,19 @@ authors and an empty assignee array.
 
 ## Snapshot payload
 
-`snapshot.get`, `snapshot.refresh`, `snapshot.loadMore` and `snapshot.resolveBlockers` all return the
-same `WorkspaceSnapshot`:
+`snapshot.get`, `snapshot.loadMore` and `snapshot.resolveBlockers` return a full `WorkspaceSnapshot`;
+`snapshot.refresh` returns a `SnapshotRefreshResult` in one of three shapes:
+
+- `{ kind: 'snapshot', snapshot }`: a full snapshot (first fetch, full refresh, or no usable change
+  set);
+- `{ kind: 'delta', changed, removed, ... }`: only changed rows and tombstones, with all other
+  metadata (metrics, counts, versions, data time) computed from the same source as a full snapshot;
+  the client merges it into the current list;
+- `{ kind: 'not-modified', revision, storeRevision, fetchedAt }`: the remote version is unchanged and
+  the client is exactly at the store commit; no row changes, `fetchedAt` is the verification time, and
+  the client clears the stale warning and local-cache badge.
+
+Fields of a full snapshot:
 
 - Ticket level: verdict (`status`, `category`), close time (`closedAt`, only when available),
   blocking references (`blockedBy`, only when available; GitHub list queries have no dependency
@@ -91,6 +103,9 @@ same `WorkspaceSnapshot`:
   `native` / `convention` / `none`). With `none` the panel disables the tree layout and explains why,
   while the flat layout works as usual; parent-child relations take no part in verdicts, statistics
   or metrics.
+- Version level: `revision` is the source revision (null for local Markdown or when the backend
+  cannot provide one) and `storeRevision` is the local store commit sequence. A refresh sends them
+  back as `ifRevision` / `storeRevision`; the two answer different questions and must not be mixed.
 - Paging: `hasMore` is true when the backend still has unloaded tickets, and the UI exposes "Load
   more" accordingly. Cursors stay inside the host (the snapshot-store entry's `nextCursor`) and are
   never exposed to the panel; backends that fetch everything at once always return `hasMore: false`.

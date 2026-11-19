@@ -26,7 +26,7 @@ import {
   type WorkspaceSnapshot,
 } from '../protocol/tracker.ts'
 import type { ResolvedBackend } from './backend-resolver.ts'
-import { createSnapshotService } from './snapshot-service.ts'
+import { createSnapshotService, type SnapshotServiceResult } from './snapshot-service.ts'
 import { createTicketService } from './ticket-service.ts'
 
 const NOW = 1_700_000_000_000
@@ -67,14 +67,16 @@ function page(
   } = {},
 ): TrackerSnapshot {
   const nextCursor = options.nextCursor
+  const total = options.total ?? tickets.length
   return {
     repository: 'cnzgray/repo',
     fetchedAt: NOW,
     loaded: tickets.length,
-    total: options.total ?? tickets.length,
+    total,
     tickets,
     viewer: options.viewer ?? null,
     hierarchy: 'native',
+    revision: { id: `page:${String(total)}`, total },
     ...(nextCursor === undefined ? {} : { nextCursor }),
   }
 }
@@ -120,30 +122,113 @@ function pagedTracker(
   return { tracker, calls, changeCalls }
 }
 
-/** 内存快照库：只实现快照服务用到的方法。 */
+/** 内存快照库：提交、版本与变化集都按目录实现的语义走。 */
 function memoryStore(): SnapshotStore & { readonly entries: Map<string, SnapshotStoreEntry> } {
   const entries = new Map<string, SnapshotStoreEntry>()
+  const log = new Map<
+    string,
+    { readonly revision: number; readonly upserts: readonly string[]; readonly removed: readonly string[] }[]
+  >()
+
   return {
     entries,
     read: (key) => Promise.resolve(entries.get(key)),
     write: (entry) => {
-      entries.set(storeKeyOf(entry.backend, entry.scopeRoot, entry.workspaceRoot), entry)
-      return Promise.resolve()
+      const key = storeKeyOf(entry.backend, entry.scopeRoot, entry.workspaceRoot)
+      const previous = entries.get(key)
+      const previousByRef = new Map(previous?.tickets.map((item) => [item.ref, item] as const))
+      const nextRefs = new Set(entry.tickets.map((item) => item.ref))
+      const changed = entry.tickets.filter((item) => {
+        const old = previousByRef.get(item.ref)
+        return old === undefined || JSON.stringify(old) !== JSON.stringify(item)
+      })
+      const removed = (previous?.tickets ?? []).flatMap((item) =>
+        nextRefs.has(item.ref) ? [] : [item.ref],
+      )
+      const revision = (previous?.storeRevision ?? 0) + 1
+      entries.set(key, { ...entry, loaded: entry.tickets.length, storeRevision: revision })
+      log.set(key, [
+        ...(log.get(key) ?? []),
+        { revision, upserts: changed.map((item) => item.ref), removed },
+      ])
+      return Promise.resolve(revision)
     },
     remove: (key) => {
       entries.delete(key)
+      log.delete(key)
       return Promise.resolve()
     },
     list: () => Promise.resolve([...entries.values()]),
     clear: () => {
       const count = entries.size
       entries.clear()
+      log.clear()
       return Promise.resolve(count)
     },
     prune: () => Promise.resolve(0),
-    patchTicket: () => Promise.resolve(false),
-    removeTicket: () => Promise.resolve(false),
+    patchTicket: (key, ref, patch) => {
+      const entry = entries.get(key)
+      const index = entry?.tickets.findIndex((item) => item.ref === ref) ?? -1
+      if (entry === undefined || index < 0) return Promise.resolve(false)
+      const tickets = [...entry.tickets]
+      const current = tickets[index]
+      if (current === undefined) return Promise.resolve(false)
+      tickets[index] = {
+        ...current,
+        ...(patch.labels === undefined ? {} : { labels: patch.labels }),
+        ...(patch.state === undefined ? {} : { state: patch.state }),
+      }
+      return memoryStoreWrite(entry, { ...entry, tickets }).then(() => true)
+    },
+    removeTicket: (key, ref) => {
+      const entry = entries.get(key)
+      if (entry === undefined) return Promise.resolve(false)
+      const tickets = entry.tickets.filter((item) => item.ref !== ref)
+      if (tickets.length === entry.tickets.length) return Promise.resolve(false)
+      return memoryStoreWrite(entry, { ...entry, tickets }).then(() => true)
+    },
+    revision: (key) => Promise.resolve(entries.get(key)?.storeRevision),
+    changesSince: (key, fromRevision) => {
+      const entry = entries.get(key)
+      if (entry === undefined || fromRevision > entry.storeRevision) return Promise.resolve(undefined)
+      const final = new Map<string, 'upsert' | 'removed'>()
+      for (const record of log.get(key) ?? []) {
+        if (record.revision <= fromRevision) continue
+        for (const ref of record.upserts) final.set(ref, 'upsert')
+        for (const ref of record.removed) final.set(ref, 'removed')
+      }
+      const changedRefs = new Set(
+        [...final].flatMap(([ref, state]) => (state === 'upsert' ? [ref] : [])),
+      )
+      return Promise.resolve({
+        fromRevision,
+        revision: entry.storeRevision,
+        tickets: entry.tickets.filter((item) => changedRefs.has(item.ref)),
+        removed: [...final].flatMap(([ref, state]) => (state === 'removed' ? [ref] : [])),
+      })
+    },
     location: () => '~/.orca-mattpocock-workflow/cache',
+  }
+
+  /** patch / remove 复用同一套提交口径：版本 +1，变化行写进日志。 */
+  function memoryStoreWrite(
+    entry: SnapshotStoreEntry,
+    next: SnapshotStoreEntry,
+  ): Promise<void> {
+    const key = storeKeyOf(next.backend, next.scopeRoot, next.workspaceRoot)
+    const changed = next.tickets.filter((item) => {
+      const old = entry.tickets.find((candidate) => candidate.ref === item.ref)
+      return old === undefined || old !== item
+    })
+    const nextRefs = new Set(next.tickets.map((item) => item.ref))
+    const removed = entry.tickets.flatMap((item) => (nextRefs.has(item.ref) ? [] : [item.ref]))
+    const revision = entry.storeRevision + 1
+    entries.set(key, { ...next, storeRevision: revision })
+    log.set(key, [
+      ...(log.get(key) ?? []),
+      { revision, upserts: changed.map((item) => item.ref), removed },
+    ])
+    return Promise.resolve()
   }
 }
 
@@ -163,6 +248,8 @@ function storeEntry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreE
     total: 6,
     tickets: [ticket(5), ticket(4)],
     hierarchy: 'native',
+    revision: { id: 'stored', total: 6 },
+    storeRevision: 1,
     ...overrides,
   }
 }
@@ -188,8 +275,12 @@ function service(
   })
 }
 
-function resultOf(result: RpcResult<WorkspaceSnapshot>): WorkspaceSnapshot {
+function resultOf(result: RpcResult<SnapshotServiceResult>): WorkspaceSnapshot {
   if (!result.ok) throw new Error(`预期成功，实际失败：${result.error.message}`)
+  if ('kind' in result.result) {
+    if (result.result.kind === 'snapshot') return result.result.snapshot
+    throw new Error(`预期整份快照，实际是 ${result.result.kind}`)
+  }
   return result.result
 }
 
@@ -464,7 +555,7 @@ describe('快照分页持久化', () => {
     const url = 'https://github.com/cnzgray/repo/issues/5'
     const { tracker, calls, changeCalls } = pagedTracker(
       new Map([['', page([ticket(5, { url })], { total: 1 })]]),
-      () => ({ tickets: [], truncated: false, hierarchy: 'native' }),
+      () => ({ tickets: [], truncated: false, hierarchy: 'native', revision: { id: 'same', total: 1 } }),
     )
 
     const snapshot = resultOf(
@@ -485,7 +576,7 @@ describe('快照分页持久化', () => {
     )
     const { tracker, calls, changeCalls } = pagedTracker(
       new Map([['', page([ticket(5, { parent: '#4' }), ticket(4)], { total: 2 })]]),
-      () => ({ tickets: [ticket(5, { title: '只取到半棵树' })], truncated: false, hierarchy: 'none' }),
+      () => ({ tickets: [ticket(5, { title: '只取到半棵树' })], truncated: false, hierarchy: 'none', revision: { id: 'half', total: 1 } }),
     )
 
     const snapshot = resultOf(
@@ -504,7 +595,8 @@ describe('快照分页持久化', () => {
       ROOT,
       storeEntry({
         loaded: 1,
-        total: 1,
+        total: 2,
+        nextCursor: 'cursor-2',
         tickets: [ticket(5, { parent: '#9' })],
       }),
     )
@@ -515,6 +607,7 @@ describe('快照分页持久化', () => {
         truncated: false,
         total: 2,
         hierarchy: 'native',
+        revision: { id: 'two', total: 2 },
       }),
     )
 
@@ -533,7 +626,7 @@ describe('快照分页持久化', () => {
     store.entries.set(ROOT, storeEntry())
     const { tracker, calls, changeCalls } = pagedTracker(
       new Map([['', page([ticket(5), ticket(4)], { total: 6, nextCursor: 'cursor-2' })]]),
-      () => ({ tickets: [], truncated: false, hierarchy: 'native' }),
+      () => ({ tickets: [], truncated: false, hierarchy: 'native', revision: { id: 'same', total: 1 } }),
     )
 
     const snapshot = resultOf(
@@ -564,6 +657,7 @@ describe('快照分页持久化', () => {
       truncated: false,
       total: 6,
       hierarchy: 'native',
+      revision: { id: 'six', total: 6 },
     }))
 
     const snapshot = resultOf(
@@ -624,6 +718,308 @@ function markdownService(
     store,
   })
 }
+
+describe('刷新版本协议', () => {
+  /** 远端不变、增量窗口也只回正文回退的假后端。 */
+  function stableTracker(
+    changes: (ifRevision: string | undefined) => TrackerChanges = () => ({
+      tickets: [],
+      truncated: false,
+      revision: { id: 'page:2', total: 2 },
+      notModified: true,
+      hierarchy: 'native',
+    }),
+    full: () => TrackerSnapshot = () => page([ticket(5), ticket(4)], { total: 2 }),
+  ): { readonly tracker: Tracker; readonly calls: (string | undefined)[] } {
+    const calls: (string | undefined)[] = []
+    return {
+      calls,
+      tracker: {
+        fetchSnapshot: (_root, request) => {
+          calls.push(request?.cursor)
+          return Promise.resolve(full())
+        },
+        fetchChanges: (_root, _since, ifRevision) =>
+          Promise.resolve(changes(ifRevision)),
+      },
+    }
+  }
+
+  it('远端版本命中且客户端库版本一致时回 not-modified，不写库', async () => {
+    const store = memoryStore()
+    const { tracker } = stableTracker()
+    const snapshots = service(tracker, store)
+    const first = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+
+    const result = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
+      workspaceRoot: ROOT,
+      ifRevision: first.revision ?? undefined,
+      storeRevision: first.storeRevision,
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.result).toMatchObject({
+      kind: 'not-modified',
+      revision: 'page:2',
+      storeRevision: first.storeRevision,
+      fetchedAt: first.fetchedAt,
+    })
+    await expect(store.revision(ROOT)).resolves.toBe(first.storeRevision)
+  })
+
+  it('库里有客户端没见过的写入时，即使远端没变也只回变化行', async () => {
+    const store = memoryStore()
+    const { tracker, calls } = stableTracker()
+    const snapshots = service(tracker, store)
+    const first = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+    // 详情页写操作同步了缓存：远端版本不变，但本地库前进了一版。
+    await store.patchTicket(ROOT, '#5', { labels: ['bug'] })
+
+    const result = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
+      workspaceRoot: ROOT,
+      ifRevision: first.revision ?? undefined,
+      storeRevision: first.storeRevision,
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok || !('kind' in result.result)) return
+    expect(result.result.kind).toBe('delta')
+    if (result.result.kind !== 'delta') return
+    expect(result.result.changed.map((item) => [item.ref, item.labels])).toEqual([
+      ['#5', ['bug']],
+    ])
+    expect(result.result.removed).toEqual([])
+    expect(result.result.storeRevision).toBeGreaterThan(first.storeRevision)
+    // 远端没变：没有重新拉列表。
+    expect(calls).toEqual([undefined])
+  })
+
+  it('权威总数漂移时退回全量重拉', async () => {
+    const store = memoryStore()
+    const { tracker, calls } = stableTracker(() => ({
+      tickets: [ticket(5)],
+      truncated: false,
+      total: 3,
+      revision: { id: 'page:3', total: 3 },
+      hierarchy: 'native',
+    }))
+    let lists = 0
+    const snapshots = service(
+      {
+        ...tracker,
+        fetchSnapshot: (_root, request) => {
+          calls.push(request?.cursor)
+          lists += 1
+          return Promise.resolve(
+            lists === 1
+              ? page([ticket(5), ticket(4)], { total: 2 })
+              : page([ticket(5), ticket(4), ticket(3)], { total: 3 }),
+          )
+        },
+      },
+      store,
+    )
+    const first = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+    expect(first.total).toBe(2)
+    expect(store.entries.get(ROOT)?.total).toBe(2)
+
+    const result = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
+      workspaceRoot: ROOT,
+      ifRevision: first.revision ?? undefined,
+      storeRevision: first.storeRevision,
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok || !('kind' in result.result)) return
+    expect(result.result.kind).toBe('snapshot')
+    if (result.result.kind !== 'snapshot') return
+    expect(result.result.snapshot.loaded).toBe(3)
+    // 第一次是首屏，第二次是为总数漂移重拉的一页。
+    expect(calls).toEqual([undefined, undefined])
+  })
+
+  it('增量被截断时退回全量重拉', async () => {
+    const store = memoryStore()
+    const { tracker, calls } = stableTracker(() => ({
+      tickets: [ticket(5)],
+      truncated: true,
+      revision: { id: 'page:2', total: 2 },
+      hierarchy: 'native',
+    }))
+    const snapshots = service(tracker, store)
+    const first = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+
+    const result = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
+      workspaceRoot: ROOT,
+      ifRevision: first.revision ?? undefined,
+      storeRevision: first.storeRevision,
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok || !('kind' in result.result)) return
+    expect(result.result.kind).toBe('snapshot')
+    expect(calls).toEqual([undefined, undefined])
+  })
+
+  it('远端删掉的票在全量重拉后从列表消失，并写进墓碑', async () => {
+    const store = memoryStore()
+    const { tracker, calls } = stableTracker(() => ({
+      tickets: [],
+      truncated: false,
+      total: 1,
+      revision: { id: 'page:1', total: 1 },
+      hierarchy: 'native',
+    }))
+    let lists = 0
+    const snapshots = service(
+      {
+        ...tracker,
+        fetchSnapshot: (_root, request) => {
+          calls.push(request?.cursor)
+          lists += 1
+          return Promise.resolve(
+            lists === 1
+              ? page([ticket(5), ticket(4)], { total: 2 })
+              : page([ticket(5)], { total: 1 }),
+          )
+        },
+      },
+      store,
+    )
+    const first = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+
+    const result = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotRefresh, {
+        workspaceRoot: ROOT,
+        ifRevision: first.revision ?? undefined,
+        storeRevision: first.storeRevision,
+      }),
+    )
+
+    expect(refs(result)).toEqual(['#5'])
+    expect(store.entries.get(ROOT)?.tickets.map((item) => item.ref)).toEqual(['#5'])
+    const changes = await store.changesSince(ROOT, first.storeRevision)
+    expect(changes?.removed).toEqual(['#4'])
+  })
+
+  it('后端给不出版本号时退回全量，不把增量当成完整结果', async () => {
+    const store = memoryStore()
+    const { tracker, calls } = stableTracker(() => ({
+      tickets: [ticket(5)],
+      truncated: false,
+      revision: null,
+      hierarchy: 'native',
+    }))
+    const snapshots = service(tracker, store)
+    const first = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+
+    const result = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
+      workspaceRoot: ROOT,
+      ifRevision: first.revision ?? undefined,
+      storeRevision: first.storeRevision,
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok || !('kind' in result.result)) return
+    expect(result.result.kind).toBe('snapshot')
+    expect(calls).toEqual([undefined, undefined])
+  })
+})
+
+describe('增量阻塞补齐范围', () => {
+  it('首屏补齐全部开放票，增量只补变更过的开放票', async () => {
+    const store = memoryStore()
+    const targetBatches: (readonly TicketReference[])[] = []
+    const tracker: Tracker = {
+      fetchSnapshot: () => Promise.resolve(page([ticket(5), ticket(4)], { total: 2 })),
+      fetchChanges: () =>
+        Promise.resolve({
+          tickets: [ticket(5, { title: '改过标题' })],
+          truncated: false,
+          total: 2,
+          revision: { id: 'page:2', total: 2 },
+          hierarchy: 'native',
+        }),
+      resolveBlockers: (_root, targets) => {
+        targetBatches.push(targets)
+        return Promise.resolve({ open: new Map(), blockedBy: new Map() })
+      },
+    }
+    const snapshots = service(tracker, store)
+    const first = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+    expect(first.blockersFinalized).toBe(false)
+
+    await snapshots.handle(RPC_METHODS.snapshotResolveBlockers, { workspaceRoot: ROOT })
+    expect(targetBatches[0]?.map((item) => item.ref)).toEqual(['#5', '#4'])
+
+    const refreshed = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
+      workspaceRoot: ROOT,
+      ifRevision: first.revision ?? undefined,
+      storeRevision: first.storeRevision,
+    })
+    expect(refreshed.ok).toBe(true)
+    if (!refreshed.ok) return
+    expect('kind' in refreshed.result ? refreshed.result.kind : 'snapshot').toBe('delta')
+
+    await snapshots.handle(RPC_METHODS.snapshotResolveBlockers, { workspaceRoot: ROOT })
+    expect(targetBatches[1]?.map((item) => item.ref)).toEqual(['#5'])
+  })
+
+  it('内存缓存为空时首次增量刷新仍补齐全部开放票', async () => {
+    const store = memoryStore()
+    const targetBatches: (readonly TicketReference[])[] = []
+    const tracker: Tracker = {
+      fetchSnapshot: () => Promise.resolve(page([ticket(5), ticket(4)], { total: 2 })),
+      fetchChanges: () =>
+        Promise.resolve({
+          tickets: [ticket(5, { title: '改过标题' })],
+          truncated: false,
+          total: 2,
+          revision: { id: 'page:2', total: 2 },
+          hierarchy: 'native',
+        }),
+      resolveBlockers: (_root, targets) => {
+        targetBatches.push(targets)
+        return Promise.resolve({ open: new Map(), blockedBy: new Map() })
+      },
+    }
+    // 第一个进程只负责把快照写进库，不补齐阻塞。
+    const first = resultOf(
+      await service(tracker, store).handle(RPC_METHODS.snapshotGet, {
+        workspaceRoot: ROOT,
+      }),
+    )
+
+    // 新进程内存为空：首个请求就是增量刷新。
+    const restarted = service(tracker, store)
+    const refreshed = await restarted.handle(RPC_METHODS.snapshotRefresh, {
+      workspaceRoot: ROOT,
+      ifRevision: first.revision ?? undefined,
+      storeRevision: first.storeRevision,
+    })
+    expect(refreshed.ok).toBe(true)
+    if (!refreshed.ok) return
+    expect('kind' in refreshed.result ? refreshed.result.kind : 'snapshot').toBe('delta')
+
+    await restarted.handle(RPC_METHODS.snapshotResolveBlockers, { workspaceRoot: ROOT })
+    expect(targetBatches[0]?.map((item) => item.ref)).toEqual(['#5', '#4'])
+  })
+})
 
 describe('仓库作用域', () => {
   it('同一仓库的两个 worktree 共用一份缓存：第二个不再拉取工单列表', async () => {
@@ -691,6 +1087,7 @@ describe('仓库作用域', () => {
       tickets: [],
       truncated: false,
       hierarchy: 'native',
+      revision: { id: 'two', total: 2 },
     }))
     const snapshots = scopedService({ [MAIN_ROOT]: MAIN_ROOT, [ATTACHED_ROOT]: MAIN_ROOT }, tracker, store)
 
@@ -799,7 +1196,13 @@ describe('写操作跨 worktree 可见（端到端）', () => {
         lists.push('list')
         return Promise.resolve(page([ticket(1), ticket(2)]))
       },
-      fetchChanges: () => Promise.resolve({ tickets: [], truncated: false, hierarchy: 'native' }),
+      fetchChanges: () =>
+        Promise.resolve({
+          tickets: [],
+          truncated: false,
+          hierarchy: 'native',
+          revision: { id: 'two', total: 2 },
+        }),
       updateTicket: (_root: string, reference: TicketReference, patch: TicketPatch) => {
         writes.push(`update ${reference.ref} ${JSON.stringify(patch)}`)
         return Promise.resolve()
@@ -966,6 +1369,7 @@ describe('当前用户与分配人的快照传播', () => {
       truncated: false,
       viewer: 'new',
       hierarchy: 'native',
+      revision: { id: 'six', total: 6 },
     }))
     const first = resultOf(
       await service(updated.tracker, withViewer).handle(RPC_METHODS.snapshotRefresh, {
@@ -979,6 +1383,7 @@ describe('当前用户与分配人的快照传播', () => {
       tickets: [ticket(6, { updatedAt: '2026-11-21T00:00:00Z' })],
       truncated: false,
       hierarchy: 'native',
+      revision: { id: 'six', total: 6 },
     }))
     const second = resultOf(
       await service(silent.tracker, kept).handle(RPC_METHODS.snapshotRefresh, {

@@ -45,6 +45,55 @@ _Avoid_: calling repository scope "repository root" or "repo root" — that read
 directory of the current worktree, and an attached worktree's top-level directory is exactly not the
 repository scope.
 
+## Local snapshot library
+
+The on-disk cache that keeps the last successfully fetched raw ticket data for a cache key across
+process restarts.
+
+- One cache key = one directory: `meta.json` is the commit point, `tickets/<hash>.json` holds one
+  ticket per file, and `changes.jsonl` is an append-only change log delimited by store revision.
+- A write always commits in the order "ticket files → change log → meta". The meta file is written
+  last and the read path resolves only the ticket refs it names, so a crash never exposes half a
+  batch. Orphan ticket files are removed by the next write.
+- Deletion uses tombstones instead of physically removing rows: a tombstone only says "not present
+  in this version", and is cleared when the ticket reappears.
+- Only raw backend data and overview metrics computed at write time are stored; readiness, blocking
+  and skill-action decisions are not.
+- Single-writer assumption; no file locking for concurrent writes from multiple host processes yet.
+- Entries older than 30 days, or whose repository directory is gone, are pruned at startup; at most
+  20 repositories are kept.
+- The format version is `SNAPSHOT_STORE_VERSION`; entries with another version are treated as "no
+  cache", with no migration.
+
+Code: `src/adapters/fs/snapshot-store.ts` (directory I/O) and `src/core/snapshot-store.ts`
+(meta and ticket validation). See `docs/adr/0001-directory-snapshot-library.md`; introduced in #24.
+
+_Avoid_: calling the local snapshot library a "cache file" — it is no longer one whole JSON file.
+
+## Source revision
+
+A comparable identifier a backend gives for "the current ticket state of this repository", returned
+with each snapshot and incremental result and shaped as `{ id, total }`. `id` is only compared for
+equality; `total` is the authoritative ticket count at that moment.
+
+- A refresh sends it back as `ifRevision`; when `id` matches, the backend returns `notModified` and
+  the host replies with a tiny not-modified response instead of scanning the change window.
+- Local Markdown has no source revision (`null`); when a backend cannot provide one, that refresh
+  falls back to a full fetch.
+- It answers "did the remote change?", not "what is in the local store?".
+
+## Store revision
+
+The monotonically increasing commit sequence of the local snapshot library (`meta.storeRevision`);
+the change log and tombstones are delimited by it.
+
+- A client sends back the store revision it last saw; the host uses `changesSince` to return only
+  changed rows and tombstones.
+- When the log has rotated past the baseline, the client version is newer than the store, or a
+  ticket file is unreadable, no change set can be produced and the host returns a full snapshot.
+- It answers "what is in the local store?", and must not be used to decide whether the remote
+  changed.
+
 ## Viewer
 
 The currently signed-in user in a list snapshot: GitHub GraphQL's `viewer.login`, GitLab's

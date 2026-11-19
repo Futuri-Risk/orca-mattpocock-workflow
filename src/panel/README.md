@@ -44,8 +44,10 @@ The MattWorkflow panel in Orca's right sidebar (`ui: "html"`, a React app runnin
 - `tickets-view.tsx`: the list view. The people-filter row under the status segments renders only
   when the snapshot carries a signed-in user; the two pill toggles show counts, "Clear" appears when
   either toggle is on, and the row ends with `@login`.
-- `ticket-detail-view.tsx` / `ticket-detail-hooks.ts`: the ticket detail view and its data hooks.
-  The manual refresh in the header re-reads the ticket while keeping loaded content, and
+- `ticket-detail-view.tsx` / `ticket-detail-hooks.ts` / `detail-cache.ts`: the ticket detail view and
+  its data hooks. Details are cached in memory per workspace + ref: reopening a ticket whose list
+  `updatedAt` is unchanged sends no request; a changed ticket shows the cached detail and refreshes
+  silently. The manual refresh in the header re-reads the ticket while keeping loaded content, and
   concurrently refreshes the list snapshot; a failure is reported under the header without clearing
   the detail.
 - `ticket-blockers.tsx`: the detail header's "Blocked N" disclosure and expanded blocker rows. It
@@ -57,8 +59,9 @@ The MattWorkflow panel in Orca's right sidebar (`ui: "html"`, a React app runnin
   opening a blocker pushes the current target, and Back/Esc pops it; opening by ref still works when
   the snapshot has no row, it just renders no skill badge or blocker entry.
 - The panel-level `snapshot-request.ts` instance: list, overview and detail share one snapshot;
-  detail refresh, write or delete results are written back with `apply`, unfinalized snapshots keep
-  resolving blockers, so blocker titles and list data update together.
+  detail refresh, write or delete results are written back with `applyRefresh`, which accepts a full
+  snapshot, a delta or a not-modified reply; unfinalized snapshots keep resolving blockers, so
+  blocker titles and list data update together.
 - `ticket-tree.ts`: pure functions for list layout. Turns the filtered, sorted visible tickets into
   render rows: in the tree layout it gives depth, whether the row has children, expand state, whether
   the parent is outside the list and the descendant count; cycles and self-references fall back to

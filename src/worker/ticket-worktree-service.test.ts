@@ -113,6 +113,7 @@ function resolver(
         tickets: [],
         viewer: null,
         hierarchy: 'none',
+        revision: null,
       }),
       fetchDetail: async () => ({
         ...detailOf(detail),

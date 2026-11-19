@@ -1,12 +1,15 @@
-import { createHash } from 'node:crypto'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { storeKeyOf } from '../../core/repository-scope.ts'
 import { SNAPSHOT_STORE_VERSION, type SnapshotStoreEntry } from '../../core/snapshot-store.ts'
+import type { Ticket } from '../../core/ticket.ts'
+import { emptyMetrics } from '../../protocol/snapshot-test-support.ts'
 import {
+  SNAPSHOT_STORE_CHANGE_LOG_LIMIT,
   SNAPSHOT_STORE_MAX_ENTRIES,
   SNAPSHOT_STORE_TTL_MS,
   createNodeSnapshotStore,
@@ -24,6 +27,22 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
+function ticket(number: number, overrides: Partial<Ticket> = {}): Ticket {
+  return {
+    ref: `#${String(number)}`,
+    number,
+    title: `票 ${String(number)}`,
+    state: 'open',
+    labels: ['ready-for-agent'],
+    author: null,
+    assignees: [],
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    openBlockers: 0,
+    ...overrides,
+  }
+}
+
 function entry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreEntry {
   return {
     version: SNAPSHOT_STORE_VERSION,
@@ -37,21 +56,10 @@ function entry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreEntry 
     viewer: 'cnzgray',
     loaded: 1,
     total: 1,
-    tickets: [
-      {
-        ref: '#1',
-        number: 1,
-        title: '一张票',
-        state: 'open',
-        labels: ['ready-for-agent'],
-        author: null,
-        assignees: [],
-        createdAt: '2026-01-01T00:00:00Z',
-        updatedAt: '2026-01-01T00:00:00Z',
-        openBlockers: 0,
-      },
-    ],
+    tickets: [ticket(1)],
     hierarchy: 'native',
+    revision: { id: '1:2026-01-01T00:00:00Z', total: 1 },
+    storeRevision: 0,
     ...overrides,
   }
 }
@@ -60,26 +68,155 @@ function store() {
   return createNodeSnapshotStore({ root: join(root, 'cache'), home: root, tmp: root })
 }
 
-describe('本地快照库的文件实现', () => {
-  it('写入后能读回同一份条目', async () => {
+function key(): string {
+  return storeKeyOf('github', workspace, workspace)
+}
+
+describe('本地快照库的目录实现', () => {
+  it('写入后能读回同一份条目，并给出第一个库版本', async () => {
     const cache = store()
-    const original = entry()
+    const original = entry({ storeRevision: 0 })
 
-    await cache.write(original)
+    const revision = await cache.write(original)
+    const restored = await cache.read(key())
 
-    await expect(cache.read(workspace)).resolves.toEqual(original)
+    expect(revision).toBe(1)
+    expect(restored).toEqual({ ...original, storeRevision: 1 })
   })
 
-  it('没有条目时读到 undefined', async () => {
-    await expect(store().read(workspace)).resolves.toBeUndefined()
+  it('库版本单调自增', async () => {
+    const cache = store()
+    const first = await cache.write(entry())
+    const second = await cache.write(entry({ fetchedAt: 2_000 }))
+
+    expect(first).toBe(1)
+    expect(second).toBe(2)
+    await expect(cache.revision(key())).resolves.toBe(2)
   })
 
-  it('文件损坏时读到 undefined', async () => {
+  it('概览指标随写入落库，读侧不用重算', async () => {
+    const cache = store()
+    const metrics = emptyMetrics({ openBacklog: 7, readyCapacity: 3 })
+
+    await cache.write(entry({ metrics }))
+
+    const restored = await cache.read(key())
+    expect(restored?.metrics).toEqual(metrics)
+  })
+
+  it('没有条目时读到 undefined，版本也是 undefined', async () => {
+    const cache = store()
+
+    await expect(cache.read(key())).resolves.toBeUndefined()
+    await expect(cache.revision(key())).resolves.toBeUndefined()
+  })
+
+  it('只改一张票时只更新那张票', async () => {
+    const cache = store()
+    await cache.write(entry({ tickets: [ticket(1), ticket(2)], metrics: emptyMetrics() }))
+
+    const patched = await cache.patchTicket(key(), '#1', { state: 'closed' })
+
+    expect(patched).toBe(true)
+    const stored = await cache.read(key())
+    expect(stored?.tickets.find((item) => item.ref === '#1')?.state).toBe('closed')
+    expect(stored?.tickets.find((item) => item.ref === '#2')).toEqual(ticket(2))
+    // 改票后旧指标不再与列表同源，清空让读侧重算。
+    expect(stored?.metrics).toBeUndefined()
+  })
+
+  it('删除走墓碑：列表里消失，变化集把它报成 removed', async () => {
+    const cache = store()
+    await cache.write(entry({ tickets: [ticket(1), ticket(2)] }))
+    const before = await cache.revision(key())
+
+    await expect(cache.removeTicket(key(), '#1')).resolves.toBe(true)
+
+    const stored = await cache.read(key())
+    expect(stored?.tickets.map((item) => item.ref)).toEqual(['#2'])
+    const changes = await cache.changesSince(key(), before ?? 0)
+    expect(changes?.tickets).toEqual([])
+    expect(changes?.removed).toEqual(['#1'])
+  })
+
+  it('按版本读变化集：变化行、墓碑与重新出现都说得清', async () => {
+    const cache = store()
+    const first = await cache.write(entry({ tickets: [ticket(1), ticket(3)] }))
+    await cache.write(
+      entry({
+        fetchedAt: 2_000,
+        tickets: [ticket(1, { title: '改过标题' }), ticket(2)],
+      }),
+    )
+
+    const changes = await cache.changesSince(key(), first)
+
+    expect(changes?.revision).toBe(2)
+    expect(changes?.tickets.map((item) => item.ref)).toEqual(['#1', '#2'])
+    expect(changes?.tickets.find((item) => item.ref === '#1')?.title).toBe('改过标题')
+    expect(changes?.removed).toEqual(['#3'])
+
+    // 再写回 #3：同一窗口的最终状态是「存在」，墓碑消失。
+    await cache.write(
+      entry({
+        fetchedAt: 3_000,
+        tickets: [ticket(1, { title: '改过标题' }), ticket(2), ticket(3)],
+      }),
+    )
+    const again = await cache.changesSince(key(), first)
+    expect(again?.tickets.map((item) => item.ref)).toEqual(['#1', '#2', '#3'])
+    expect(again?.removed).toEqual([])
+  })
+
+  it('从当前版本读变化集是空的，未来版本读不出来', async () => {
+    const cache = store()
+    const revision = await cache.write(entry())
+
+    await expect(cache.changesSince(key(), revision)).resolves.toEqual({
+      fromRevision: revision,
+      revision,
+      tickets: [],
+      removed: [],
+    })
+    await expect(cache.changesSince(key(), revision + 1)).resolves.toBeUndefined()
+  })
+
+  it('提交中途崩溃时旧 meta 仍可读，下一次写入自愈', async () => {
+    await store().write(entry({ tickets: [ticket(1)] }))
+    const crashing = createNodeSnapshotStore({
+      root: join(root, 'cache'),
+      home: root,
+      tmp: root,
+      onCommitStage: (stage) => {
+        if (stage === 'meta') throw new Error('模拟 meta 前崩溃')
+      },
+    })
+
+    await expect(
+      crashing.write(entry({ fetchedAt: 2_000, tickets: [ticket(1), ticket(2)] })),
+    ).rejects.toThrow('模拟 meta 前崩溃')
+
+    // 旧 meta 是提交点：新票文件与日志尾巴都不可见。
+    const old = await store().read(key())
+    expect(old?.tickets.map((item) => item.ref)).toEqual(['#1'])
+    expect(old?.storeRevision).toBe(1)
+
+    // 下一次正常提交把日志尾巴与孤儿票文件收掉，读到的仍是完整条目。
+    await store().write(entry({ fetchedAt: 1_500, tickets: [ticket(1)] }))
+    const healed = await store().read(key())
+    expect(healed?.tickets.map((item) => item.ref)).toEqual(['#1'])
+  })
+
+  it('变化日志超过上限后，过旧的基线退回整份', async () => {
     const cache = store()
     await cache.write(entry())
-    await writeFile(join(root, 'cache', fileName(workspace)), 'not json')
+    for (let index = 0; index < SNAPSHOT_STORE_CHANGE_LOG_LIMIT; index += 1) {
+      await cache.write(entry({ fetchedAt: 1_000 + index }))
+    }
 
-    await expect(cache.read(workspace)).resolves.toBeUndefined()
+    await expect(cache.changesSince(key(), 0)).resolves.toBeUndefined()
+    const current = await cache.revision(key())
+    await expect(cache.changesSince(key(), (current ?? 1) - 1)).resolves.toBeDefined()
   })
 
   it('清空后条目全部消失并返回清掉的数量', async () => {
@@ -103,7 +240,7 @@ describe('本地快照库的文件实现', () => {
     const cache = store()
     await mkdir(root, { recursive: true })
     // 键指向存在的目录（root），只有时间条件让它该被淘汰。
-    await cache.write(entry({ scopeRoot: root, fetchedAt: 1_000 }))
+    await cache.write(entry({ scopeRoot: root, workspaceRoot: root, fetchedAt: 1_000 }))
 
     const removed = await cache.prune(1_000 + SNAPSHOT_STORE_TTL_MS + 1)
 
@@ -181,32 +318,11 @@ describe('本地快照库的文件实现', () => {
     await expect(cache.clear()).resolves.toBe(1)
   })
 
-  it('变更后缓存里那张票跟着更新', async () => {
-    const cache = store()
-    await cache.write(entry())
-
-    const patched = await cache.patchTicket(workspace, '#1', { labels: ['bug'], state: 'closed' })
-
-    expect(patched).toBe(true)
-    const stored = await cache.read(workspace)
-    expect(stored?.tickets[0]?.labels).toEqual(['bug'])
-    expect(stored?.tickets[0]?.state).toBe('closed')
-  })
-
   it('缓存里没有这张票时变更返回 false', async () => {
     const cache = store()
     await cache.write(entry())
 
-    await expect(cache.patchTicket(workspace, '#99', { state: 'closed' })).resolves.toBe(false)
-  })
-
-  it('删除后那张票从缓存里消失', async () => {
-    const cache = store()
-    await cache.write(entry())
-
-    await expect(cache.removeTicket(workspace, '#1')).resolves.toBe(true)
-    const stored = await cache.read(workspace)
-    expect(stored?.tickets).toEqual([])
+    await expect(cache.patchTicket(key(), '#99', { state: 'closed' })).resolves.toBe(false)
   })
 
   it('缓存位置用符号形式给出', () => {
@@ -217,8 +333,3 @@ describe('本地快照库的文件实现', () => {
     expect(withoutHome.location()).toBe('系统临时目录')
   })
 })
-
-/** 取出某个工作区对应的缓存文件名。 */
-function fileName(workspaceRoot: string): string {
-  return `${createHash('sha256').update(workspaceRoot).digest('hex').slice(0, 16)}.json`
-}

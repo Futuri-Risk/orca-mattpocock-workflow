@@ -24,7 +24,18 @@ function createNodeEnvFiles() {
 // src/adapters/fs/snapshot-store.ts
 import { createHash } from "node:crypto";
 import { constants } from "node:fs";
-import { access, chmod, mkdir, readdir, readFile, rename, rm, stat as stat2, writeFile } from "node:fs/promises";
+import {
+  access,
+  appendFile,
+  chmod,
+  mkdir,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  stat as stat2,
+  writeFile
+} from "node:fs/promises";
 import { homedir as homedir2, tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -60,47 +71,62 @@ function isRecord(value) {
 }
 
 // src/core/snapshot-store.ts
-var SNAPSHOT_STORE_VERSION = 3;
+var SNAPSHOT_STORE_VERSION = 4;
 var BACKENDS = ["github", "gitlab", "gitea", "markdown"];
 var HIERARCHIES = ["native", "convention", "none"];
-function serializeSnapshotStoreEntry(entry) {
+function serializeSnapshotStoreMeta(meta) {
   return JSON.stringify({
-    version: entry.version,
-    scopeRoot: entry.scopeRoot,
-    workspaceRoot: entry.workspaceRoot,
-    backend: entry.backend,
-    repository: entry.repository,
-    repositoryKey: entry.repositoryKey,
-    repositoryHost: entry.repositoryHost,
-    fetchedAt: entry.fetchedAt,
-    viewer: entry.viewer,
-    loaded: entry.loaded,
-    total: entry.total,
-    ...entry.nextCursor === void 0 ? {} : { nextCursor: entry.nextCursor },
-    tickets: entry.tickets,
-    hierarchy: entry.hierarchy
+    version: meta.version,
+    storeRevision: meta.storeRevision,
+    scopeRoot: meta.scopeRoot,
+    workspaceRoot: meta.workspaceRoot,
+    backend: meta.backend,
+    repository: meta.repository,
+    repositoryKey: meta.repositoryKey,
+    repositoryHost: meta.repositoryHost,
+    fetchedAt: meta.fetchedAt,
+    viewer: meta.viewer,
+    total: meta.total,
+    ...meta.nextCursor === void 0 ? {} : { nextCursor: meta.nextCursor },
+    hierarchy: meta.hierarchy,
+    revision: meta.revision,
+    ticketRefs: meta.ticketRefs,
+    tombstones: meta.tombstones,
+    ...meta.metrics === void 0 ? {} : { metrics: meta.metrics }
   });
 }
-function parseSnapshotStoreEntry(raw) {
+function parseSnapshotStoreMeta(raw) {
   let payload;
   try {
     payload = JSON.parse(raw);
   } catch {
     return void 0;
   }
-  return readEntry(payload);
+  return readMeta(payload);
 }
-function readEntry(value) {
+function serializeSnapshotTicket(ticket) {
+  return JSON.stringify(ticket);
+}
+function parseSnapshotTicket(raw) {
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch {
+    return void 0;
+  }
+  return readTicket(payload);
+}
+function readMeta(value) {
   if (!isRecord(value)) return void 0;
   if (value.version !== SNAPSHOT_STORE_VERSION) return void 0;
+  const storeRevision = readCount(value.storeRevision);
   const workspaceRoot = readString(value.workspaceRoot);
   const scopeRoot = readString(value.scopeRoot);
   const repository = readString(value.repository);
   const repositoryKey2 = readString(value.repositoryKey);
   const fetchedAt = readNumber(value.fetchedAt);
-  const loaded = readNumber(value.loaded);
   const total = readNumber(value.total);
-  if (workspaceRoot === void 0 || scopeRoot === void 0 || repository === void 0 || repositoryKey2 === void 0 || fetchedAt === void 0 || loaded === void 0 || total === void 0) {
+  if (storeRevision === void 0 || workspaceRoot === void 0 || scopeRoot === void 0 || repository === void 0 || repositoryKey2 === void 0 || fetchedAt === void 0 || total === void 0) {
     return void 0;
   }
   const backend = value.backend;
@@ -114,14 +140,19 @@ function readEntry(value) {
   if (nextCursor !== void 0 && (typeof nextCursor !== "string" || nextCursor.length === 0)) {
     return void 0;
   }
-  const tickets = readTickets(value.tickets);
-  if (tickets === void 0) return void 0;
   const hierarchy = value.hierarchy;
   if (typeof hierarchy !== "string" || !HIERARCHIES.includes(hierarchy)) {
     return void 0;
   }
+  const revision = readSourceRevision(value.revision);
+  if (revision === void 0) return void 0;
+  const ticketRefs = readStringArray(value.ticketRefs);
+  const tombstones = readStringArray(value.tombstones);
+  if (ticketRefs === void 0 || tombstones === void 0) return void 0;
+  const metrics = readMetrics(value.metrics);
   return {
     version: SNAPSHOT_STORE_VERSION,
+    storeRevision,
     scopeRoot,
     workspaceRoot,
     backend,
@@ -130,22 +161,168 @@ function readEntry(value) {
     repositoryHost: repositoryHost ?? null,
     fetchedAt,
     viewer,
-    loaded,
     total,
     ...nextCursor === void 0 ? {} : { nextCursor },
-    tickets,
-    hierarchy
+    hierarchy,
+    revision,
+    ticketRefs,
+    tombstones,
+    ...metrics === void 0 ? {} : { metrics }
   };
 }
-function readTickets(value) {
-  if (!Array.isArray(value)) return void 0;
-  const tickets = [];
-  for (const item of value) {
-    const ticket = readTicket(item);
-    if (ticket === void 0) return void 0;
-    tickets.push(ticket);
+function readMetrics(value) {
+  if (!isRecord(value)) return void 0;
+  const counts = ["openBacklog", "readyCapacity", "blockedRatio", "needsTriage", "stalled"];
+  for (const key of counts) {
+    if (typeof value[key] !== "number") return void 0;
   }
-  return tickets;
+  const metricKeys = [
+    "staleCount",
+    "staleRatio",
+    "oldestUpdateDays",
+    "longestBlockerChain",
+    "openedLast30Days",
+    "closedLast30Days",
+    "netFlow"
+  ];
+  const metrics = {};
+  for (const key of metricKeys) {
+    const metric = readMetricValue(value[key]);
+    if (metric === void 0) return void 0;
+    metrics[key] = metric;
+  }
+  const coverage = value.coverage;
+  if (!isRecord(coverage) || typeof coverage.truncated !== "boolean") return void 0;
+  const pressure = readPressure(value.pressure);
+  if (pressure === void 0) return void 0;
+  const attention = readAttention(value.attention);
+  if (attention === void 0) return void 0;
+  return {
+    openBacklog: value.openBacklog,
+    readyCapacity: value.readyCapacity,
+    blockedRatio: value.blockedRatio,
+    needsTriage: value.needsTriage,
+    stalled: value.stalled,
+    staleCount: metrics.staleCount,
+    staleRatio: metrics.staleRatio,
+    oldestUpdateDays: metrics.oldestUpdateDays,
+    longestBlockerChain: metrics.longestBlockerChain,
+    openedLast30Days: metrics.openedLast30Days,
+    closedLast30Days: metrics.closedLast30Days,
+    netFlow: metrics.netFlow,
+    coverage: { truncated: coverage.truncated },
+    pressure,
+    attention
+  };
+}
+var GAPS = ["no-timestamps", "no-closed-time", "no-dependency-edges"];
+function readMetricValue(value) {
+  if (!isRecord(value)) return void 0;
+  const metric = value.value;
+  if (metric !== null && typeof metric !== "number") return void 0;
+  const gap = value.gap;
+  if (gap !== null && (typeof gap !== "string" || !GAPS.includes(gap))) {
+    return void 0;
+  }
+  return { value: metric, gap };
+}
+var TIERS = ["light", "normal", "tight"];
+var DIMENSIONS = ["scale", "blocking", "freshness"];
+var PRESSURE_METRICS = [
+  "backlog",
+  "netFlow",
+  "blockedRatio",
+  "staleRatio",
+  "stalled"
+];
+function readPressure(value) {
+  if (!isRecord(value)) return void 0;
+  const tier = readTier(value.tier);
+  if (tier === void 0 || !Array.isArray(value.dimensions)) return void 0;
+  const dimensions = [];
+  for (const item of value.dimensions) {
+    const dimension = readPressureDimension(item);
+    if (dimension === void 0) return void 0;
+    dimensions.push(dimension);
+  }
+  return { tier, dimensions };
+}
+function readTier(value) {
+  if (typeof value !== "string" || !TIERS.includes(value)) return void 0;
+  return value;
+}
+function readPressureDimension(value) {
+  if (!isRecord(value)) return void 0;
+  const dimension = value.dimension;
+  if (typeof dimension !== "string" || !DIMENSIONS.includes(dimension)) {
+    return void 0;
+  }
+  const tier = value.tier === null ? null : readTier(value.tier);
+  if (tier === void 0) return void 0;
+  if (!Array.isArray(value.signals) || !Array.isArray(value.triggers) || !Array.isArray(value.gaps)) {
+    return void 0;
+  }
+  if (typeof value.provisional !== "boolean") return void 0;
+  const signals = value.signals.map(readSignal);
+  if (signals.some((signal) => signal === void 0)) return void 0;
+  const triggers = value.triggers.map(readPressureMetric);
+  if (triggers.some((trigger) => trigger === void 0)) return void 0;
+  const gaps = value.gaps.map(readGap);
+  if (gaps.some((gap) => gap === void 0)) return void 0;
+  return {
+    dimension,
+    tier,
+    signals,
+    triggers,
+    gaps,
+    provisional: value.provisional
+  };
+}
+function readSignal(value) {
+  if (!isRecord(value) || typeof value.value !== "number") return void 0;
+  const metric = readPressureMetric(value.metric);
+  return metric === void 0 ? void 0 : { metric, value: value.value };
+}
+function readPressureMetric(value) {
+  if (typeof value !== "string" || !PRESSURE_METRICS.includes(value)) {
+    return void 0;
+  }
+  return value;
+}
+function readGap(value) {
+  if (typeof value !== "string" || !GAPS.includes(value)) return void 0;
+  return value;
+}
+var ATTENTION_REASONS = [
+  "untriaged-bug",
+  "stale",
+  "most-blocking",
+  "oldest-stalled"
+];
+function readAttention(value) {
+  if (!Array.isArray(value)) return void 0;
+  const items = [];
+  for (const item of value) {
+    if (!isRecord(item)) return void 0;
+    const ref = readString(item.ref);
+    const title = readString(item.title);
+    const reason = item.reason;
+    if (ref === void 0 || title === void 0 || typeof reason !== "string" || !ATTENTION_REASONS.includes(reason)) {
+      return void 0;
+    }
+    const evidence = item.evidence;
+    if (evidence !== null && typeof evidence !== "number") return void 0;
+    items.push({ ref, title, reason, evidence });
+  }
+  return items;
+}
+function readSourceRevision(value) {
+  if (value === null) return null;
+  if (!isRecord(value)) return void 0;
+  const id = readString(value.id);
+  const total = readCount(value.total);
+  if (id === void 0 || total === void 0) return void 0;
+  return { id, total };
 }
 function readTicket(value) {
   if (!isRecord(value)) return void 0;
@@ -238,6 +415,10 @@ function readNumber(value) {
   if (typeof value !== "number" || !Number.isFinite(value)) return void 0;
   return value;
 }
+function readCount(value) {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 0) return void 0;
+  return value;
+}
 function readStringArray(value) {
   if (!Array.isArray(value)) return void 0;
   const items = [];
@@ -251,7 +432,11 @@ function readStringArray(value) {
 // src/adapters/fs/snapshot-store.ts
 var SNAPSHOT_STORE_TTL_MS = 30 * 24 * 60 * 60 * 1e3;
 var SNAPSHOT_STORE_MAX_ENTRIES = 20;
+var SNAPSHOT_STORE_CHANGE_LOG_LIMIT = 512;
 var DIRECTORY_NAME = "orca-mattpocock-workflow";
+var META_FILE = "meta.json";
+var TICKETS_DIRECTORY = "tickets";
+var CHANGE_LOG_FILE = "changes.jsonl";
 function createNodeSnapshotStore(deps = {}) {
   const home = resolveHome(deps);
   const fallbackRoot = join(resolveTmp(deps), `${DIRECTORY_NAME}-cache`);
@@ -273,26 +458,56 @@ function createNodeSnapshotStore(deps = {}) {
     return root;
   };
   return {
-    ...entryOperations(resolveRoot),
-    ...ticketOperations(resolveRoot),
+    ...entryOperations(resolveRoot, deps.onCommitStage),
+    ...ticketOperations(resolveRoot, deps.onCommitStage),
+    revision: async (key) => (await readMetaAt(await resolveRoot(), key))?.storeRevision,
+    changesSince: async (key, fromRevision) => readChangesSince(await resolveRoot(), key, fromRevision),
     location: () => display
   };
 }
-function entryOperations(resolveRoot) {
+function entryOperations(resolveRoot, onCommitStage) {
   const list = async () => {
     const root = await resolveRoot();
-    return (await scanEntries(root)).flatMap(
+    return (await scanEntryDirectories(root)).flatMap(
       (scanned) => scanned.entry === void 0 ? [] : [scanned.entry]
     );
   };
   return {
-    read: (key) => readEntryAt(resolveRoot, key),
+    read: async (key) => {
+      const root = await resolveRoot();
+      return readEntryAt(root, key);
+    },
     async write(entry) {
-      await writeEntryAt(await resolveRoot(), entry);
+      const root = await resolveRoot();
+      const key = storeKeyOf(entry.backend, entry.scopeRoot, entry.workspaceRoot);
+      const previous = await readEntryAt(root, key);
+      const previousByRef = new Map(
+        (previous?.tickets ?? []).map((ticket) => [ticket.ref, ticket])
+      );
+      const nextRefs = new Set(entry.tickets.map((ticket) => ticket.ref));
+      const changed = entry.tickets.filter((ticket) => {
+        const old = previousByRef.get(ticket.ref);
+        return old === void 0 || serializeSnapshotTicket(old) !== serializeSnapshotTicket(ticket);
+      });
+      const removed = (previous?.tickets ?? []).flatMap(
+        (ticket) => nextRefs.has(ticket.ref) ? [] : [ticket.ref]
+      );
+      return commitEntry(
+        root,
+        key,
+        entry,
+        {
+          tickets: changed,
+          removed,
+          ...entry.metrics === void 0 ? {} : { metrics: entry.metrics }
+        },
+        onCommitStage
+      );
     },
     async remove(key) {
       const root = await resolveRoot();
-      await rm(fileFor(root, key), { force: true });
+      await rm(directoryFor(root, key), { recursive: true, force: true });
+      await rm(legacyFileFor(root, key), { force: true });
     },
     list,
     async clear() {
@@ -305,8 +520,8 @@ function entryOperations(resolveRoot) {
       }
       let removed = 0;
       for (const name of names) {
-        if (!name.endsWith(".json")) continue;
-        await rm(join(root, name), { force: true });
+        if (!isEntryDirectory(name) && !isLegacyFile(name)) continue;
+        await rm(join(root, name), { recursive: true, force: true });
         removed += 1;
       }
       return removed;
@@ -315,9 +530,9 @@ function entryOperations(resolveRoot) {
       const root = await resolveRoot();
       const kept = [];
       let removed = 0;
-      for (const scanned of await scanEntries(root)) {
+      for (const scanned of await scanEntryDirectories(root)) {
         if (scanned.entry === void 0) {
-          await rm(join(root, scanned.name), { force: true });
+          await rm(scanned.path, { recursive: true, force: true });
           removed += 1;
           continue;
         }
@@ -325,18 +540,20 @@ function entryOperations(resolveRoot) {
         const key = storeKeyOf(entry.backend, entry.scopeRoot, entry.workspaceRoot);
         const gone = await isDirectoryGone(key);
         if (gone === true || gone === void 0 && now - entry.fetchedAt > SNAPSHOT_STORE_TTL_MS) {
-          await rm(join(root, scanned.name), { force: true });
+          await rm(scanned.path, { recursive: true, force: true });
           removed += 1;
           continue;
         }
         kept.push(entry);
       }
+      removed += await removeLegacyFiles(root);
       if (kept.length > SNAPSHOT_STORE_MAX_ENTRIES) {
         kept.sort((left, right) => left.fetchedAt - right.fetchedAt);
         for (const entry of kept.slice(0, kept.length - SNAPSHOT_STORE_MAX_ENTRIES)) {
-          await rm(fileFor(root, storeKeyOf(entry.backend, entry.scopeRoot, entry.workspaceRoot)), {
-            force: true
-          });
+          await rm(
+            directoryFor(root, storeKeyOf(entry.backend, entry.scopeRoot, entry.workspaceRoot)),
+            { recursive: true, force: true }
+          );
           removed += 1;
         }
       }
@@ -344,11 +561,11 @@ function entryOperations(resolveRoot) {
     }
   };
 }
-function ticketOperations(resolveRoot) {
+function ticketOperations(resolveRoot, onCommitStage) {
   return {
     async patchTicket(key, ref, patch) {
       const root = await resolveRoot();
-      const entry = await readEntryAt(resolveRoot, key);
+      const entry = await readEntryAt(root, key);
       if (entry === void 0) return false;
       const index = entry.tickets.findIndex((ticket) => ticket.ref === ref);
       if (index < 0) return false;
@@ -361,24 +578,274 @@ function ticketOperations(resolveRoot) {
       };
       const tickets = [...entry.tickets];
       tickets[index] = updated;
-      await writeEntryAt(root, { ...entry, tickets });
+      await commitEntry(
+        root,
+        key,
+        { ...entry, tickets },
+        { tickets: [updated], removed: [] },
+        onCommitStage
+      );
       return true;
     },
     async removeTicket(key, ref) {
       const root = await resolveRoot();
-      const entry = await readEntryAt(resolveRoot, key);
+      const entry = await readEntryAt(root, key);
       if (entry === void 0) return false;
       const tickets = entry.tickets.filter((ticket) => ticket.ref !== ref);
       if (tickets.length === entry.tickets.length) return false;
-      await writeEntryAt(root, { ...entry, tickets });
+      await commitEntry(
+        root,
+        key,
+        { ...entry, tickets },
+        { tickets: [], removed: [ref] },
+        onCommitStage
+      );
       return true;
     }
   };
 }
-function fileFor(root, key) {
+async function commitEntry(root, key, entry, change, onCommitStage) {
+  const directory = directoryFor(root, key);
+  const ticketsDirectory = join(directory, TICKETS_DIRECTORY);
+  await mkdir(ticketsDirectory, { recursive: true, mode: 448 });
+  const previousMeta = await readMetaAt(root, key);
+  const previousRevision = previousMeta?.storeRevision ?? 0;
+  const revision = previousRevision + 1;
+  for (const ticket of change.tickets) {
+    await writeFileAtomic(
+      join(ticketsDirectory, `${hashOf(ticket.ref)}.json`),
+      serializeSnapshotTicket(ticket)
+    );
+  }
+  await onCommitStage?.("tickets");
+  await appendChangeRecord(directory, previousRevision, {
+    revision,
+    upserts: change.tickets.map((ticket) => ticket.ref),
+    removed: change.removed
+  });
+  await onCommitStage?.("log");
+  const ticketRefs = entry.tickets.map((ticket) => ticket.ref);
+  const currentRefs = new Set(ticketRefs);
+  const tombstones = [
+    .../* @__PURE__ */ new Set([
+      ...(previousMeta?.tombstones ?? []).filter((ref) => !currentRefs.has(ref)),
+      ...change.removed
+    ])
+  ];
+  const meta = {
+    version: entry.version,
+    storeRevision: revision,
+    scopeRoot: entry.scopeRoot,
+    workspaceRoot: entry.workspaceRoot,
+    backend: entry.backend,
+    repository: entry.repository,
+    repositoryKey: entry.repositoryKey,
+    repositoryHost: entry.repositoryHost,
+    fetchedAt: entry.fetchedAt,
+    viewer: entry.viewer,
+    total: entry.total,
+    ...entry.nextCursor === void 0 ? {} : { nextCursor: entry.nextCursor },
+    hierarchy: entry.hierarchy,
+    revision: entry.revision,
+    ticketRefs,
+    tombstones,
+    ...change.metrics === void 0 ? {} : { metrics: change.metrics }
+  };
+  await onCommitStage?.("meta");
+  await writeFileAtomic(join(directory, META_FILE), serializeSnapshotStoreMeta(meta));
+  await removeOrphanTicketFiles(ticketsDirectory, currentRefs);
+  await pruneChangeLog(directory);
+  return revision;
+}
+async function readEntryAt(root, key) {
+  return readEntryFromDirectory(directoryFor(root, key));
+}
+async function readEntryFromDirectory(directory) {
+  const meta = await readMetaFromDirectory(directory);
+  if (meta === void 0) return void 0;
+  const tickets = [];
+  for (const ref of meta.ticketRefs) {
+    try {
+      const raw = await readFile(join(directory, TICKETS_DIRECTORY, `${hashOf(ref)}.json`), "utf8");
+      const ticket = parseSnapshotTicket(raw);
+      if (ticket === void 0 || ticket.ref !== ref) return void 0;
+      tickets.push(ticket);
+    } catch {
+      return void 0;
+    }
+  }
+  return {
+    version: meta.version,
+    scopeRoot: meta.scopeRoot,
+    workspaceRoot: meta.workspaceRoot,
+    backend: meta.backend,
+    repository: meta.repository,
+    repositoryKey: meta.repositoryKey,
+    repositoryHost: meta.repositoryHost,
+    fetchedAt: meta.fetchedAt,
+    viewer: meta.viewer,
+    loaded: tickets.length,
+    total: meta.total,
+    ...meta.nextCursor === void 0 ? {} : { nextCursor: meta.nextCursor },
+    tickets,
+    hierarchy: meta.hierarchy,
+    revision: meta.revision,
+    storeRevision: meta.storeRevision,
+    ...meta.metrics === void 0 ? {} : { metrics: meta.metrics }
+  };
+}
+async function readMetaAt(root, key) {
+  return readMetaFromDirectory(directoryFor(root, key));
+}
+async function readMetaFromDirectory(directory) {
+  try {
+    return parseSnapshotStoreMeta(await readFile(join(directory, META_FILE), "utf8"));
+  } catch {
+    return void 0;
+  }
+}
+async function readChangesSince(root, key, fromRevision) {
+  if (!Number.isInteger(fromRevision) || fromRevision < 0) return void 0;
+  const directory = directoryFor(root, key);
+  const meta = await readMetaFromDirectory(directory);
+  if (meta === void 0) return void 0;
+  if (fromRevision > meta.storeRevision) return void 0;
+  const log = await readChangeRecords(directory, false);
+  if (log === void 0) return void 0;
+  const committed = log.records.filter((record) => record.revision <= meta.storeRevision);
+  if (fromRevision === meta.storeRevision) {
+    return { fromRevision, revision: meta.storeRevision, tickets: [], removed: [] };
+  }
+  const oldest = committed[0]?.revision;
+  if (oldest === void 0 || fromRevision < oldest - 1) return void 0;
+  const final = /* @__PURE__ */ new Map();
+  for (const record of committed) {
+    if (record.revision <= fromRevision) continue;
+    for (const ref of record.upserts) final.set(ref, "upsert");
+    for (const ref of record.removed) final.set(ref, "removed");
+  }
+  if (final.size === 0) {
+    return { fromRevision, revision: meta.storeRevision, tickets: [], removed: [] };
+  }
+  const changedRefs = new Set(
+    [...final].flatMap(([ref, state]) => state === "upsert" ? [ref] : [])
+  );
+  const tickets = [];
+  for (const ref of meta.ticketRefs) {
+    if (!changedRefs.has(ref)) continue;
+    const ticket = await readTicketFile(directory, ref);
+    if (ticket === void 0) return void 0;
+    tickets.push(ticket);
+  }
+  const removed = [...final].flatMap(([ref, state]) => state === "removed" ? [ref] : []);
+  return { fromRevision, revision: meta.storeRevision, tickets, removed };
+}
+async function readTicketFile(directory, ref) {
+  try {
+    const raw = await readFile(join(directory, TICKETS_DIRECTORY, `${hashOf(ref)}.json`), "utf8");
+    const ticket = parseSnapshotTicket(raw);
+    return ticket?.ref === ref ? ticket : void 0;
+  } catch {
+    return void 0;
+  }
+}
+async function appendChangeRecord(directory, committedRevision, record) {
+  const path = join(directory, CHANGE_LOG_FILE);
+  const existing = await readChangeRecords(directory, true);
+  const committed = (existing?.records ?? []).filter((item) => item.revision <= committedRevision);
+  if (existing === void 0 || !existing.clean || committed.length !== existing.records.length) {
+    await writeFileAtomic(path, serializeChangeRecords(committed));
+  }
+  await appendFile(path, `${JSON.stringify(record)}
+`, { mode: 384 });
+  await chmod(path, 384);
+}
+async function readChangeRecords(directory, tolerant) {
+  let raw;
+  try {
+    raw = await readFile(join(directory, CHANGE_LOG_FILE), "utf8");
+  } catch {
+    return { records: [], clean: true };
+  }
+  const records = [];
+  let clean = true;
+  for (const line of raw.split("\n")) {
+    if (line.length === 0) continue;
+    const record = parseChangeRecord(line);
+    if (record === void 0) {
+      if (!tolerant) return void 0;
+      clean = false;
+      continue;
+    }
+    records.push(record);
+  }
+  return { records, clean };
+}
+function parseChangeRecord(line) {
+  let payload;
+  try {
+    payload = JSON.parse(line);
+  } catch {
+    return void 0;
+  }
+  if (typeof payload !== "object" || payload === null) return void 0;
+  const value = payload;
+  const revision = value.revision;
+  if (typeof revision !== "number" || !Number.isInteger(revision) || revision < 0) return void 0;
+  const upserts = readStringList(value.upserts);
+  const removed = readStringList(value.removed);
+  if (upserts === void 0 || removed === void 0) return void 0;
+  return { revision, upserts, removed };
+}
+function readStringList(value) {
+  if (!Array.isArray(value)) return void 0;
+  const items = [];
+  for (const item of value) {
+    if (typeof item !== "string") return void 0;
+    items.push(item);
+  }
+  return items;
+}
+function serializeChangeRecords(records) {
+  return records.map((record) => `${JSON.stringify(record)}
+`).join("");
+}
+async function pruneChangeLog(directory) {
+  const log = await readChangeRecords(directory, true);
+  if (log === void 0 || log.records.length <= SNAPSHOT_STORE_CHANGE_LOG_LIMIT) return;
+  await writeFileAtomic(
+    join(directory, CHANGE_LOG_FILE),
+    serializeChangeRecords(
+      log.records.slice(log.records.length - SNAPSHOT_STORE_CHANGE_LOG_LIMIT)
+    )
+  );
+}
+async function removeOrphanTicketFiles(ticketsDirectory, refs) {
+  let names;
+  try {
+    names = await readdir(ticketsDirectory);
+  } catch {
+    return;
+  }
+  const expected = new Set([...refs].map((ref) => `${hashOf(ref)}.json`));
+  for (const name of names) {
+    if (expected.has(name)) continue;
+    await rm(join(ticketsDirectory, name), { force: true });
+  }
+}
+function directoryFor(root, key) {
+  return join(root, `${hashOf(key)}.dir`);
+}
+function legacyFileFor(root, key) {
   return join(root, `${hashOf(key)}.json`);
 }
-async function scanEntries(root) {
+function isEntryDirectory(name) {
+  return name.endsWith(".dir");
+}
+function isLegacyFile(name) {
+  return name.endsWith(".json");
+}
+async function scanEntryDirectories(root) {
   let names;
   try {
     names = await readdir(root);
@@ -387,32 +854,33 @@ async function scanEntries(root) {
   }
   const scanned = [];
   for (const name of names) {
-    if (!name.endsWith(".json")) continue;
-    try {
-      scanned.push({
-        name,
-        entry: parseSnapshotStoreEntry(await readFile(join(root, name), "utf8"))
-      });
-    } catch {
-    }
+    if (!isEntryDirectory(name)) continue;
+    const path = join(root, name);
+    scanned.push({ path, entry: await readEntryFromDirectory(path) });
   }
   return scanned;
 }
-async function readEntryAt(resolveRoot, key) {
+async function removeLegacyFiles(root) {
+  let names;
   try {
-    const root = await resolveRoot();
-    const raw = await readFile(fileFor(root, key), "utf8");
-    return parseSnapshotStoreEntry(raw);
+    names = await readdir(root);
   } catch {
-    return void 0;
+    return 0;
   }
+  let removed = 0;
+  for (const name of names) {
+    if (!isLegacyFile(name)) continue;
+    await rm(join(root, name), { force: true });
+    removed += 1;
+  }
+  return removed;
 }
-async function writeEntryAt(root, entry) {
-  await mkdir(root, { recursive: true, mode: 448 });
-  const target = fileFor(root, storeKeyOf(entry.backend, entry.scopeRoot, entry.workspaceRoot));
-  const temporary = `${target}.${String(process.pid)}.tmp`;
+var temporaryCounter = 0;
+async function writeFileAtomic(target, content) {
+  temporaryCounter += 1;
+  const temporary = `${target}.${String(process.pid)}.${String(temporaryCounter)}.tmp`;
   try {
-    await writeFile(temporary, serializeSnapshotStoreEntry(entry), { mode: 384 });
+    await writeFile(temporary, content, { mode: 384 });
     await rename(temporary, target);
     await chmod(target, 384);
   } catch (error) {
@@ -1605,7 +2073,7 @@ async function readChangedTicketFiles(files, workspaceRoot, since) {
       const path = joinPath(issuesDirectory, entry.name);
       const timestamps = await files.statFile(path);
       if (timestamps.updatedAt > since) {
-        moved.push(await readTicketFile(files, feature.name, entry.name, path, timestamps));
+        moved.push(await readTicketFile2(files, feature.name, entry.name, path, timestamps));
       } else {
         untouched.push({ entry, timestamps });
       }
@@ -1615,7 +2083,7 @@ async function readChangedTicketFiles(files, workspaceRoot, since) {
     for (const sibling of referencedSiblings(moved, untouched, feature.name)) {
       const path = joinPath(issuesDirectory, sibling.entry.name);
       context.push(
-        await readTicketFile(files, feature.name, sibling.entry.name, path, sibling.timestamps)
+        await readTicketFile2(files, feature.name, sibling.entry.name, path, sibling.timestamps)
       );
     }
   }
@@ -1640,7 +2108,7 @@ function referencedSiblings(moved, untouched, feature) {
   }
   return untouched.filter(({ entry }) => referenced.has(`.scratch/${feature}/issues/${entry.name}`));
 }
-async function readTicketFile(files, feature, name, path, timestamps) {
+async function readTicketFile2(files, feature, name, path, timestamps) {
   const content = await files.readTextFile(path);
   return {
     path: `.scratch/${feature}/issues/${name}`,
@@ -2337,7 +2805,7 @@ function invalidOptions(message) {
 
 // src/adapters/gitea/tracker.ts
 var DEFAULT_PAGE_SIZE = 50;
-var DEFAULT_CONCURRENCY = 4;
+var DEFAULT_CONCURRENCY = 8;
 var MAX_PAGES3 = 200;
 function createGiteaTracker(deps) {
   const pageSize = normalizePositive(deps.pageSize ?? DEFAULT_PAGE_SIZE, DEFAULT_PAGE_SIZE);
@@ -2350,24 +2818,17 @@ function createGiteaTracker(deps) {
     async fetchSnapshot(workspaceRoot) {
       const repository = await readRepository(deps.run, workspaceRoot);
       const viewer = readCurrentViewer(deps, workspaceRoot);
+      const revision = readGiteaRevision(deps, workspaceRoot, repository);
       const issues = await readIssues(deps, workspaceRoot, repository, pageSize);
       const states = /* @__PURE__ */ new Map();
       for (const issue of issues.items) {
         if (issue.ticket.number !== null) states.set(issue.ticket.number, issue.ticket.state);
       }
-      const native = await readNativeBlockers(
-        deps,
-        workspaceRoot,
-        repository,
-        issues.items,
-        pageSize,
-        concurrency
-      );
       const tickets = issues.items.map((issue) => ({
         ...issue.ticket,
         ...resolveOpenBlockers({
           ticket: issue.ticket,
-          nativeBlockers: native?.get(issue.ticket.number ?? -1),
+          nativeBlockers: void 0,
           text: issue.body,
           states
         })
@@ -2380,11 +2841,45 @@ function createGiteaTracker(deps) {
         tickets,
         viewer: await viewer,
         // Gitea 没有原生子工单；父级来自子票正文首行的 `Part of #<n>` 约定。
-        hierarchy: "convention"
+        hierarchy: "convention",
+        revision: await revision
       };
     },
-    async fetchChanges(workspaceRoot, since) {
-      return readGiteaChanges(deps, workspaceRoot, pageSize, since, concurrency);
+    async fetchChanges(workspaceRoot, since, ifRevision) {
+      return readGiteaChanges(deps, workspaceRoot, pageSize, since, ifRevision);
+    },
+    async resolveBlockers(workspaceRoot, targets) {
+      const open = targets.filter(
+        (target) => target.number !== null
+      );
+      if (open.length === 0) return { open: /* @__PURE__ */ new Map(), blockedBy: /* @__PURE__ */ new Map() };
+      const repository = await readRepository(deps.run, workspaceRoot);
+      try {
+        const counts = await mapWithConcurrency(open, concurrency, async (target) => ({
+          ref: target.ref,
+          blockedBy: await readDependencies(
+            deps,
+            workspaceRoot,
+            repository,
+            target.number,
+            pageSize
+          )
+        }));
+        const native = /* @__PURE__ */ new Map();
+        const blockedBy = /* @__PURE__ */ new Map();
+        for (const entry of counts) {
+          native.set(entry.ref, entry.blockedBy.open);
+          if (entry.blockedBy.refs.length > 0) {
+            blockedBy.set(entry.ref, remoteBlockerRefs(entry.blockedBy.refs));
+          }
+        }
+        return { open: native, blockedBy };
+      } catch (error) {
+        if (error instanceof DependenciesUnavailable) {
+          return { open: /* @__PURE__ */ new Map(), blockedBy: /* @__PURE__ */ new Map() };
+        }
+        throw error;
+      }
     },
     fetchDetail: (workspaceRoot, reference) => readGiteaDetail(detailDeps, workspaceRoot, reference),
     updateTicket: (workspaceRoot, reference, patch) => applyGiteaChanges(detailDeps, workspaceRoot, reference, patch),
@@ -2393,42 +2888,80 @@ function createGiteaTracker(deps) {
     deleteTicket: (workspaceRoot, reference) => deleteGiteaTicket(deps, workspaceRoot, reference)
   };
 }
-async function readGiteaChanges(deps, workspaceRoot, pageSize, since, concurrency) {
+async function readGiteaChanges(deps, workspaceRoot, pageSize, since, ifRevision) {
   if (!Number.isFinite(since)) {
     throw new TrackerError("fetch-failed", "\u589E\u91CF\u7A97\u53E3\u7684\u8D77\u70B9\u4E0D\u662F\u6709\u6548\u65F6\u95F4\u6233\u3002");
   }
   const repository = await readRepository(deps.run, workspaceRoot);
+  const revision = await readGiteaRevision(deps, workspaceRoot, repository);
+  if (ifRevision !== void 0 && revision?.id === ifRevision) {
+    return {
+      tickets: [],
+      truncated: false,
+      revision,
+      notModified: true,
+      hierarchy: "convention"
+    };
+  }
   const viewer = readCurrentViewer(deps, workspaceRoot);
   const issues = await readIssues(deps, workspaceRoot, repository, pageSize, since);
   const states = /* @__PURE__ */ new Map();
   for (const issue of issues.items) {
     if (issue.ticket.number !== null) states.set(issue.ticket.number, issue.ticket.state);
   }
-  const native = await readNativeBlockers(
-    deps,
-    workspaceRoot,
-    repository,
-    issues.items,
-    pageSize,
-    concurrency
-  );
-  const tickets = issues.items.map((issue) => ({
+  const resolvedTickets = issues.items.map((issue) => ({
     ...issue.ticket,
     ...resolveOpenBlockers({
       ticket: issue.ticket,
-      nativeBlockers: native?.get(issue.ticket.number ?? -1),
+      nativeBlockers: void 0,
       text: issue.body,
       states
     })
   }));
   const login = await viewer;
   return {
-    tickets,
+    tickets: resolvedTickets,
     truncated: issues.truncated,
-    // 身份查询失败时省略，宿主沿用基准数据里的身份。
+    // 变更查询的 X-Total-Count 是过滤后的条数；仓库总数只认版本查询的计数。
+    ...revision === null ? {} : { total: revision.total },
     ...login === null ? {} : { viewer: login },
-    hierarchy: "convention"
+    hierarchy: "convention",
+    revision
   };
+}
+async function readGiteaRevision(deps, workspaceRoot, repository) {
+  try {
+    const [response, repositoryUpdatedAt] = await Promise.all([
+      callGiteaApi(deps.run, workspaceRoot, revisionEndpoint(repository)),
+      readRepositoryUpdatedAt(deps, workspaceRoot, repository)
+    ]);
+    if (response.status >= 400) return null;
+    const total = response.total;
+    if (total === void 0) return null;
+    if (total === 0) return { id: "0:", total };
+    const latest = parseIssuesPage(response.body, repository.avatarBaseUrl)[0]?.ticket.updatedAt;
+    if (latest === void 0) return null;
+    const id = repositoryUpdatedAt === void 0 ? `${String(total)}:${latest}` : `${repositoryUpdatedAt}:${String(total)}:${latest}`;
+    return { id, total };
+  } catch {
+    return null;
+  }
+}
+async function readRepositoryUpdatedAt(deps, workspaceRoot, repository) {
+  try {
+    const response = await callGiteaApi(
+      deps.run,
+      workspaceRoot,
+      `/repos/${repository.owner}/${repository.name}`
+    );
+    if (response.status >= 400) return void 0;
+    const payload = JSON.parse(response.body);
+    if (!isRecord(payload)) return void 0;
+    const updatedAt = payload.updated_at;
+    return typeof updatedAt === "string" && updatedAt.length > 0 ? updatedAt : void 0;
+  } catch {
+    return void 0;
+  }
 }
 async function readCurrentViewer(deps, workspaceRoot) {
   try {
@@ -2458,28 +2991,6 @@ async function readIssues(deps, workspaceRoot, repository, pageSize, since) {
   }
   return { items, total, truncated };
 }
-async function readNativeBlockers(deps, workspaceRoot, repository, issues, pageSize, concurrency) {
-  const open = issues.filter(
-    (issue) => issue.ticket.state === "open" && issue.ticket.number !== null
-  );
-  if (open.length === 0) return /* @__PURE__ */ new Map();
-  try {
-    const counts = await mapWithConcurrency(open, concurrency, async (issue) => ({
-      number: issue.ticket.number,
-      blockedBy: await readDependencies(
-        deps,
-        workspaceRoot,
-        repository,
-        issue.ticket.number,
-        pageSize
-      )
-    }));
-    return new Map(counts.map((entry) => [entry.number, entry.blockedBy]));
-  } catch (error) {
-    if (error instanceof DependenciesUnavailable) return void 0;
-    throw error;
-  }
-}
 async function readDependencies(deps, workspaceRoot, repository, index, pageSize) {
   let open = 0;
   let received = 0;
@@ -2505,6 +3016,9 @@ async function readDependencies(deps, workspaceRoot, repository, index, pageSize
 }
 var DependenciesUnavailable = class extends Error {
 };
+function revisionEndpoint(repository) {
+  return `/repos/${repository.owner}/${repository.name}/issues?state=all&type=issues&page=1&limit=1&sort=recentupdate`;
+}
 function issuesEndpoint(repository, pageSize, page, since) {
   const window = since === void 0 ? "" : `&since=${new Date(since).toISOString()}`;
   return `/repos/${repository.owner}/${repository.name}/issues?state=all&type=issues&page=${String(page)}&limit=${String(pageSize)}${window}`;
@@ -2668,7 +3182,8 @@ function parseIssueGraphql(output) {
   }
   const nextCursor = readNextCursor(issues);
   const viewer = readViewer(payload);
-  return nextCursor === void 0 ? { total, tickets, viewer } : { total, tickets, viewer, nextCursor };
+  const revision = readLatestRevision(repository) ?? revisionOf(total, nodes);
+  return nextCursor === void 0 ? { total, tickets, viewer, revision } : { total, tickets, viewer, revision, nextCursor };
 }
 function parseIssueChangesGraphql(output) {
   const payload = parseJson6(output, "gh \u8FD4\u56DE\u7684\u4E0D\u662F\u6709\u6548 JSON");
@@ -2683,8 +3198,31 @@ function parseIssueChangesGraphql(output) {
     tickets,
     truncated: readHasNextPage(issues),
     viewer: readViewer(payload),
+    revision: readLatestRevision(repository),
     ...total === void 0 ? {} : { total }
   };
+}
+function parseGithubRevision(output) {
+  const payload = parseJson6(output, "gh \u8FD4\u56DE\u7684\u4E0D\u662F\u6709\u6548 JSON");
+  const repository = readRepository3(payload);
+  return readLatestRevision(repository);
+}
+function readLatestRevision(repository) {
+  const latest = repository.latest;
+  if (!isRecord(latest)) return null;
+  const total = latest.totalCount;
+  if (typeof total !== "number" || !Number.isInteger(total) || total < 0) return null;
+  const nodes = latest.nodes;
+  if (!Array.isArray(nodes)) return null;
+  return revisionOf(total, nodes);
+}
+function revisionOf(total, nodes) {
+  if (total === 0) return { id: "0:", total };
+  const first = nodes[0];
+  if (!isRecord(first)) return null;
+  const updatedAt = first.updatedAt;
+  if (typeof updatedAt !== "string" || updatedAt.length === 0) return null;
+  return { id: `${String(total)}:${updatedAt}`, total };
 }
 function readNextCursor(issues) {
   const pageInfo = issues.pageInfo;
@@ -3156,10 +3694,23 @@ var ISSUE_QUERY = `query ($owner: String!, $name: String!, $limit: Int!, $after:
   viewer { login }
   repository(owner: $owner, name: $name) {
     nameWithOwner
+    latest: issues(first: 1, orderBy: { field: UPDATED_AT, direction: DESC }) {
+      totalCount
+      nodes { updatedAt }
+    }
     issues(first: $limit, after: $after, orderBy: { field: UPDATED_AT, direction: DESC }) {
       totalCount
       pageInfo { hasNextPage endCursor }
       ${ISSUE_NODES}
+    }
+  }
+}`;
+var REVISION_QUERY = `query ($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    nameWithOwner
+    latest: issues(first: 1, orderBy: { field: UPDATED_AT, direction: DESC }) {
+      totalCount
+      nodes { updatedAt }
     }
   }
 }`;
@@ -3168,6 +3719,10 @@ var CHANGES_QUERY = `query ($owner: String!, $name: String!, $limit: Int!, $sinc
   repository(owner: $owner, name: $name) {
     nameWithOwner
     repositoryTotal: issues(first: 1) { totalCount }
+    latest: issues(first: 1, orderBy: { field: UPDATED_AT, direction: DESC }) {
+      totalCount
+      nodes { updatedAt }
+    }
     issues(first: $limit, orderBy: { field: UPDATED_AT, direction: DESC }, filterBy: { since: $since }) {
       pageInfo { hasNextPage }
       ${ISSUE_NODES}
@@ -3179,7 +3734,7 @@ function createGithubTracker(deps) {
   return {
     async fetchSnapshot(workspaceRoot, page) {
       const repository = await readRepository2(deps.run, workspaceRoot);
-      const tickets = await readTickets2(deps, workspaceRoot, repository, limit, page?.cursor);
+      const tickets = await readTickets(deps, workspaceRoot, repository, limit, page?.cursor);
       const nextCursor = tickets.nextCursor;
       return {
         repository: repositoryLabel(repository),
@@ -3190,18 +3745,32 @@ function createGithubTracker(deps) {
         viewer: tickets.viewer,
         // GitHub 的子工单是原生父子关系。
         hierarchy: "native",
+        revision: tickets.revision,
         // 还有下一页时给出游标；这份快照只覆盖到这一页。
         ...nextCursor === void 0 ? {} : { nextCursor }
       };
     },
-    async fetchChanges(workspaceRoot, since) {
+    async fetchChanges(workspaceRoot, since, ifRevision) {
       const repository = await readRepository2(deps.run, workspaceRoot);
+      if (ifRevision !== void 0) {
+        const revision = await readRevision(deps, workspaceRoot, repository);
+        if (revision?.id === ifRevision) {
+          return {
+            tickets: [],
+            truncated: false,
+            revision,
+            notModified: true,
+            hierarchy: "native"
+          };
+        }
+      }
       const changes = await readChanges(deps, workspaceRoot, repository, limit, since);
       return {
         tickets: changes.tickets,
         truncated: changes.truncated,
         viewer: changes.viewer,
         hierarchy: "native",
+        revision: changes.revision,
         ...changes.total === void 0 ? {} : { total: changes.total }
       };
     },
@@ -3212,7 +3781,20 @@ function createGithubTracker(deps) {
     deleteTicket: (workspaceRoot, reference) => deleteGithubTicket(deps, workspaceRoot, reference)
   };
 }
-async function readTickets2(deps, workspaceRoot, repository, limit, cursor) {
+async function readRevision(deps, workspaceRoot, repository) {
+  const output = await callGh(deps.run, workspaceRoot, [
+    "api",
+    "graphql",
+    "-f",
+    `query=${REVISION_QUERY}`,
+    "-f",
+    `owner=${repository.owner}`,
+    "-f",
+    `name=${repository.name}`
+  ]);
+  return parseGithubRevision(output);
+}
+async function readTickets(deps, workspaceRoot, repository, limit, cursor) {
   const args = [
     "api",
     "graphql",
@@ -3785,6 +4367,7 @@ function createGitlabTracker(deps) {
     async fetchSnapshot(workspaceRoot) {
       const project = await readProjectAddress(deps.run, workspaceRoot);
       const viewer = readCurrentViewer2(deps, workspaceRoot);
+      const revision = readGitlabRevision(deps, workspaceRoot, project.path);
       const issues = await readIssues3(deps, workspaceRoot, project.path, pageSize);
       const states = /* @__PURE__ */ new Map();
       for (const issue of issues) {
@@ -3802,14 +4385,25 @@ function createGitlabTracker(deps) {
         total: tickets.length,
         tickets,
         viewer: await viewer,
-        hierarchy: workItems.hierarchy
+        hierarchy: workItems.hierarchy,
+        revision: await revision
       };
     },
-    async fetchChanges(workspaceRoot, since) {
+    async fetchChanges(workspaceRoot, since, ifRevision) {
       if (!Number.isFinite(since)) {
         throw new TrackerError("fetch-failed", "\u589E\u91CF\u7A97\u53E3\u7684\u8D77\u70B9\u4E0D\u662F\u6709\u6548\u65F6\u95F4\u6233\u3002");
       }
       const project = await readProjectAddress(deps.run, workspaceRoot);
+      const revision = await readGitlabRevision(deps, workspaceRoot, project.path);
+      if (ifRevision !== void 0 && revision?.id === ifRevision) {
+        return {
+          tickets: [],
+          truncated: false,
+          revision,
+          notModified: true,
+          hierarchy: "native"
+        };
+      }
       const viewer = readCurrentViewer2(deps, workspaceRoot);
       const listing = { pageSize, pageLimit: incrementalPageLimit };
       const { issues, truncated } = await readChangedIssues(
@@ -3828,7 +4422,9 @@ function createGitlabTracker(deps) {
         truncated,
         // 身份查询失败时省略，宿主沿用基准数据里的身份。
         ...login === null ? {} : { viewer: login },
-        hierarchy: workItems.hierarchy
+        hierarchy: workItems.hierarchy,
+        // 变更列表的 total 不是权威总数；版本里的 count 才是。
+        revision
       };
     },
     async resolveBlockers(workspaceRoot, targets) {
@@ -3908,6 +4504,31 @@ async function readWorkItemHierarchy(deps, workspaceRoot, project, issues) {
     return { parents: /* @__PURE__ */ new Map(), hierarchy: "none" };
   }
   return { parents, hierarchy: "native" };
+}
+async function readGitlabRevision(deps, workspaceRoot, project) {
+  const query = "query ($project: ID!) { project(fullPath: $project) { updatedAt issues { count } } }";
+  try {
+    const output = (await deps.run(
+      "glab",
+      ["api", "graphql", "-f", `query=${query}`, "-f", `project=${project}`],
+      { cwd: workspaceRoot }
+    )).stdout;
+    const payload = JSON.parse(output);
+    if (!isRecord(payload)) return null;
+    const data = payload.data;
+    if (!isRecord(data)) return null;
+    const found = data.project;
+    if (!isRecord(found)) return null;
+    const updatedAt = found.updatedAt;
+    if (typeof updatedAt !== "string" || updatedAt.length === 0) return null;
+    const issues = found.issues;
+    if (!isRecord(issues)) return null;
+    const count = issues.count;
+    if (typeof count !== "number" || !Number.isInteger(count) || count < 0) return null;
+    return { id: `${String(count)}:${updatedAt}`, total: count };
+  } catch {
+    return null;
+  }
 }
 async function readCurrentViewer2(deps, workspaceRoot) {
   try {
@@ -4061,7 +4682,7 @@ async function readMarkdownDetail(deps, workspaceRoot, reference) {
     );
   }
   const path = joinPath(workspaceRoot, relative);
-  const { content, timestamps } = await readTicketFile2(deps.files, path);
+  const { content, timestamps } = await readTicketFile3(deps.files, path);
   const name = relative.slice(relative.lastIndexOf("/") + 1);
   const parsed = parseMarkdownDetail(content, titleFromFileName(name));
   return {
@@ -4083,7 +4704,7 @@ async function readMarkdownDetail(deps, workspaceRoot, reference) {
     updatedAt: new Date(timestamps.updatedAt).toISOString()
   };
 }
-async function readTicketFile2(files, path) {
+async function readTicketFile3(files, path) {
   try {
     const [content, timestamps] = await Promise.all([
       files.readTextFile(path),
@@ -4126,7 +4747,9 @@ function createMarkdownTracker(deps) {
         // 本地 Markdown 没有远端用户，人员筛选整行不出现。
         viewer: null,
         // 本地工单用 `Parent:` 行建立父子关系，属于正文约定。
-        hierarchy: "convention"
+        hierarchy: "convention",
+        // 本地 Markdown 没有远端版本，刷新永远走全量（本地扫描，代价可控）。
+        revision: null
       };
     },
     async fetchChanges(workspaceRoot, since) {
@@ -4140,14 +4763,17 @@ function createMarkdownTracker(deps) {
           { cause: error }
         );
       }
-      if (files === void 0) return { tickets: [], truncated: false, hierarchy: "convention" };
+      if (files === void 0) {
+        return { tickets: [], truncated: false, hierarchy: "convention", revision: null };
+      }
       const parsed = parseMarkdownTickets([...files.changed, ...files.context]);
       const moved = new Set(files.changed.map((file) => file.path));
       return {
         tickets: parsed.filter((ticket) => moved.has(ticket.ref)),
         // 本地目录扫描没有上限，一次就能看全。
         truncated: false,
-        hierarchy: "convention"
+        hierarchy: "convention",
+        revision: null
       };
     },
     // 本地 Markdown 只提供只读详情：没有链接、分配人与任何写操作。
@@ -5022,6 +5648,9 @@ var FLOW_DIAGRAMS = [
 
 // src/worker/env-check-service.ts
 var TRACKER_DOC = "docs/agents/issue-tracker.md";
+var ENV_CHECK_CACHE_TTL_MS = 10 * 60 * 1e3;
+var ENV_CHECK_BACKOFF_BASE_MS = 8e3;
+var ENV_CHECK_BACKOFF_MAX_MS = 5 * 60 * 1e3;
 var ORCA_CAPABILITY_IDS = {
   /** gh 是否安装。 */
   cliGh: "cli.gh",
@@ -5044,6 +5673,8 @@ var ORCA_CAPABILITY_IDS = {
 };
 function createEnvCheckService(deps) {
   const pending = /* @__PURE__ */ new Map();
+  const cached = /* @__PURE__ */ new Map();
+  const failures = /* @__PURE__ */ new Map();
   return {
     handle(method, params) {
       if (method !== RPC_METHODS.envCheck) {
@@ -5055,9 +5686,10 @@ function createEnvCheckService(deps) {
           failure2(ERROR_CODES.invalidParams, "\u7F3A\u5C11\u975E\u7A7A\u7684 workspaceRoot \u53C2\u6570\u3002")
         );
       }
+      const force = readForce(params);
       const running = pending.get(workspaceRoot);
       if (running !== void 0) return running;
-      const task = runCheck(deps, workspaceRoot);
+      const task = cachedOrRunCheck(deps, workspaceRoot, force, cached, failures);
       pending.set(workspaceRoot, task);
       void task.then(
         () => {
@@ -5070,6 +5702,55 @@ function createEnvCheckService(deps) {
       return task;
     }
   };
+}
+async function cachedOrRunCheck(deps, workspaceRoot, force, cached, failures) {
+  const key = await envCacheKey(deps, workspaceRoot);
+  const now = deps.now();
+  if (!force) {
+    const hit = cached.get(key);
+    if (hit !== void 0 && now - hit.storedAt < ENV_CHECK_CACHE_TTL_MS) {
+      return { ok: true, result: hit.report };
+    }
+    const blocked2 = failures.get(key);
+    if (blocked2 !== void 0 && now < blocked2.nextAt) {
+      return blockedFailure(blocked2, now);
+    }
+  }
+  const result = await runCheck(deps, workspaceRoot);
+  if (result.ok) {
+    failures.delete(key);
+    if (reportPassed(result.result)) {
+      cached.set(key, { report: result.result, storedAt: now });
+    } else {
+      cached.delete(key);
+    }
+    return result;
+  }
+  cached.delete(key);
+  const previous = failures.get(key);
+  const count = (previous?.count ?? 0) + 1;
+  const delay = Math.min(
+    ENV_CHECK_BACKOFF_BASE_MS * 2 ** Math.min(count - 1, 16),
+    ENV_CHECK_BACKOFF_MAX_MS
+  );
+  failures.set(key, { count, nextAt: now + delay, error: result.error });
+  return result;
+}
+function blockedFailure(blocked2, now) {
+  const seconds = Math.max(1, Math.ceil((blocked2.nextAt - now) / 1e3));
+  return failure2(blocked2.error.code, `${blocked2.error.message}\uFF08${String(seconds)} \u79D2\u540E\u53EF\u91CD\u8BD5\uFF09`);
+}
+function reportPassed(report) {
+  return report.items.every((item) => item.status === "pass");
+}
+async function envCacheKey(deps, workspaceRoot) {
+  try {
+    const output = (await deps.run("git", ["remote", "-v"], { cwd: workspaceRoot })).stdout;
+    const address = pickRemoteAddress(parseRemotes(output));
+    return address === void 0 ? `${workspaceRoot}\0no-remote` : `${workspaceRoot}\0${address.host}/${address.path}`;
+  } catch {
+    return `${workspaceRoot}\0unknown`;
+  }
 }
 async function runCheck(deps, workspaceRoot) {
   const startedAt = deps.now();
@@ -5275,7 +5956,7 @@ async function probeTools(deps) {
 }
 async function probeTool(deps, name) {
   try {
-    await resolveExecutable(name);
+    await (deps.resolveExecutable ?? resolveExecutable)(name);
   } catch {
     return { installed: false, loggedIn: false };
   }
@@ -5371,6 +6052,9 @@ function readWorkspaceRoot(params) {
   if (!("workspaceRoot" in params)) return void 0;
   const root = params.workspaceRoot;
   return typeof root === "string" && root.length > 0 ? root : void 0;
+}
+function readForce(params) {
+  return typeof params === "object" && params !== null && "force" in params && params.force === true;
 }
 function failure2(code, message) {
   return { ok: false, error: { code, message } };
@@ -6306,9 +6990,9 @@ async function removeStored(deps, key) {
   } catch {
   }
 }
-async function writeStored(deps, scopeRoot, workspaceRoot, resolved2, raw) {
+async function writeStored(deps, scopeRoot, workspaceRoot, resolved2, raw, metrics) {
   const store = deps.store;
-  if (store === void 0) return;
+  if (store === void 0) return void 0;
   const entry = {
     version: SNAPSHOT_STORE_VERSION,
     scopeRoot,
@@ -6319,14 +7003,15 @@ async function writeStored(deps, scopeRoot, workspaceRoot, resolved2, raw) {
     repositoryHost: resolved2.kind === "markdown" ? null : resolved2.address?.host ?? null,
     fetchedAt: raw.fetchedAt,
     viewer: raw.viewer,
-    loaded: raw.tickets.length,
     total: raw.total,
     ...raw.nextCursor === void 0 ? {} : { nextCursor: raw.nextCursor },
     tickets: raw.tickets,
-    hierarchy: raw.hierarchy
+    hierarchy: raw.hierarchy,
+    revision: raw.revision,
+    metrics
   };
   try {
-    await store.write(entry);
+    return await store.write(entry);
   } catch (error) {
     deps.log("warn", LOG_EVENTS.snapshot, {
       result: "error",
@@ -6335,12 +7020,13 @@ async function writeStored(deps, scopeRoot, workspaceRoot, resolved2, raw) {
       code: ERROR_CODES.internal,
       ...error instanceof Error ? { reason: error.message } : {}
     });
+    return void 0;
   }
 }
 function buildStoredSnapshot(deps, stored, state) {
   const raw = rawOf(stored);
   const tickets = withSkillActions(classifyTickets(raw.tickets, deps.labels), deps.labels);
-  const metrics = metricsOf(deps, stored.backend, raw, tickets, false);
+  const metrics = stored.metrics ?? metricsOf(deps, stored.backend, raw, tickets, false);
   return {
     backend: stored.backend,
     repository: raw.repository,
@@ -6356,27 +7042,32 @@ function buildStoredSnapshot(deps, stored, state) {
     source: "cache",
     stale: state.stale,
     refreshError: state.refreshError,
-    tickets: tickets.map((ticket) => ({
-      ref: ticket.ref,
-      number: ticket.number,
-      title: ticket.title,
-      state: ticket.state,
-      category: ticket.category,
-      status: ticket.status,
-      labels: ticket.labels,
-      author: ticket.author,
-      assignees: ticket.assignees,
-      skillAction: ticket.skillAction,
-      skillActionReason: ticket.skillActionReason,
-      createdAt: ticket.createdAt,
-      updatedAt: ticket.updatedAt,
-      openBlockers: ticket.openBlockers,
-      ...ticket.closedAt === void 0 ? {} : { closedAt: ticket.closedAt },
-      ...ticket.blockedBy === void 0 ? {} : { blockedBy: ticket.blockedBy },
-      ...ticket.parent === void 0 ? {} : { parent: ticket.parent },
-      ...ticket.url === void 0 ? {} : { url: ticket.url }
-    }))
+    revision: stored.revision?.id ?? null,
+    storeRevision: stored.storeRevision,
+    tickets: ticketSnapshotsOf(tickets)
   };
+}
+function ticketSnapshotsOf(tickets) {
+  return tickets.map((ticket) => ({
+    ref: ticket.ref,
+    number: ticket.number,
+    title: ticket.title,
+    state: ticket.state,
+    category: ticket.category,
+    status: ticket.status,
+    labels: ticket.labels,
+    author: ticket.author,
+    assignees: ticket.assignees,
+    skillAction: ticket.skillAction,
+    skillActionReason: ticket.skillActionReason,
+    createdAt: ticket.createdAt,
+    updatedAt: ticket.updatedAt,
+    openBlockers: ticket.openBlockers,
+    ...ticket.closedAt === void 0 ? {} : { closedAt: ticket.closedAt },
+    ...ticket.blockedBy === void 0 ? {} : { blockedBy: ticket.blockedBy },
+    ...ticket.parent === void 0 ? {} : { parent: ticket.parent },
+    ...ticket.url === void 0 ? {} : { url: ticket.url }
+  }));
 }
 function storedEntry(stored, resolved2, snapshot) {
   return {
@@ -6388,6 +7079,8 @@ function storedEntry(stored, resolved2, snapshot) {
     raw: rawOf(stored),
     snapshot,
     resolver: resolved2?.tracker.resolveBlockers ?? null,
+    // 从库里恢复时不知道上次增量只补了哪些票：按全部开放票补齐。
+    blockerTargets: null,
     pending: null
   };
 }
@@ -6447,6 +7140,7 @@ function rawOf(stored) {
     tickets: stored.tickets,
     viewer: stored.viewer,
     hierarchy: stored.hierarchy,
+    revision: stored.revision,
     ...stored.nextCursor === void 0 ? {} : { nextCursor: stored.nextCursor }
   };
 }
@@ -6490,7 +7184,7 @@ function createSnapshotService(deps) {
       if (method === RPC_METHODS.snapshotLoadMore) {
         return loadMore(deps, cache, loading, paging, target);
       }
-      return refreshSnapshot(deps, cache, target, readFullFlag(params));
+      return refreshSnapshot(deps, cache, target, params);
     },
     cache(params) {
       if (readWorkspaceRoot2(params) === void 0) {
@@ -6505,9 +7199,6 @@ function createSnapshotService(deps) {
 }
 function isSnapshotMethod(method) {
   return method === RPC_METHODS.snapshotGet || method === RPC_METHODS.snapshotRefresh || method === RPC_METHODS.snapshotLoadMore || method === RPC_METHODS.snapshotResolveBlockers;
-}
-function readFullFlag(params) {
-  return isRecord(params) && params.full === true;
 }
 async function scopeOf(deps, workspaceRoot) {
   try {
@@ -6589,53 +7280,80 @@ async function serveStored(deps, cache, target, hit) {
   cache.set(hit.key, storedEntry(stored, resolved2, snapshot));
   return { ok: true, result: snapshot };
 }
-async function refreshSnapshot(deps, cache, target, full) {
+function readRefreshRequest(params) {
+  const full = isRecord(params) && params.full === true;
+  const ifRevision = isRecord(params) && typeof params.ifRevision === "string" && params.ifRevision.length > 0 ? params.ifRevision : void 0;
+  const rawStoreRevision = isRecord(params) ? params.storeRevision : void 0;
+  const storeRevision = typeof rawStoreRevision === "number" && Number.isInteger(rawStoreRevision) && rawStoreRevision >= 0 ? rawStoreRevision : void 0;
+  return { full, ifRevision, storeRevision };
+}
+async function refreshSnapshot(deps, cache, target, params) {
+  const request = readRefreshRequest(params);
   const startedAt = deps.now();
   let resolved2;
   try {
     resolved2 = await deps.resolve(target.workspaceRoot);
   } catch (error) {
-    return await keepOldSnapshot(deps, cache, target, mapError(error), startedAt);
+    return asFull(await keepOldSnapshot(deps, cache, target, mapError(error), startedAt));
   }
   const hit = await readStoredFor(deps, target.scopeRoot, target.workspaceRoot);
   const base = hit?.entry.repositoryKey === repositoryKey(resolved2.kind, resolved2.address) ? hit.entry : void 0;
   const tracker = resolved2.tracker;
   const extendable = base === void 0 || base.nextCursor !== void 0 || base.total <= base.tickets.length;
-  if (base !== void 0 && !full && extendable && tracker.fetchChanges !== void 0 && !needsUrlBackfill(resolved2, base)) {
-    const merged = await mergeIncremental(deps, cache, target, resolved2, base, startedAt);
+  if (base !== void 0 && !request.full && extendable && base.revision !== null && tracker.fetchChanges !== void 0 && !needsUrlBackfill(resolved2, base)) {
+    const merged = await mergeIncremental(deps, cache, target, resolved2, base, request, startedAt);
     if (merged !== void 0) return merged;
   }
   try {
     const raw = await tracker.fetchSnapshot(target.workspaceRoot);
-    return await publish(
-      deps,
-      cache,
-      target,
-      resolved2,
-      withViewerFallback(raw, base?.viewer),
-      startedAt,
-      "full"
+    return asFull(
+      await publish(
+        deps,
+        cache,
+        target,
+        resolved2,
+        withViewerFallback(raw, base?.viewer),
+        startedAt,
+        "full"
+      )
     );
   } catch (error) {
-    return await keepOldSnapshot(deps, cache, target, mapError(error), startedAt);
+    return asFull(await keepOldSnapshot(deps, cache, target, mapError(error), startedAt));
   }
+}
+function asFull(result) {
+  if (!result.ok) return result;
+  return { ok: true, result: { kind: "snapshot", snapshot: result.result } };
 }
 function needsUrlBackfill(resolved2, base) {
   if (resolved2.kind === "markdown") return false;
   return base.tickets.some((ticket) => ticket.url === void 0);
 }
-async function mergeIncremental(deps, cache, target, resolved2, base, startedAt) {
+async function mergeIncremental(deps, cache, target, resolved2, base, request, startedAt) {
   const tracker = resolved2.tracker;
   if (tracker.fetchChanges === void 0) return void 0;
   let changes;
   try {
     changes = await tracker.fetchChanges(
       target.workspaceRoot,
-      base.fetchedAt - INCREMENTAL_OVERLAP_MS
+      base.fetchedAt - INCREMENTAL_OVERLAP_MS,
+      request.ifRevision ?? base.revision?.id
     );
   } catch (error) {
-    return await keepOldSnapshot(deps, cache, target, mapError(error), startedAt);
+    return asFull(await keepOldSnapshot(deps, cache, target, mapError(error), startedAt));
   }
+  if (changes.notModified === true && changes.revision !== null && request.storeRevision !== void 0 && request.storeRevision === base.storeRevision) {
+    return {
+      ok: true,
+      result: {
+        kind: "not-modified",
+        revision: changes.revision.id,
+        storeRevision: base.storeRevision,
+        fetchedAt: deps.now()
+      }
+    };
+  }
+  if (changes.revision === null) return void 0;
   if (changes.truncated) {
     deps.log("warn", LOG_EVENTS.snapshot, {
       result: "error",
@@ -6647,21 +7365,77 @@ async function mergeIncremental(deps, cache, target, resolved2, base, startedAt)
     return void 0;
   }
   if (changes.hierarchy !== base.hierarchy) return void 0;
+  const total = changes.revision.total;
+  if (changes.total !== void 0 && changes.total !== total) return void 0;
+  if (total !== base.total) return void 0;
   const merged = mergeTickets(base.tickets, changes.tickets);
   const nextCursor = base.nextCursor;
   const raw = {
     repository: base.repository,
     fetchedAt: deps.now(),
     loaded: merged.length,
-    total: changes.total ?? base.total,
+    total,
     tickets: merged,
     // 增量没查身份时沿用基准数据里的；查了但没识别出来则按 null 记。
     viewer: changes.viewer === void 0 ? base.viewer : changes.viewer,
     hierarchy: changes.hierarchy,
+    revision: changes.revision,
     // 游标仍指向已加载窗口之后的第一张；窗口大小由已加载数表达。
     ...nextCursor === void 0 ? {} : { nextCursor }
   };
-  return await publish(deps, cache, target, resolved2, raw, startedAt, "incremental");
+  const cachedBefore = cachedWorkspace(cache, target);
+  const previouslyUnfinalized = cachedBefore === void 0 || !cachedBefore.snapshot.blockersFinalized;
+  const changedOpenRefs = changes.tickets.filter((ticket) => ticket.state === "open").map((ticket) => ticket.ref);
+  const published = await publish(
+    deps,
+    cache,
+    target,
+    resolved2,
+    raw,
+    startedAt,
+    "incremental",
+    previouslyUnfinalized || changes.tickets.length === 0 ? void 0 : changedOpenRefs
+  );
+  if (!published.ok) return published;
+  const delta = await deltaSince(deps, target, resolved2, published.result, request.storeRevision);
+  return delta === void 0 ? { ok: true, result: { kind: "snapshot", snapshot: published.result } } : { ok: true, result: delta };
+}
+async function deltaSince(deps, target, resolved2, snapshot, baseline) {
+  if (baseline === void 0 || deps.store === void 0) return void 0;
+  if (baseline >= snapshot.storeRevision) return void 0;
+  const key = storeKeyOf(resolved2.kind, target.scopeRoot, target.workspaceRoot);
+  let changes;
+  try {
+    changes = await deps.store.changesSince(key, baseline);
+  } catch {
+    return void 0;
+  }
+  if (changes === void 0 || changes.revision !== snapshot.storeRevision) return void 0;
+  const changed = withSkillActions(
+    classifyTickets(changes.tickets, deps.labels),
+    deps.labels
+  );
+  return {
+    kind: "delta",
+    backend: snapshot.backend,
+    repository: snapshot.repository,
+    repositoryHost: snapshot.repositoryHost,
+    revision: snapshot.revision,
+    storeRevision: snapshot.storeRevision,
+    fetchedAt: snapshot.fetchedAt,
+    viewer: snapshot.viewer,
+    loaded: snapshot.loaded,
+    total: snapshot.total,
+    hasMore: snapshot.hasMore,
+    hierarchy: snapshot.hierarchy,
+    metrics: snapshot.metrics,
+    blockersFinalized: snapshot.blockersFinalized,
+    source: snapshot.source,
+    stale: snapshot.stale,
+    refreshError: snapshot.refreshError,
+    changed: ticketSnapshotsOf(changed),
+    removed: changes.removed
+  };
 }
 function loadMore(deps, cache, loading, paging, target) {
   return singleFlight(
@@ -6688,7 +7462,12 @@ async function appendPage(deps, cache, loading, target) {
     return await keepOldSnapshot(deps, cache, target, mapError(error), startedAt);
   }
   if (repositoryKey(resolved2.kind, resolved2.address) !== entry.repositoryKey) {
-    return await refreshSnapshot(deps, cache, target, false);
+    const refreshed = await refreshSnapshot(deps, cache, target, { full: true });
+    if (!refreshed.ok) return refreshed;
+    if (refreshed.result.kind !== "snapshot") {
+      return failure3(ERROR_CODES.internal, "\u5168\u91CF\u5237\u65B0\u6CA1\u6709\u8FD4\u56DE\u6574\u4EFD\u5FEB\u7167\u3002");
+    }
+    return { ok: true, result: refreshed.result.snapshot };
   }
   let page;
   try {
@@ -6716,6 +7495,8 @@ async function appendPage(deps, cache, loading, target) {
     viewer: withViewerFallback(page, entry.raw.viewer).viewer,
     // 父子能力属于整份快照；追加一页不改变它的来源。
     hierarchy: entry.raw.hierarchy,
+    // 扩窗后仍是同一份列表；响应带版本时以它为准，否则沿用当前版本。
+    revision: page.revision ?? entry.raw.revision,
     ...nextCursor === void 0 ? {} : { nextCursor }
   };
   return await publish(deps, cache, target, resolved2, raw, startedAt, "more");
@@ -6744,12 +7525,22 @@ async function fetchAndCache(deps, cache, target) {
     return failure3(mapped.code, mapped.message);
   }
 }
-async function publish(deps, cache, target, resolved2, raw, startedAt, mode) {
+async function publish(deps, cache, target, resolved2, raw, startedAt, mode, blockerTargets) {
   const tickets = withSkillActions(classifyTickets(raw.tickets, deps.labels), deps.labels);
   const resolver = resolved2.tracker.resolveBlockers ?? null;
   const repositoryHost = resolved2.kind === "markdown" ? null : resolved2.address?.host ?? null;
-  const finalized = resolver === null || !tickets.some((ticket) => ticket.state === "open");
+  const scope = blockerTargets === void 0 ? null : new Set(blockerTargets);
+  const pendingBlockerRefs = tickets.filter((ticket) => ticket.state === "open" && (scope === null || scope.has(ticket.ref))).map((ticket) => ticket.ref);
+  const finalized = resolver === null || pendingBlockerRefs.length === 0;
   const metrics = metricsOf(deps, resolved2.kind, raw, tickets, finalized);
+  const storeRevision = await writeStored(
+    deps,
+    target.scopeRoot,
+    target.workspaceRoot,
+    resolved2,
+    raw,
+    metrics
+  ) ?? 0;
   const snapshot = buildSnapshot(
     resolved2.kind,
     repositoryHost,
@@ -6759,7 +7550,8 @@ async function publish(deps, cache, target, resolved2, raw, startedAt, mode) {
     metrics,
     "live",
     false,
-    null
+    null,
+    storeRevision
   );
   cache.set(memoryKeyOf(target, resolved2.kind), {
     kind: resolved2.kind,
@@ -6770,9 +7562,9 @@ async function publish(deps, cache, target, resolved2, raw, startedAt, mode) {
     raw,
     snapshot,
     resolver,
+    blockerTargets: pendingBlockerRefs,
     pending: null
   });
-  await writeStored(deps, target.scopeRoot, target.workspaceRoot, resolved2, raw);
   deps.log("info", LOG_EVENTS.snapshot, {
     result: "ok",
     backend: resolved2.kind,
@@ -6833,7 +7625,8 @@ function resolveCached(deps, cache, target, entry) {
 }
 async function finalize(deps, cache, target, entry, resolver) {
   const startedAt = deps.now();
-  const targets = entry.snapshot.tickets.filter((ticket) => ticket.state === "open").map((ticket) => ({ ref: ticket.ref, number: ticket.number }));
+  const wanted = entry.blockerTargets === null ? null : new Set(entry.blockerTargets);
+  const targets = entry.snapshot.tickets.filter((ticket) => ticket.state === "open" && (wanted === null || wanted.has(ticket.ref))).map((ticket) => ({ ref: ticket.ref, number: ticket.number }));
   let settled;
   let failure6 = null;
   try {
@@ -6852,7 +7645,8 @@ async function finalize(deps, cache, target, entry, resolver) {
       metrics,
       entry.snapshot.source,
       entry.snapshot.stale,
-      entry.snapshot.refreshError
+      entry.snapshot.refreshError,
+      entry.snapshot.storeRevision
     );
   } catch (error) {
     failure6 = mapError(error);
@@ -6874,7 +7668,7 @@ async function finalize(deps, cache, target, entry, resolver) {
   });
   return { ok: true, result: settled };
 }
-function buildSnapshot(kind, repositoryHost, raw, tickets, blockersFinalized, metrics, source, stale, refreshError) {
+function buildSnapshot(kind, repositoryHost, raw, tickets, blockersFinalized, metrics, source, stale, refreshError, storeRevision) {
   return {
     backend: kind,
     repository: raw.repository,
@@ -6890,26 +7684,9 @@ function buildSnapshot(kind, repositoryHost, raw, tickets, blockersFinalized, me
     source,
     stale,
     refreshError,
-    tickets: tickets.map((ticket) => ({
-      ref: ticket.ref,
-      number: ticket.number,
-      title: ticket.title,
-      state: ticket.state,
-      category: ticket.category,
-      status: ticket.status,
-      labels: ticket.labels,
-      author: ticket.author,
-      assignees: ticket.assignees,
-      skillAction: ticket.skillAction,
-      skillActionReason: ticket.skillActionReason,
-      createdAt: ticket.createdAt,
-      updatedAt: ticket.updatedAt,
-      openBlockers: ticket.openBlockers,
-      ...ticket.closedAt === void 0 ? {} : { closedAt: ticket.closedAt },
-      ...ticket.blockedBy === void 0 ? {} : { blockedBy: ticket.blockedBy },
-      ...ticket.parent === void 0 ? {} : { parent: ticket.parent },
-      ...ticket.url === void 0 ? {} : { url: ticket.url }
-    }))
+    revision: raw.revision?.id ?? null,
+    storeRevision,
+    tickets: ticketSnapshotsOf(tickets)
   };
 }
 function mapError(error) {

@@ -268,3 +268,13 @@ export const GITLAB_PROJECT_OUTPUT = JSON.stringify({
     group_access: null,
   },
 })
+
+/** 远端版本查询的录制输出：项目更新时间 + 工单总数。 */
+export const GITLAB_REVISION_OUTPUT = JSON.stringify({
+  data: {
+    project: {
+      updatedAt: '2027-01-01T00:00:00Z',
+      issues: { count: 3 },
+    },
+  },
+})

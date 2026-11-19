@@ -3,11 +3,18 @@
  * 列表、概览与详情读同一份状态，这里只实现一次。
  *
  * 数据来自本地快照库时先把缓存显示出来，再自动发起一次增量刷新；
- * 刷新失败保留已有数据，只把失败原因记在状态里，不把整屏切成错误页。
+ * 刷新回包有三种：not-modified 保留行数据但清掉陈旧标记，delta 只合并变化行与墓碑，
+ * 整份回包替换当前列表。刷新失败保留已有数据，只把失败原因记在状态里。
  */
 import * as React from 'react'
 
-import type { RpcErrorBody, WorkspaceSnapshot } from '../protocol/tracker.ts'
+import type {
+  RpcErrorBody,
+  SnapshotBaseline,
+  SnapshotDelta,
+  SnapshotRefreshResult,
+  WorkspaceSnapshot,
+} from '../protocol/tracker.ts'
 import { useMessages, type Translate } from './i18n.ts'
 import type { PanelClient } from './transport.ts'
 
@@ -25,8 +32,8 @@ export interface SnapshotRequestState {
   readonly refresh: () => void
   /** 全量刷新：忽略本地快照库重拉一次。 */
   readonly refreshFull: () => void
-  /** 详情刷新或写操作已经拿到的快照：写回面板，列表、概览与详情共用同一份。 */
-  readonly apply: (snapshot: WorkspaceSnapshot) => void
+  /** 详情刷新或写操作拿到的刷新回包：按整份 / delta / not-modified 落地。 */
+  readonly applyRefresh: (result: SnapshotRefreshResult) => void
   /** 正在取下一页；界面据此禁用「加载更多」。 */
   readonly appending: boolean
   /** 取下一页并追加到当前列表；没有更多时宿主原样返回。 */
@@ -57,6 +64,107 @@ export function snapshotRefreshNotice(
   return null
 }
 
+/**
+ * 把增量回包合并进当前快照。
+ *
+ * - 墓碑从列表里拿掉；
+ * - 变化行按引用替换，位置不变；新行按回包顺序接在末尾；
+ * - 指标、计数与数据时间取宿主回包（服务端同源算好）。
+ *
+ * @param current - 当前显示的整份快照。
+ * @param delta - 宿主回的变化行与墓碑。
+ * @returns 合并后的整份快照。
+ */
+export function applySnapshotDelta(
+  current: WorkspaceSnapshot,
+  delta: SnapshotDelta,
+): WorkspaceSnapshot {
+  const removed = new Set(delta.removed)
+  const changed = new Map(delta.changed.map((ticket) => [ticket.ref, ticket] as const))
+  const tickets = current.tickets.flatMap((ticket) => {
+    if (removed.has(ticket.ref)) return []
+    return [changed.get(ticket.ref) ?? ticket]
+  })
+  const present = new Set(tickets.map((ticket) => ticket.ref))
+  for (const ticket of delta.changed) {
+    if (present.has(ticket.ref)) continue
+    tickets.push(ticket)
+    present.add(ticket.ref)
+  }
+
+  return {
+    backend: delta.backend,
+    repository: delta.repository,
+    repositoryHost: delta.repositoryHost,
+    fetchedAt: delta.fetchedAt,
+    viewer: delta.viewer,
+    loaded: delta.loaded,
+    total: delta.total,
+    hasMore: delta.hasMore,
+    hierarchy: delta.hierarchy,
+    metrics: delta.metrics,
+    blockersFinalized: delta.blockersFinalized,
+    source: delta.source,
+    stale: delta.stale,
+    refreshError: delta.refreshError,
+    revision: delta.revision,
+    storeRevision: delta.storeRevision,
+    tickets,
+  }
+}
+
+/**
+ * 把刷新回包落到当前快照上；not-modified 保留行数据但标成已核验的最新，
+ * delta 需要当前基线。
+ * @param current - 当前快照。
+ * @param result - 刷新回包。
+ * @returns 落地后的快照；没有基线可合并时是 current 或 null。
+ */
+export function applyRefreshResult(
+  current: WorkspaceSnapshot | null,
+  result: SnapshotRefreshResult,
+): WorkspaceSnapshot | null {
+  if (result.kind === 'snapshot') return result.snapshot
+  if (result.kind === 'not-modified') {
+    if (current === null) return null
+    // 这次刷新成功核对了数据没变：清掉陈旧提示与本地缓存徽标，数据时间推进到核对时刻。
+    return {
+      ...current,
+      source: 'live',
+      stale: false,
+      refreshError: null,
+      fetchedAt: result.fetchedAt,
+      revision: result.revision ?? current.revision,
+      storeRevision: result.storeRevision,
+    }
+  }
+  return current === null ? null : applySnapshotDelta(current, result)
+}
+
+/** 一次请求的结果：落地后的数据与这次是否已经由远端确认。 */
+interface LoadOutcome {
+  readonly snapshot: WorkspaceSnapshot | null
+  /** 这次请求已经到过远端（整份或 not-modified）或合并了增量。 */
+  readonly settled: boolean
+}
+
+/**
+ * 从当前快照取刷新基线。没有快照、或两个版本都还是初始值时返回 null，
+ * 宿主据此回整份而不是拿一个空基线去比对。
+ * @param snapshot - 当前显示的整份快照。
+ * @returns 刷新参数里的版本基线。
+ */
+export function snapshotBaselineOf(snapshot: WorkspaceSnapshot | null): SnapshotBaseline | null {
+  if (snapshot === null) return null
+  const hasRevision = snapshot.revision !== null
+  const hasStore = snapshot.storeRevision > 0
+  if (!hasRevision && !hasStore) return null
+  return {
+    ...(snapshot.revision === null ? {} : { ifRevision: snapshot.revision }),
+    ...(hasStore ? { storeRevision: snapshot.storeRevision } : {}),
+  }
+}
+
 /** 一次请求的结果：已应用的数据，或失败时的 null。 */
 interface Loader {
   readonly snapshot: WorkspaceSnapshot | null
@@ -64,8 +172,8 @@ interface Loader {
   readonly refreshError: RpcErrorBody | null
   readonly phase: SnapshotPhase
   readonly appending: boolean
-  readonly load: (mode: RequestMode) => Promise<WorkspaceSnapshot | null>
-  readonly apply: (snapshot: WorkspaceSnapshot) => void
+  readonly load: (mode: RequestMode) => Promise<LoadOutcome | null>
+  readonly applyRefresh: (result: SnapshotRefreshResult) => void
   readonly append: () => Promise<void>
 }
 
@@ -81,16 +189,24 @@ export function useSnapshotRequest(
   workspaceRoot: string | undefined,
   reloadToken = 0,
 ): SnapshotRequestState {
-  const { snapshot, error, refreshError, phase, appending, load, apply, append } =
-    useSnapshotLoader(client, workspaceRoot)
+  const {
+    snapshot,
+    error,
+    refreshError,
+    phase,
+    appending,
+    load,
+    applyRefresh,
+    append,
+  } = useSnapshotLoader(client, workspaceRoot)
   // 一轮缓存只自动刷新一次：刷新失败时不再反复打宿主。
   const autoRefreshed = React.useRef(false)
 
   const run = React.useCallback(
     async (mode: RequestMode): Promise<void> => {
       const applied = await load(mode)
-      if (applied === null) return
-      if (applied.source === 'live') {
+      if (applied === null || applied.snapshot === null) return
+      if (applied.settled) {
         autoRefreshed.current = false
         return
       }
@@ -98,7 +214,7 @@ export function useSnapshotRequest(
       if (autoRefreshed.current) return
       autoRefreshed.current = true
       const refreshed = await load('refresh')
-      if (refreshed !== null && refreshed.source === 'live') autoRefreshed.current = false
+      if (refreshed !== null && refreshed.settled) autoRefreshed.current = false
     },
     [load],
   )
@@ -130,7 +246,7 @@ export function useSnapshotRequest(
     phase,
     refresh,
     refreshFull,
-    apply,
+    applyRefresh,
     appending,
     loadMore,
   }
@@ -150,6 +266,8 @@ function useSnapshotLoader(client: PanelClient, workspaceRoot: string | undefine
   const [phase, setPhase] = React.useState<SnapshotPhase>('loading')
   const [appending, setAppending] = React.useState(false)
   const sequence = React.useRef(0)
+  // 刷新要带回当前基线的两个版本；state 更新是异步的，用 ref 立即读到最新值。
+  const current = React.useRef<WorkspaceSnapshot | null>(null)
   // 已经拿到过数据：刷新失败时要靠它决定是保留列表还是切错误页。
   const hasData = React.useRef(false)
   // 详情里的异步刷新可能在换工作区之后才落地；旧仓库的快照不能写进新仓库。
@@ -158,14 +276,24 @@ function useSnapshotLoader(client: PanelClient, workspaceRoot: string | undefine
   // 防连点：state 更新是异步的，用 ref 立即拦住第二次点击。
   const appendingRef = React.useRef(false)
 
+  const commit = React.useCallback((next: WorkspaceSnapshot): void => {
+    current.current = next
+    hasData.current = true
+    setSnapshot(next)
+    setError(null)
+    setRefreshError(null)
+    setPhase('ready')
+  }, [])
+
   const load = React.useCallback(
-    async (mode: RequestMode): Promise<WorkspaceSnapshot | null> => {
-      const current = sequence.current + 1
-      sequence.current = current
+    async (mode: RequestMode): Promise<LoadOutcome | null> => {
+      const request = sequence.current + 1
+      sequence.current = request
 
       if (workspaceRoot === undefined) {
-        setSnapshot(null)
+        current.current = null
         hasData.current = false
+        setSnapshot(null)
         setError({ code: 'invalid-params', message: t('error.noWorkspaceTickets') })
         setPhase('error')
         return null
@@ -173,11 +301,18 @@ function useSnapshotLoader(client: PanelClient, workspaceRoot: string | undefine
 
       setPhase(mode === 'get' ? 'loading' : 'refreshing')
       setError(null)
+      const baseline = snapshotBaselineOf(current.current)
+      const options = {
+        ...(mode === 'refresh-full' ? { full: true } : {}),
+        ...(baseline ?? {}),
+      }
       const result =
         mode === 'get'
           ? await client.get(workspaceRoot)
-          : await client.refresh(workspaceRoot, { full: mode === 'refresh-full' })
-      if (current !== sequence.current) return null
+          : Object.keys(options).length === 0
+            ? await client.refresh(workspaceRoot)
+            : await client.refresh(workspaceRoot, options)
+      if (request !== sequence.current) return null
 
       if (!result.ok) {
         // 刷新失败时保留已有数据：不清空列表、不切错误页，只把原因记下来。
@@ -188,39 +323,52 @@ function useSnapshotLoader(client: PanelClient, workspaceRoot: string | undefine
         }
         setRefreshError(result.error)
         setPhase('ready')
-        return null
+        return { snapshot: current.current, settled: false }
       }
 
-      // 首屏只等列表：阻塞数先按描述回退显示，补齐结果到了再原子替换。
-      setSnapshot(result.result)
-      hasData.current = true
-      setError(null)
-      setRefreshError(null)
-      setPhase('ready')
-      let applied = result.result
+      const isRefresh = 'kind' in result.result
+      const next = isRefresh
+        ? applyRefreshResult(current.current, result.result)
+        : result.result
+      if (next === null) {
+        // delta 到达时没有基线（理论上只在面板刚挂载时发生）：退回整份读取。
+        const full = await client.get(workspaceRoot)
+        if (request !== sequence.current) return null
+        if (!full.ok) {
+          setError(full.error)
+          setPhase('error')
+          return null
+        }
+        commit(full.result)
+        return { snapshot: full.result, settled: true }
+      }
+
+      commit(next)
+      let applied = next
 
       if (!applied.blockersFinalized) {
         const finalized = await client.resolveBlockers(workspaceRoot)
         // 刷新会推进序号；旧补齐结果不能覆盖新列表。
-        if (current !== sequence.current) return null
+        if (request !== sequence.current) return null
         // 补齐失败保留首屏结果：列表已经可用，不弹错误横幅。
         if (finalized.ok) {
-          setSnapshot(finalized.result)
+          commit(finalized.result)
           applied = finalized.result
         }
       }
 
-      return applied
+      return { snapshot: applied, settled: mode !== 'get' || applied.source === 'live' }
     },
-    [client, workspaceRoot, t],
+    [client, commit, workspaceRoot, t],
   )
 
   // 换工作区时清掉上一份数据，不让旧仓库的票留在新仓库的列表里。
   React.useEffect(() => {
+    current.current = null
+    hasData.current = false
     setSnapshot(null)
     setError(null)
     setRefreshError(null)
-    hasData.current = false
   }, [workspaceRoot])
 
   /**
@@ -241,39 +389,50 @@ function useSnapshotLoader(client: PanelClient, workspaceRoot: string | undefine
         if (hasData.current) setRefreshError(result.error)
         return
       }
-      setSnapshot(result.result)
-      hasData.current = true
-      setRefreshError(null)
-      setPhase('ready')
+      commit(result.result)
     } finally {
       appendingRef.current = false
       setAppending(false)
     }
-  }, [client, workspaceRoot])
+  }, [client, commit, workspaceRoot])
 
-  /**
-   * 写回别处已经拿到的快照（详情刷新、写操作或删除后的快照）。
-   * 不推进请求序号：在途的刷新仍是有效的最新结果。
-   * 快照还没定稿时在这里补做一次阻塞补齐，否则列表阶段的阻塞边会覆盖已定稿结果。
-   */
-  const apply = React.useCallback(
-    (applied: WorkspaceSnapshot): void => {
-      if (workspaceRoot === undefined || workspace.current !== workspaceRoot) return
-      const started = sequence.current
-      setSnapshot(applied)
-      hasData.current = true
-      setError(null)
-      setRefreshError(null)
-      setPhase('ready')
-      if (applied.blockersFinalized) return
+  /** 快照尚未定稿时补做一次阻塞补齐；旧一代的结果不覆盖新列表。 */
+  const applyBlockersLater = React.useCallback(
+    (applied: WorkspaceSnapshot, started = sequence.current): void => {
+      if (applied.blockersFinalized || workspaceRoot === undefined) return
       void client.resolveBlockers(workspaceRoot).then((finalized) => {
         if (!finalized.ok) return
         if (workspace.current !== workspaceRoot || sequence.current !== started) return
-        setSnapshot(finalized.result)
+        commit(finalized.result)
       })
     },
-    [client, workspaceRoot],
+    [client, commit, workspaceRoot],
   )
 
-  return { snapshot, error, refreshError, phase, appending, load, apply, append }
+  /**
+   * 写回一次刷新回包：not-modified 保留行数据并清掉陈旧标记，delta 只合并变化行。
+   * 不推进请求序号，旧仓库的在途结果不落地。
+   */
+  const applyRefresh = React.useCallback(
+    (result: SnapshotRefreshResult): void => {
+      if (workspaceRoot === undefined || workspace.current !== workspaceRoot) return
+      const started = sequence.current
+      const next = applyRefreshResult(current.current, result)
+      if (next === null) return
+      commit(next)
+      applyBlockersLater(next, started)
+    },
+    [applyBlockersLater, commit, workspaceRoot],
+  )
+
+  return {
+    snapshot,
+    error,
+    refreshError,
+    phase,
+    appending,
+    load,
+    applyRefresh,
+    append,
+  }
 }

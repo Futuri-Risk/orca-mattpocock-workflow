@@ -9,6 +9,7 @@ import {
   GH_ISSUES_OUTPUT,
   GH_ISSUES_PAGED_OUTPUT,
   GH_LABELS_OUTPUT,
+  GH_REVISION_OUTPUT,
   GH_TRUNCATED_CHANGES_OUTPUT,
   GH_VIEWER_PERMISSION_OUTPUT,
   GIT_REMOTES_OUTPUT,
@@ -233,14 +234,19 @@ const EMPTY_ISSUES_OUTPUT = JSON.stringify({
 })
 
 /**
- * 增量用的假 runner：带 `since` 参数的查询回增量夹具，其它回列表夹具。
- * 真实后端按查询里的时间窗口过滤，这里靠夹具区分两条路。
+ * 增量与版本查询共用的假 gh：带 `since` 的回增量夹具，
+ * 极小版本查询（含 `latest`）回版本夹具，其余回列表夹具。
  */
-function changesRunner(outputs: { changes?: string; list?: string } = {}): RecordedRunner {
+function changesRunner(outputs: {
+  changes?: string
+  list?: string
+  revision?: string
+} = {}): RecordedRunner {
   return recordedRunner({
     gh: (args) => {
-      const isChanges = args.some((arg) => arg.startsWith('since='))
-      if (isChanges) return outputs.changes ?? GH_CHANGES_OUTPUT
+      const query = args.find((arg) => arg.startsWith('query=')) ?? ''
+      if (args.some((arg) => arg.startsWith('since='))) return outputs.changes ?? GH_CHANGES_OUTPUT
+      if (query.includes('latest:')) return outputs.revision ?? GH_REVISION_OUTPUT
       return outputs.list ?? GH_ISSUES_OUTPUT
     },
   })
@@ -273,6 +279,38 @@ describe('GitHub 工单增量', () => {
     expect(changes?.tickets.map((ticket) => ticket.ref)).toEqual(['#16', '#12'])
     expect(changes?.truncated).toBe(false)
     expect(changes?.total).toBe(30)
+    // 增量查询里的 latest 子连接给出权威总数与最新更新时间。
+    expect(changes?.revision).toEqual({
+      id: '30:2027-01-01T00:00:00Z',
+      total: 30,
+    })
+  })
+
+  it('列表快照用同一次查询里的总数与最新更新时间做远端版本', async () => {
+    const { runner } = recordedRunner({})
+    const tracker = createGithubTracker({ run: runner, now: () => NOW })
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.revision).toEqual({
+      id: '30:2026-11-12T14:11:38Z',
+      total: 30,
+    })
+  })
+
+  it('版本命中时只发一次极小查询，不扫描变更窗口', async () => {
+    const { runner, calls } = changesRunner()
+    const tracker = createGithubTracker({ run: runner, now: () => NOW })
+
+    const changes = await tracker.fetchChanges?.(
+      '/workspace',
+      SINCE,
+      '30:2027-01-01T00:00:00Z',
+    )
+
+    expect(changes?.notModified).toBe(true)
+    expect(changes?.tickets).toEqual([])
+    expect(calls.filter((call) => call.some((part) => part.startsWith('since=')))).toEqual([])
   })
 
   it('后端还有下一页时标记为截断，宿主据此退回全量重拉', async () => {

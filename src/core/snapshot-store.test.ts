@@ -1,15 +1,20 @@
 import { describe, expect, it } from 'vitest'
 
+import { emptyMetrics } from '../protocol/snapshot-test-support.ts'
 import {
   SNAPSHOT_STORE_VERSION,
-  parseSnapshotStoreEntry,
-  serializeSnapshotStoreEntry,
-  type SnapshotStoreEntry,
+  parseSnapshotStoreMeta,
+  parseSnapshotTicket,
+  serializeSnapshotStoreMeta,
+  serializeSnapshotTicket,
+  type SnapshotStoreMeta,
 } from './snapshot-store.ts'
+import type { Ticket } from './ticket.ts'
 
-function entry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreEntry {
+function meta(overrides: Partial<SnapshotStoreMeta> = {}): SnapshotStoreMeta {
   return {
     version: SNAPSHOT_STORE_VERSION,
+    storeRevision: 3,
     scopeRoot: '/workspace',
     workspaceRoot: '/workspace',
     backend: 'github',
@@ -18,211 +23,144 @@ function entry(overrides: Partial<SnapshotStoreEntry> = {}): SnapshotStoreEntry 
     repositoryHost: 'github.com',
     fetchedAt: 1_000,
     viewer: 'cnzgray',
-    loaded: 1,
     total: 1,
-    tickets: [
-      {
-        ref: '#1',
-        number: 1,
-        title: '一张票',
-        state: 'open',
-        labels: ['ready-for-agent'],
-        author: { login: 'cnzgray', displayName: null, avatarUrl: null },
-        assignees: ['cnzgray'],
-        createdAt: '2026-01-01T00:00:00Z',
-        updatedAt: '2026-01-01T00:00:00Z',
-        openBlockers: 0,
-      },
-    ],
     hierarchy: 'native',
+    revision: { id: '1:2026-01-01T00:00:00Z', total: 1 },
+    ticketRefs: ['#1'],
+    tombstones: [],
     ...overrides,
   }
 }
 
-describe('本地快照库条目', () => {
-  it('序列化后再解析得到同一份条目', () => {
-    const original = entry()
+function ticket(overrides: Partial<Ticket> = {}): Ticket {
+  return {
+    ref: '#1',
+    number: 1,
+    title: '一张票',
+    state: 'open',
+    labels: ['ready-for-agent'],
+    author: { login: 'cnzgray', displayName: null, avatarUrl: null },
+    assignees: ['cnzgray'],
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    openBlockers: 0,
+    ...overrides,
+  }
+}
 
-    expect(parseSnapshotStoreEntry(serializeSnapshotStoreEntry(original))).toEqual(original)
+describe('本地快照库的 meta', () => {
+  it('序列化后再解析得到同一份 meta', () => {
+    const original = meta()
+
+    expect(parseSnapshotStoreMeta(serializeSnapshotStoreMeta(original))).toEqual(original)
   })
 
-  it('分页窗口与游标一并保存，重启后还能继续加载', () => {
-    const original = entry({ loaded: 100, total: 11_162, nextCursor: 'cursor-2' })
+  it('分页窗口、墓碑与两个版本号一并保存', () => {
+    const original = meta({
+      nextCursor: 'cursor-2',
+      tombstones: ['#9'],
+      revision: null,
+    })
 
-    const restored = parseSnapshotStoreEntry(serializeSnapshotStoreEntry(original))
+    const restored = parseSnapshotStoreMeta(serializeSnapshotStoreMeta(original))
 
     expect(restored).toEqual(original)
     expect(restored?.nextCursor).toBe('cursor-2')
-  })
-
-  it('父子能力与父级引用随条目保存', () => {
-    const original = entry()
-    const withParent = {
-      ...original,
-      hierarchy: 'convention' as const,
-      tickets: [{ ...original.tickets[0]!, parent: '.scratch/login/issues/01-token.md' }],
-    }
-
-    const restored = parseSnapshotStoreEntry(serializeSnapshotStoreEntry(withParent))
-
-    expect(restored).toEqual(withParent)
-    expect(restored?.hierarchy).toBe('convention')
-    expect(restored?.tickets[0]?.parent).toBe('.scratch/login/issues/01-token.md')
-  })
-
-  it('工单链接随条目保存；旧条目的缺失字段按没有链接处理', () => {
-    const original = entry()
-    const url = 'https://github.com/cnzgray/repo/issues/1'
-    const withUrl = {
-      ...original,
-      tickets: [{ ...original.tickets[0]!, url }],
-    }
-
-    const restored = parseSnapshotStoreEntry(serializeSnapshotStoreEntry(withUrl))
-    const legacy = parseSnapshotStoreEntry(serializeSnapshotStoreEntry(original))
-
-    expect(restored?.tickets[0]?.url).toBe(url)
-    expect(legacy?.tickets[0]?.url).toBeUndefined()
-  })
-
-  it('工单链接不是非空字符串时整份作废', () => {
-    const original = entry()
-    const raw = JSON.stringify({
-      ...original,
-      tickets: [{ ...original.tickets[0], url: 42 }],
-    })
-
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
-  })
-
-  it('父子能力不是已知枚举时整份作废', () => {
-    const raw = JSON.stringify({ ...entry(), hierarchy: 'guess' })
-
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
-  })
-
-  it('父级引用不是非空字符串时整份作废', () => {
-    const original = entry()
-    const legacy = {
-      ...original,
-      tickets: [{ ...original.tickets[0], parent: 42 }],
-    }
-
-    expect(parseSnapshotStoreEntry(JSON.stringify(legacy))).toBeUndefined()
-  })
-
-  it('游标不是非空字符串时整份作废', () => {
-    const raw = JSON.stringify({ ...entry(), nextCursor: 42 })
-
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+    expect(restored?.tombstones).toEqual(['#9'])
+    expect(restored?.revision).toBeNull()
   })
 
   it('格式版本不符时按没有缓存处理', () => {
-    const raw = serializeSnapshotStoreEntry(entry({ version: 99 }))
-
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+    expect(parseSnapshotStoreMeta(JSON.stringify({ ...meta(), version: 3 }))).toBeUndefined()
   })
 
-  it('升级前按工作区存的旧条目（版本 1）读不出来', () => {
-    const raw = JSON.stringify({ ...entry(), version: 1 })
-
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  it('提交序号不是非负整数时整份作废', () => {
+    expect(
+      parseSnapshotStoreMeta(JSON.stringify({ ...meta(), storeRevision: -1 })),
+    ).toBeUndefined()
   })
 
-  it('上一版（版本 2）缓存整体作废，不把缺父子字段的数据当成完整树', () => {
-    const raw = JSON.stringify({ ...entry(), version: 2 })
-
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  it('远端版本形状不对时整份作废', () => {
+    expect(
+      parseSnapshotStoreMeta(JSON.stringify({ ...meta(), revision: { id: '', total: 1 } })),
+    ).toBeUndefined()
   })
 
-  it('缺少仓库作用域时按没有缓存处理', () => {
-    const raw = JSON.stringify({ ...entry(), scopeRoot: undefined })
-
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  it('票引用列表损坏时整份作废', () => {
+    expect(
+      parseSnapshotStoreMeta(JSON.stringify({ ...meta(), ticketRefs: ['#1', 42] })),
+    ).toBeUndefined()
   })
 
-  it('内容不是 JSON 时按没有缓存处理', () => {
-    expect(parseSnapshotStoreEntry('not json')).toBeUndefined()
+  it('写入时算好的指标随 meta 进出', () => {
+    const metrics = emptyMetrics({ openBacklog: 7, readyCapacity: 3 })
+
+    const restored = parseSnapshotStoreMeta(
+      serializeSnapshotStoreMeta(meta({ metrics })),
+    )
+
+    expect(restored?.metrics).toEqual(metrics)
   })
 
-  it('工单字段不合法时整份作废', () => {
-    const raw = JSON.stringify({ ...entry(), tickets: [{ ref: '#1' }] })
+  it('指标损坏时只丢指标，票数据仍然可用', () => {
+    const restored = parseSnapshotStoreMeta(
+      JSON.stringify({
+        ...meta(),
+        metrics: { ...emptyMetrics(), openBacklog: '坏了' },
+      }),
+    )
 
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
-  })
-
-  it('后端类型不认识时按没有缓存处理', () => {
-    const raw = JSON.stringify({ ...entry(), backend: 'bitbucket' })
-
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
-  })
-
-  it('缺少仓库身份时按没有缓存处理', () => {
-    const raw = JSON.stringify({ ...entry(), repositoryKey: undefined })
-
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
-  })
-
-  it('老记录没有头像字段时按没有头像处理', () => {
-    const old = entry()
-    const legacy = {
-      ...old,
-      tickets: [
-        {
-          ...old.tickets[0],
-          author: { login: 'cnzgray', displayName: null },
-        },
-      ],
-    }
-
-    const parsed = parseSnapshotStoreEntry(JSON.stringify(legacy))
-
-    expect(parsed?.tickets[0]?.author?.avatarUrl).toBeNull()
-  })
-
-  it('当前用户为 null 的条目合法', () => {
-    const original = entry({ viewer: null })
-
-    const parsed = parseSnapshotStoreEntry(serializeSnapshotStoreEntry(original))
-
-    expect(parsed?.viewer).toBeNull()
+    expect(restored).toBeDefined()
+    expect(restored?.ticketRefs).toEqual(['#1'])
+    expect(restored?.metrics).toBeUndefined()
   })
 
   it('缺少当前用户时整份作废，不把旧数据当成无身份', () => {
-    const raw = JSON.stringify({ ...entry(), viewer: undefined })
-
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+    expect(
+      parseSnapshotStoreMeta(JSON.stringify({ ...meta(), viewer: undefined })),
+    ).toBeUndefined()
   })
 
-  it('当前用户类型不对时整份作废', () => {
-    const raw = JSON.stringify({ ...entry(), viewer: 42 })
+  it('内容不是 JSON 时按没有缓存处理', () => {
+    expect(parseSnapshotStoreMeta('not json')).toBeUndefined()
+  })
+})
 
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+describe('本地快照库的票文件', () => {
+  it('序列化后再解析得到同一张票', () => {
+    const original = ticket()
+
+    expect(parseSnapshotTicket(serializeSnapshotTicket(original))).toEqual(original)
   })
 
-  it('分配人不是字符串数组时整份作废', () => {
-    const old = entry()
-    const raw = JSON.stringify({
-      ...old,
-      tickets: [{ ...old.tickets[0], assignees: ['alice', 42] }],
+  it('链接、父级与阻塞引用随票保存', () => {
+    const original = ticket({
+      url: 'https://github.com/cnzgray/repo/issues/1',
+      parent: '#2',
+      blockedBy: ['#3'],
+      closedAt: '2026-01-02T00:00:00Z',
     })
 
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+    expect(parseSnapshotTicket(serializeSnapshotTicket(original))).toEqual(original)
   })
 
-  it('缺少分配人时整份作废，旧缓存自动重拉', () => {
-    const old = entry()
-    const raw = JSON.stringify({
-      ...old,
-      tickets: [{ ...old.tickets[0], assignees: undefined }],
-    })
-
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  it('工单字段不合法时整票作废', () => {
+    expect(parseSnapshotTicket(JSON.stringify({ ref: '#1' }))).toBeUndefined()
   })
 
-  it('上一版（版本 2）的条目读不出来', () => {
-    const raw = JSON.stringify({ ...entry(), version: 2 })
+  it('链接不是非空字符串时整票作废', () => {
+    expect(
+      parseSnapshotTicket(JSON.stringify({ ...ticket(), url: 42 })),
+    ).toBeUndefined()
+  })
 
-    expect(parseSnapshotStoreEntry(raw)).toBeUndefined()
+  it('分配人不是字符串数组时整票作废', () => {
+    expect(
+      parseSnapshotTicket(JSON.stringify({ ...ticket(), assignees: ['alice', 42] })),
+    ).toBeUndefined()
+  })
+
+  it('内容不是 JSON 时整票作废', () => {
+    expect(parseSnapshotTicket('not json')).toBeUndefined()
   })
 })

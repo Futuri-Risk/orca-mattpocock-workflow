@@ -20,11 +20,13 @@ import {
   resolveOpenBlockers,
 } from '../../core/blocked-by.ts'
 import { mapWithConcurrency } from '../../core/concurrency.ts'
+import { isRecord } from '../../core/json.ts'
 import type { RepositoryAddress } from '../../core/remote.ts'
 import type {
   BinaryCommandRunner,
   BlockerResolution,
   CommandRunner,
+  SourceRevision,
   Ticket,
   TicketHierarchy,
   TicketReference,
@@ -107,8 +109,9 @@ export function createGitlabTracker(deps: GitlabTrackerDeps): Tracker {
   return {
     async fetchSnapshot(workspaceRoot: string): Promise<TrackerSnapshot> {
       const project = await readProjectAddress(deps.run, workspaceRoot)
-      // 身份与列表并行发出：身份失败只丢筛选行，不拖慢也不打挂列表。
+      // 身份、版本与列表并行发出：版本读不到只让刷新退回全量，不影响首屏。
       const viewer = readCurrentViewer(deps, workspaceRoot)
+      const revision = readGitlabRevision(deps, workspaceRoot, project.path)
       const issues = await readIssues(deps, workspaceRoot, project.path, pageSize)
       const states = new Map<number, TicketState>()
       for (const issue of issues) {
@@ -132,15 +135,30 @@ export function createGitlabTracker(deps: GitlabTrackerDeps): Tracker {
         tickets,
         viewer: await viewer,
         hierarchy: workItems.hierarchy,
+        revision: await revision,
       }
     },
 
-    async fetchChanges(workspaceRoot: string, since: number): Promise<TrackerChanges> {
+    async fetchChanges(
+      workspaceRoot: string,
+      since: number,
+      ifRevision?: string,
+    ): Promise<TrackerChanges> {
       if (!Number.isFinite(since)) {
         throw new TrackerError('fetch-failed', '增量窗口的起点不是有效时间戳。')
       }
 
       const project = await readProjectAddress(deps.run, workspaceRoot)
+      const revision = await readGitlabRevision(deps, workspaceRoot, project.path)
+      if (ifRevision !== undefined && revision?.id === ifRevision) {
+        return {
+          tickets: [],
+          truncated: false,
+          revision,
+          notModified: true,
+          hierarchy: 'native',
+        }
+      }
       const viewer = readCurrentViewer(deps, workspaceRoot)
       const listing = { pageSize, pageLimit: incrementalPageLimit }
       const { issues, truncated } = await readChangedIssues(
@@ -163,6 +181,8 @@ export function createGitlabTracker(deps: GitlabTrackerDeps): Tracker {
         // 身份查询失败时省略，宿主沿用基准数据里的身份。
         ...(login === null ? {} : { viewer: login }),
         hierarchy: workItems.hierarchy,
+        // 变更列表的 total 不是权威总数；版本里的 count 才是。
+        revision,
       }
     },
 
@@ -299,6 +319,49 @@ async function readWorkItemHierarchy(
     return { parents: new Map(), hierarchy: 'none' }
   }
   return { parents, hierarchy: 'native' }
+}
+
+/**
+ * 读取远端版本：项目 `updatedAt` 与工单总数的组合。
+ *
+ * 一次 GraphQL 查询拿两个数，不翻工单列表；失败时返回 null，
+ * 宿主下一次刷新退回全量，而不是把「读不到版本」当成没有变化。
+ * @param deps - 命令执行器。
+ * @param workspaceRoot - 工作区根目录。
+ * @param project - 项目完整路径。
+ * @returns 远端版本；任何字段不可用时为 null。
+ */
+async function readGitlabRevision(
+  deps: GitlabTrackerDeps,
+  workspaceRoot: string,
+  project: string,
+): Promise<SourceRevision | null> {
+  const query =
+    'query ($project: ID!) { project(fullPath: $project) { updatedAt issues { count } } }'
+  try {
+    const output = (
+      await deps.run(
+        'glab',
+        ['api', 'graphql', '-f', `query=${query}`, '-f', `project=${project}`],
+        { cwd: workspaceRoot },
+      )
+    ).stdout
+    const payload: unknown = JSON.parse(output)
+    if (!isRecord(payload)) return null
+    const data = payload.data
+    if (!isRecord(data)) return null
+    const found = data.project
+    if (!isRecord(found)) return null
+    const updatedAt = found.updatedAt
+    if (typeof updatedAt !== 'string' || updatedAt.length === 0) return null
+    const issues = found.issues
+    if (!isRecord(issues)) return null
+    const count = issues.count
+    if (typeof count !== 'number' || !Number.isInteger(count) || count < 0) return null
+    return { id: `${String(count)}:${updatedAt}`, total: count }
+  } catch {
+    return null
+  }
 }
 
 /**

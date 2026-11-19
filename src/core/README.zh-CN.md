@@ -20,8 +20,11 @@
   登录名为空时整条用户按 null 处理（不从列表里消失），头像只放行 http(s) 绝对地址，
   实例内相对路径按后端给出的基准补全；列表与详情共用同一份规则。`readLogins` 用同样的容错口径
   只取登录名，供列表快照的分配人使用（不读展示名与头像）；
-- `snapshot-store.ts` 是本地快照库的条目模型（格式版本 3）：保存当前用户 `viewer` 与每张票的
-  分配人登录名 `assignees`；版本不符、字段缺失或类型不对时整份作废，由宿主自动全量重拉；
+- `snapshot-store.ts` 是本地快照库的模型（格式版本 4）：meta 保存库版本、仓库身份、远端版本、
+  票引用、墓碑与写入时算好的概览指标；每张票一个文件，存当前用户 `viewer` 与分配人登录名
+  `assignees`。版本不符、meta 字段缺失或类型不对时整份作废，由宿主自动全量重拉；
+  `metrics` 是唯一例外：形状不对时只丢指标、读侧重算，票数据仍然可用；
+  单个票文件损坏时该缓存键按没有缓存处理，不影响其它工作区；
 - `ticket-detail.ts` 只做纯计算与字段校验：目标集合与当前集合的差异（`diffSets` / `resolveTargetSet` /
   `planSetChange` / `isEmptyDiff`），以及三个远端后端共用的详情字段读取（`readRequiredString`、
   `readNameList`、`sortCommentsByTime`、`requireTicketNumber`、`invalidDetail`）；
@@ -31,8 +34,8 @@
 - `markdown.ts` 里的 `parseMarkdownDetail` 把本地工单文件切成标题、正文与评论段落；
   `parseMarkdownTickets` 同时解析 `Parent:` 行：只看 `## Comments` 之前，取第一个数字，
   只认同 feature 下的另一张工单；缺失、自引用与跨 feature 都按无父级处理；
-- `snapshot-store.ts` 的条目格式版本升到 3，保存快照级的 `hierarchy` 与工单级的 `parent`、`url`；
-  版本不符或枚举非法时整份作废，避免把缺父子字段的旧缓存当成完整的树；
+- `snapshot-store.ts` 的格式版本升到 4：目录布局、库版本与变化集替代整份 JSON；
+  快照级 `hierarchy` 与工单级 `parent`、`url` 仍然随票保存，旧版本的条目整份作废；
 - `worktree.ts` 推导 worktree 的分支名、工作区名与注释（工作区名与分支名同值），按 Orca 的 URL 路由表判定工单链接能否挂载
   （自建 Gitea / GitHub 的 `/issues/<n>` 不挂，链接补进注释），拼装 Orca 命令行参数，并解析它的 JSON 输出；
 - `repository-scope.ts` 解析 `git worktree list --porcelain`，给出仓库作用域（主 worktree 根目录）

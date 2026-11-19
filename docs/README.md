@@ -29,6 +29,7 @@ English | [简体中文](README.zh-CN.md)
 | Core logic | [src/core](../src/core/README.md) | [src/core](../src/core/README.zh-CN.md) |
 | Panel | [src/panel](../src/panel/README.md) | [src/panel](../src/panel/README.zh-CN.md) |
 | Protocol | [src/protocol](../src/protocol/README.md) | [src/protocol](../src/protocol/README.zh-CN.md) |
+| Snapshot library decision | [ADR 0001](adr/0001-directory-snapshot-library.md) | [ADR 0001](adr/0001-directory-snapshot-library.zh-CN.md) |
 | Skills | [skills](../skills/README.md) | [skills](../skills/README.zh-CN.md) |
 
 Agent operating docs (Chinese only):

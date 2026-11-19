@@ -84,6 +84,16 @@ function recordedRunner(options: RunnerOptions = {}): RecordedRunner {
   return { runner, calls, dependencyCalls }
 }
 
+/** 手动开关的闸门：测试用它在不推进真实时间的前提下观察并发。 */
+function gate(): { wait(): Promise<void>; open(): void } {
+  // 目标 lib 是 ES2023，类型库里没有 Promise.withResolvers。
+  let open = (): void => undefined
+  const waiting = new Promise<void>((resolve) => {
+    open = resolve
+  })
+  return { wait: () => waiting, open: () => open() }
+}
+
 function trackerWith(options: RunnerOptions = {}): {
   readonly tracker: Tracker
   readonly calls: readonly (readonly string[])[]
@@ -179,13 +189,65 @@ describe('Gitea 工单后端', () => {
     expect(snapshot.total).toBe(3)
   })
 
-  it('依赖列表只统计未关闭的票，且只查询开放工单', async () => {
+  it('首屏只按正文回退，依赖查询留到补齐阶段', async () => {
     const { tracker, dependencyCalls } = trackerWith()
 
     const snapshot = await tracker.fetchSnapshot('/workspace')
 
-    expect(snapshot.tickets.map((ticket) => ticket.openBlockers)).toEqual([0, 1, 0])
+    // 正文里没有 Blocked by 行：首屏阻塞数为 0，也不发任何依赖请求。
+    expect(snapshot.tickets.map((ticket) => ticket.openBlockers)).toEqual([0, 0, 0])
+    expect(dependencyCalls).toEqual([])
+  })
+
+  it('补齐阶段只查询开放票，并把原生计数与引用交回宿主', async () => {
+    const { tracker, dependencyCalls } = trackerWith()
+
+    const native = await tracker.resolveBlockers?.('/workspace', [
+      { ref: '#15', number: 15 },
+      { ref: '#16', number: 16 },
+    ])
+
     expect(new Set(dependencyCalls)).toEqual(new Set([15, 16]))
+    expect(native).toEqual({
+      open: new Map([
+        ['#15', 0],
+        ['#16', 1],
+      ]),
+      blockedBy: new Map([
+        ['#15', ['#7']],
+        ['#16', ['#15', '#7']],
+      ]),
+    })
+  })
+
+  it('补齐阶段按并发上限查询依赖', async () => {
+    let inFlight = 0
+    let peak = 0
+    const started = gate()
+    const release = gate()
+    const runner: CommandRunner = async (command, args) => {
+      if (command === 'git') return { stdout: GITEA_REMOTES_OUTPUT, stderr: '' }
+      const endpoint = args[2] ?? ''
+      if (endpoint.includes('/dependencies')) {
+        inFlight += 1
+        peak = Math.max(peak, inFlight)
+        if (inFlight === 2) started.open()
+        await release.wait()
+        inFlight -= 1
+        return { stdout: '[]', stderr: '' }
+      }
+      return { stdout: '[]', stderr: '' }
+    }
+    const tracker = createGiteaTracker({ run: runner, now: () => NOW, concurrency: 2 })
+
+    const pending = tracker.resolveBlockers?.(
+      '/workspace',
+      [1, 2, 3, 4].map((number) => ({ ref: `#${String(number)}`, number })),
+    )
+    await started.wait()
+    expect(peak).toBe(2)
+    release.open()
+    await pending
   })
 
   it('依赖接口返回 404 时退回正文顶部的 Blocked by 行', async () => {
@@ -269,8 +331,8 @@ describe('Gitea 工单后端', () => {
     expect(endpoints.length).toBeGreaterThan(0)
     for (const endpoint of endpoints) {
       expect(endpoint).not.toContain('/pulls')
-      // 当前用户查询是人员筛选的前提，不属于工单数据。
-      if (endpoint === '/user') continue
+      // 当前用户查询是人员筛选的前提；仓库元数据只给远端版本号。
+      if (endpoint === '/user' || endpoint === '/repos/cnzgray/dsh-workflow') continue
       expect(endpoint).toContain('/issues')
     }
   })
@@ -297,14 +359,29 @@ describe('Gitea 工单后端', () => {
     })
   })
 
-  it('依赖接口返回 401 时返回 tea-unauthenticated', async () => {
+  it('补齐依赖接口返回 401 时返回 tea-unauthenticated', async () => {
     const { tracker } = trackerWith({
       dependencies: () => failedApiCall(401, 'token is expired'),
     })
 
-    await expect(tracker.fetchSnapshot('/workspace')).rejects.toMatchObject({
+    await expect(
+      tracker.resolveBlockers?.('/workspace', [{ ref: '#15', number: 15 }]),
+    ).rejects.toMatchObject({
       code: 'tea-unauthenticated',
     })
+  })
+
+  it('依赖接口 404 时补齐返回空结果，正文回退仍然有效', async () => {
+    const { tracker } = trackerWith({
+      dependencies: () => failedApiCall(404, 'Not Found'),
+    })
+
+    const native = await tracker.resolveBlockers?.('/workspace', [
+      { ref: '#15', number: 15 },
+      { ref: '#16', number: 16 },
+    ])
+
+    expect(native).toEqual({ open: new Map(), blockedBy: new Map() })
   })
 
   it('其他失败返回 fetch-failed', async () => {
@@ -344,16 +421,35 @@ describe('Gitea 工单增量', () => {
     expect(endpoint).toContain(`since=${new Date(SINCE).toISOString()}`)
   })
 
-  it('返回窗口内变更过的票，并给出它的阻塞数', async () => {
-    const { tracker } = trackerWith()
+  it('返回窗口内变更过的票，阻塞数先按正文回退', async () => {
+    const { tracker, dependencyCalls } = trackerWith()
 
     const changes = await tracker.fetchChanges?.('/workspace', SINCE)
 
     expect(changes?.tickets.map((ticket) => ticket.ref)).toEqual(['#16'])
     expect(changes?.truncated).toBe(false)
-    // Gitea 没有单独的阻塞补齐能力，增量里要自己补齐，
-    // 否则合并后这张票会显示成没有阻塞。
-    expect(changes?.tickets[0]?.openBlockers).toBe(1)
+    // 增量只回正文回退结果；原生阻塞数留给补齐阶段，成本不与开放票总数挂钩。
+    expect(changes?.tickets[0]?.openBlockers).toBe(0)
+    expect(dependencyCalls).toEqual([])
+    expect(changes?.revision).toEqual({
+      id: '3:2026-11-21T14:11:38Z',
+      total: 3,
+    })
+  })
+
+  it('版本命中时回 not-modified，不扫描变更窗口', async () => {
+    const { tracker, calls } = trackerWith()
+
+    const changes = await tracker.fetchChanges?.(
+      '/workspace',
+      SINCE,
+      '3:2026-11-21T14:11:38Z',
+    )
+
+    expect(changes?.notModified).toBe(true)
+    expect(changes?.tickets).toEqual([])
+    expect(changes?.revision?.total).toBe(3)
+    expect(calls.filter((call) => call.some((part) => part.includes('since=')))).toEqual([])
   })
 
   it('增量也刷新当前用户', async () => {
@@ -1009,7 +1105,23 @@ describeTrackerContract('Gitea', {
     repository: 'cnzgray/dsh-workflow',
     fetchedAt: NOW,
   },
-  nativeBlockers: { kind: 'snapshot', expected: [0, 1, 0] },
+  nativeBlockers: {
+    kind: 'deferred',
+    request: [
+      { ref: '#15', number: 15 },
+      { ref: '#16', number: 16 },
+    ],
+    expected: {
+      open: new Map([
+        ['#15', 0],
+        ['#16', 1],
+      ]),
+      blockedBy: new Map([
+        ['#15', ['#7']],
+        ['#16', ['#15', '#7']],
+      ]),
+    },
+  },
   hierarchy: { hierarchy: 'convention', parents: { '#16': '#15' } },
   changes: {
     createTracker: () => createGiteaTracker({ run: recordedRunner().runner, now: () => NOW }),
@@ -1057,6 +1169,7 @@ describeTrackerContract('Gitea', {
   },
   fields: {
     closedAt: { '#9': '2026-11-11T10:00:00Z' },
-    blockedBy: { '#15': ['#7'], '#16': ['#15', '#7'], '#9': [] },
+    // 列表阶段只有描述回退；这个 fixture 的描述里没有 Blocked by 行。
+    blockedBy: { '#15': [], '#16': [], '#9': [] },
   },
 })

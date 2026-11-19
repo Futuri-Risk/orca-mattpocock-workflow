@@ -7,6 +7,7 @@ import { emptyMetrics } from '../protocol/snapshot-test-support.ts'
 import type {
   RpcErrorBody,
   RpcResult,
+  SnapshotRefreshResult,
   TicketDetail,
   TicketSnapshot,
   WorkspaceSnapshot,
@@ -79,6 +80,8 @@ export function makeSnapshot(overrides: Partial<WorkspaceSnapshot> = {}): Worksp
     source: 'live',
     stale: false,
     refreshError: null,
+    revision: null,
+    storeRevision: 0,
     ...overrides,
   }
 }
@@ -86,6 +89,11 @@ export function makeSnapshot(overrides: Partial<WorkspaceSnapshot> = {}): Worksp
 /** 成功响应。 */
 export function ok<T>(result: T): RpcResult<T> {
   return { ok: true, result }
+}
+
+/** 整份快照的刷新回包。 */
+export function full(snapshot: WorkspaceSnapshot): SnapshotRefreshResult {
+  return { kind: 'snapshot', snapshot }
 }
 
 /** 失败响应。 */

@@ -18,6 +18,7 @@ import {
   GITLAB_LINKS,
   GITLAB_NOTES,
   GITLAB_REMOTES_OUTPUT,
+  GITLAB_REVISION_OUTPUT,
   GITLAB_USER_OUTPUT,
   gitlabAuthor,
   gitlabIssue,
@@ -41,6 +42,8 @@ interface RunnerOptions {
   readonly user?: () => string
   /** 工作项层级查询用这一组输出。 */
   readonly hierarchy?: () => string
+  /** 远端版本查询用这一组输出。 */
+  readonly revision?: () => string
 }
 
 interface RecordedRunner {
@@ -49,9 +52,10 @@ interface RecordedRunner {
   readonly linkCalls: readonly number[]
   /** 全部 GraphQL 调用，按发生顺序。 */
   readonly graphqlCalls: readonly string[]
-  /** 只含阻塞计数查询，避免层级查询混进阻塞断言。 */
+  /** 只含阻塞计数查询，避免层级与版本查询混进阻塞断言。 */
   readonly blockerGraphqlCalls: readonly string[]
   readonly hierarchyGraphqlCalls: readonly string[]
+  readonly revisionGraphqlCalls: readonly string[]
 }
 
 function recordedRunner(options: RunnerOptions = {}): RecordedRunner {
@@ -60,6 +64,7 @@ function recordedRunner(options: RunnerOptions = {}): RecordedRunner {
   const graphqlCalls: string[] = []
   const blockerGraphqlCalls: string[] = []
   const hierarchyGraphqlCalls: string[] = []
+  const revisionGraphqlCalls: string[] = []
   const runner: CommandRunner = (command, args) => {
     calls.push([command, ...args])
     if (command === 'git') {
@@ -80,6 +85,13 @@ function recordedRunner(options: RunnerOptions = {}): RecordedRunner {
     if (endpoint === 'graphql') {
       const query = args.join(' ')
       graphqlCalls.push(query)
+      if (query.includes('issues { count }')) {
+        revisionGraphqlCalls.push(query)
+        return Promise.resolve({
+          stdout: (options.revision ?? (() => GITLAB_REVISION_OUTPUT))(),
+          stderr: '',
+        })
+      }
       if (query.includes('workItems')) {
         hierarchyGraphqlCalls.push(query)
         return Promise.resolve({
@@ -89,7 +101,8 @@ function recordedRunner(options: RunnerOptions = {}): RecordedRunner {
       }
       blockerGraphqlCalls.push(query)
       return Promise.resolve({
-        stdout: (options.graphql ?? (() => GITLAB_BLOCKED_BY_OUTPUT))(),
+        stdout: (options.graphql
+          ?? (() => GITLAB_BLOCKED_BY_OUTPUT))(),
         stderr: '',
       })
     }
@@ -113,7 +126,15 @@ function recordedRunner(options: RunnerOptions = {}): RecordedRunner {
       stderr: '',
     })
   }
-  return { runner, calls, linkCalls, graphqlCalls, blockerGraphqlCalls, hierarchyGraphqlCalls }
+  return {
+    runner,
+    calls,
+    linkCalls,
+    graphqlCalls,
+    blockerGraphqlCalls,
+    hierarchyGraphqlCalls,
+    revisionGraphqlCalls,
+  }
 }
 
 function trackerWith(
@@ -564,6 +585,35 @@ describe('GitLab 工单增量', () => {
     // 阻塞判定由宿主在合并后统一处理，增量保持原始票字段。
     expect(changes?.tickets[0]?.openBlockers).toBe(0)
     expect(changes?.tickets[0]?.blockedBy).toEqual([])
+    expect(changes?.revision).toEqual({
+      id: '3:2027-01-01T00:00:00Z',
+      total: 3,
+    })
+  })
+
+  it('列表快照带项目更新时间与工单总数组成的远端版本', async () => {
+    const { tracker } = trackerWith()
+
+    const snapshot = await tracker.fetchSnapshot('/workspace')
+
+    expect(snapshot.revision).toEqual({
+      id: '3:2027-01-01T00:00:00Z',
+      total: 3,
+    })
+  })
+
+  it('版本命中时不翻变更窗口', async () => {
+    const { tracker, calls } = trackerWith()
+
+    const changes = await tracker.fetchChanges?.(
+      '/workspace',
+      SINCE,
+      '3:2027-01-01T00:00:00Z',
+    )
+
+    expect(changes?.notModified).toBe(true)
+    expect(changes?.tickets).toEqual([])
+    expect(calls.filter((call) => call.some((part) => part.includes('updated_after')))).toEqual([])
   })
 
   it('增量也刷新当前用户', async () => {

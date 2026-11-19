@@ -12,10 +12,12 @@ import {
   setupDom,
   teardownDom,
 } from './dom-test-support.ts'
+import { clearDetailCache } from './detail-cache.ts'
 import type { PromptCopy } from './injection.ts'
 import { TaskPanel } from './task-panel.tsx'
 import {
   deferred,
+  full,
   makeDetail,
   makeSnapshot,
   makeTicket,
@@ -82,7 +84,7 @@ function clientWith(options: PanelClientOptions = {}): PanelClient {
             },
           }),
         )),
-    refresh: options.refresh ?? (async () => ok(SNAPSHOT)),
+    refresh: options.refresh ?? (async () => ok(full(SNAPSHOT))),
     resolveBlockers: options.resolveBlockers ?? (async () => ok(SNAPSHOT)),
     updateTicket:
       options.updateTicket ?? (async () => ok({ applied: true as const })),
@@ -117,6 +119,7 @@ function pressEscape(): Promise<void> {
 const PREFERENCE_STORE = new Map<string, unknown>()
 
 beforeEach(() => {
+  clearDetailCache()
   setupDom()
   PREFERENCE_STORE.clear()
   // 视图偏好存在宿主私有存储里；给它一份内存实现，返回列表时筛选才能保留。
@@ -248,7 +251,7 @@ describe('详情里的阻塞项导航', () => {
         ticket.ref === '#1' ? { ...ticket, title: 'Bravo 改过标题' } : ticket,
       ),
     })
-    const refresh = vi.fn<PanelClient['refresh']>(async () => ok(retitled))
+    const refresh = vi.fn<PanelClient['refresh']>(async () => ok(full(retitled)))
     await render(
       <TaskPanel client={clientWith({ refresh })} workspaceRoot="/ws" copy={COPY} />,
     )
@@ -293,7 +296,7 @@ describe('详情里的阻塞项导航', () => {
         ticket.ref === '#1' ? { ...ticket, title: 'Bravo 改过标题' } : ticket,
       ),
     })
-    const refresh = vi.fn<PanelClient['refresh']>(async () => ok(unfinalized))
+    const refresh = vi.fn<PanelClient['refresh']>(async () => ok(full(unfinalized)))
     const resolveBlockers = vi.fn<PanelClient['resolveBlockers']>(async () => ok(finalized))
     await render(
       <TaskPanel

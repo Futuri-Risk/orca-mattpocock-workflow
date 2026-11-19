@@ -55,6 +55,8 @@ export function createMarkdownTracker(deps: MarkdownTrackerDeps): Tracker {
         viewer: null,
         // 本地工单用 `Parent:` 行建立父子关系，属于正文约定。
         hierarchy: 'convention',
+        // 本地 Markdown 没有远端版本，刷新永远走全量（本地扫描，代价可控）。
+        revision: null,
       }
     },
 
@@ -71,7 +73,9 @@ export function createMarkdownTracker(deps: MarkdownTrackerDeps): Tracker {
         )
       }
 
-      if (files === undefined) return { tickets: [], truncated: false, hierarchy: 'convention' }
+      if (files === undefined) {
+        return { tickets: [], truncated: false, hierarchy: 'convention', revision: null }
+      }
 
       // 补读的兄弟文件只为判定阻塞与父级，结果里只留窗口内动过的票。
       const parsed = parseMarkdownTickets([...files.changed, ...files.context])
@@ -82,6 +86,7 @@ export function createMarkdownTracker(deps: MarkdownTrackerDeps): Tracker {
         // 本地目录扫描没有上限，一次就能看全。
         truncated: false,
         hierarchy: 'convention',
+        revision: null,
       }
     },
 

@@ -14,6 +14,7 @@ import {
   setupDom,
   teardownDom,
 } from './dom-test-support.ts'
+import { clearDetailCache } from './detail-cache.ts'
 import type { PromptCopy } from './injection.ts'
 import { TicketDetailView, type TicketDetailViewProps } from './ticket-detail-view.tsx'
 import {
@@ -68,6 +69,7 @@ function view(
       onBack={() => undefined}
       onOpenBlocker={() => undefined}
       onSnapshot={() => undefined}
+      baseline={null}
       onOpenEnvCheck={() => undefined}
       {...overrides}
     />
@@ -75,6 +77,7 @@ function view(
 }
 
 beforeEach(() => {
+  clearDetailCache()
   setupDom()
 })
 

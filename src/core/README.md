@@ -25,11 +25,13 @@ Ticket details:
   row), and accept only absolute http(s) avatar URLs, completing instance-relative paths against the
   backend-provided base. Lists and details share these rules. `readLogins` uses the same tolerance
   but reads logins only, for the assignees in list snapshots (no display names or avatars).
-- `snapshot-store.ts` is the entry model of the local snapshot store (format version 3): it keeps the
-  signed-in user `viewer`, each ticket's assignee logins `assignees`, the snapshot-level `hierarchy`
-  and the ticket-level `parent` and `url`. A version mismatch, a missing or mistyped field, or an
-  invalid enum voids the whole entry and the host refetches everything, so an old cache without
-  hierarchy fields is never taken as a complete tree.
+- `snapshot-store.ts` is the model of the local snapshot store (format version 4): meta keeps the
+  store revision, repository identity, source revision, ticket refs, tombstones and the overview
+  metrics computed at write time; each ticket has its own file with the signed-in user `viewer` and
+  assignee logins `assignees`. A version mismatch or a missing/mistyped meta field voids the whole
+  entry and the host refetches everything; `metrics` is the one exception — a malformed metrics blob
+  is dropped and recomputed on read while the ticket data stays usable. One unreadable ticket file
+  only makes that cache key look empty and never affects other workspaces.
 - `ticket-detail.ts` only performs pure computation and field validation: set differences
   (`diffSets` / `resolveTargetSet` / `planSetChange` / `isEmptyDiff`) and detail-field readers shared
   by the three remote backends (`readRequiredString`, `readNameList`, `sortCommentsByTime`,

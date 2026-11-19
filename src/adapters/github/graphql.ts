@@ -11,6 +11,7 @@ import {
   sortCommentsByTime,
 } from '../../core/ticket-detail.ts'
 import type {
+  SourceRevision,
   Ticket,
   TicketAuthor,
   TicketComment,
@@ -37,6 +38,8 @@ export interface ParsedIssues {
   readonly tickets: readonly Ticket[]
   /** 当前登录用户的登录名；响应里没有时为 null。 */
   readonly viewer: string | null
+  /** 这份列表对应的远端版本；响应里缺少可比较字段时为 null。 */
+  readonly revision: SourceRevision | null
   /** 还有下一页时给出的游标；缺省表示这一份已经覆盖全部。 */
   readonly nextCursor?: string
 }
@@ -53,6 +56,8 @@ export interface ParsedChanges {
   readonly total?: number
   /** 当前登录用户的登录名；响应里没有时为 null。 */
   readonly viewer: string | null
+  /** 增量查询拿到的远端版本；缺少 latest 连接时为 null。 */
+  readonly revision: SourceRevision | null
 }
 
 /**
@@ -78,9 +83,11 @@ export function parseIssueGraphql(output: string): ParsedIssues {
 
   const nextCursor = readNextCursor(issues)
   const viewer = readViewer(payload)
+  // 优先用 latest 子连接：翻到第二页时本页第一条不再是全仓最新更新时间。
+  const revision = readLatestRevision(repository) ?? revisionOf(total, nodes)
   return nextCursor === undefined
-    ? { total, tickets, viewer }
-    : { total, tickets, viewer, nextCursor }
+    ? { total, tickets, viewer, revision }
+    : { total, tickets, viewer, revision, nextCursor }
 }
 
 /**
@@ -108,8 +115,48 @@ export function parseIssueChangesGraphql(output: string): ParsedChanges {
     tickets,
     truncated: readHasNextPage(issues),
     viewer: readViewer(payload),
+    revision: readLatestRevision(repository),
     ...(total === undefined ? {} : { total }),
   }
+}
+
+/**
+ * 解析一次「只看远端版本」的极小查询。
+ *
+ * 查询与列表共用 `issues(first: 1, orderBy: UPDATED_AT DESC)` 的形状：
+ * 只取总数与最新更新时间，不取工单正文。
+ * @param output - `gh api graphql` 的标准输出。
+ * @returns 远端版本；响应里缺少可比较字段时为 null。
+ * @throws {TrackerError} 输出不是 JSON 或仓库不可见。
+ */
+export function parseGithubRevision(output: string): SourceRevision | null {
+  const payload = parseJson(output, 'gh 返回的不是有效 JSON')
+  const repository = readRepository(payload)
+  return readLatestRevision(repository)
+}
+
+/** 从 `latest` 别名连接读远端版本；没有这个连接时为 null。 */
+function readLatestRevision(repository: Record<string, unknown>): SourceRevision | null {
+  const latest = repository.latest
+  if (!isRecord(latest)) return null
+  const total = latest.totalCount
+  if (typeof total !== 'number' || !Number.isInteger(total) || total < 0) return null
+  const nodes = latest.nodes
+  if (!Array.isArray(nodes)) return null
+  return revisionOf(total, nodes)
+}
+
+/**
+ * 远端版本：总数 + 最新更新时间。总数变了（新增或删除）也一定变，
+ * 所以客户端带回的版本相等时可以安全跳过变更窗口。
+ */
+function revisionOf(total: number, nodes: readonly unknown[]): SourceRevision | null {
+  if (total === 0) return { id: '0:', total }
+  const first = nodes[0]
+  if (!isRecord(first)) return null
+  const updatedAt = first.updatedAt
+  if (typeof updatedAt !== 'string' || updatedAt.length === 0) return null
+  return { id: `${String(total)}:${updatedAt}`, total }
 }
 
 /**

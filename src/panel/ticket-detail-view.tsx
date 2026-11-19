@@ -19,11 +19,12 @@ import { backendLabel } from './backend-label.ts'
 import type {
   ErrorCode,
   RpcErrorBody,
+  SnapshotBaseline,
+  SnapshotRefreshResult,
   TicketDetail,
   TicketPatch,
   TicketSnapshot,
   TicketWorktreeResult,
-  WorkspaceSnapshot,
 } from '../protocol/tracker.ts'
 import { authorName, authorTitle } from './author-text.ts'
 import { errorText } from './error-text.ts'
@@ -119,7 +120,9 @@ export interface TicketDetailViewProps {
   /** 打开一条阻塞项：只导航，不复制提示词、不改筛选与排序。 */
   readonly onOpenBlocker: (ref: string) => void
   /** 详情刷新或写操作得到的新快照：写回面板，阻塞项与列表共用同一份。 */
-  readonly onSnapshot: (snapshot: WorkspaceSnapshot) => void
+  readonly onSnapshot: (result: SnapshotRefreshResult) => void
+  /** 当前列表快照的版本基线；没有快照时为 null。 */
+  readonly baseline: SnapshotBaseline | null
   /** 建 worktree 失败属于环境问题时，跳到环境检查。 */
   readonly onOpenEnvCheck: (code: ErrorCode) => void
 }
@@ -129,7 +132,13 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
   const t = useMessages()
   const { client, workspaceRoot } = props
   const { ref, number, ticket } = props.target
-  const request = useDetailRequest(client, workspaceRoot, ref, number)
+  const request = useDetailRequest(
+    client,
+    workspaceRoot,
+    ref,
+    number,
+    props.target.ticket?.updatedAt,
+  )
   const detail = request.detail
   // 技能徽标与阻塞项跟着面板快照走：关单/改标签/刷新落地后，父层会把同一行换进来。
   const blockers = blockerItems(ticket, props.snapshotTickets)
@@ -148,12 +157,14 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
     number,
     onUpdated: request.replace,
     onSnapshot: props.onSnapshot,
+    baseline: props.baseline,
   })
   const refresh = useDetailRefresh(
     client,
     { workspaceRoot, ref, number },
     request.replace,
     props.onSnapshot,
+    props.baseline,
   )
   const deletion = useTicketDeletion(client, {
     workspaceRoot,
@@ -161,6 +172,7 @@ export function TicketDetailView(props: TicketDetailViewProps): React.ReactEleme
     number,
     onSnapshot: props.onSnapshot,
     onDeleted: props.onBack,
+    baseline: props.baseline,
   })
   const options = useTicketOptions(client, workspaceRoot, detail?.capabilities.labels === true)
   const actions = useTicketActions(workspaceRoot, props.copy, client)

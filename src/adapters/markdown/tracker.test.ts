@@ -148,6 +148,7 @@ describe('本地 Markdown 工单后端', () => {
       tickets: [],
       viewer: null,
       hierarchy: 'convention',
+      revision: null,
     })
   })
 

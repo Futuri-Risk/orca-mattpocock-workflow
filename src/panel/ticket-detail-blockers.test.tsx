@@ -13,6 +13,7 @@ import {
   setupDom,
   teardownDom,
 } from './dom-test-support.ts'
+import { clearDetailCache } from './detail-cache.ts'
 import type { PromptCopy } from './injection.ts'
 import type { TicketDetailViewProps } from './ticket-detail-view.tsx'
 import { TicketDetailView } from './ticket-detail-view.tsx'
@@ -49,6 +50,7 @@ function view(overrides: Partial<TicketDetailViewProps> = {}): ReactElement {
       onBack={() => undefined}
       onOpenBlocker={() => undefined}
       onSnapshot={() => undefined}
+      baseline={null}
       onOpenEnvCheck={() => undefined}
       {...overrides}
     />
@@ -56,6 +58,7 @@ function view(overrides: Partial<TicketDetailViewProps> = {}): ReactElement {
 }
 
 beforeEach(() => {
+  clearDetailCache()
   setupDom()
 })
 

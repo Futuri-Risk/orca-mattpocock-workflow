@@ -21,6 +21,13 @@ export const ENV_SUMMARY_STYLE: CSSProperties = {
   whiteSpace: 'nowrap',
 }
 
+/** 检查时刻：与后端徽标同一行的小字，命中缓存时也要看得出结果有多旧。 */
+export const ENV_CHECKED_AT_STYLE: CSSProperties = {
+  color: COLORS.tertiary,
+  fontSize: 11,
+  whiteSpace: 'nowrap',
+}
+
 /** 与列表视图头部的后端徽标同一样式。 */
 export const ENV_BACKEND_STYLE: CSSProperties = BACKEND_BADGE_STYLE
 

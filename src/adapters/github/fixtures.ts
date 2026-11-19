@@ -143,6 +143,10 @@ export const GH_CHANGES_OUTPUT = JSON.stringify(
       repository: {
         nameWithOwner: 'cnzgray/dsh-mattpocock-workflow',
         repositoryTotal: { totalCount: 30 },
+        latest: {
+          totalCount: 30,
+          nodes: [{ updatedAt: '2027-01-01T00:00:00Z' }],
+        },
         issues: {
           pageInfo: { hasNextPage: false },
           nodes: [
@@ -190,6 +194,19 @@ export const GH_TRUNCATED_CHANGES_OUTPUT = JSON.stringify({
       issues: {
         pageInfo: { hasNextPage: true },
         nodes: [],
+      },
+    },
+  },
+})
+
+/** 只看远端版本的极小查询：总数与最新更新时间。 */
+export const GH_REVISION_OUTPUT = JSON.stringify({
+  data: {
+    repository: {
+      nameWithOwner: 'cnzgray/dsh-mattpocock-workflow',
+      latest: {
+        totalCount: 30,
+        nodes: [{ updatedAt: '2027-01-01T00:00:00Z' }],
       },
     },
   },

@@ -89,7 +89,7 @@ const ZH_CN = {
   'tickets.loadMoreHint': '继续加载后面的工单',
   'tickets.loadingMore': '加载中…',
   'tickets.loadMore': '加载更多',
-  'tickets.refreshFull': '全量刷新',
+  'tickets.refreshTitle': '刷新（Shift+点击：忽略本地缓存全量重拉）',
   'tickets.newFeature': '新建需求',
   'tickets.newFeatureHint': '把需求入池提示词复制到剪贴板',
   'tickets.newFeatureLabel': '新建需求：复制提示词',
@@ -240,6 +240,7 @@ const ZH_CN = {
 
   // ── 环境检查 ────────────────────────────────────────────────────────────
   'env.summary': '环境检查 {passed}/{total}',
+  'env.checkedAt': '检查于 {time}',
   'env.loading': '正在检查环境…',
   'env.noWorkspace':
     '当前会话没有工作区目录，无法检查环境。请在打开的工作区里重新打开面板。',
@@ -665,7 +666,7 @@ const EN = {
   'tickets.loadMoreHint': 'Load more tickets',
   'tickets.loadingMore': 'Loading…',
   'tickets.loadMore': 'Load more',
-  'tickets.refreshFull': 'Full refresh',
+  'tickets.refreshTitle': 'Refresh (Shift+click: refetch all, ignoring the local store)',
   'tickets.newFeature': 'New feature',
   'tickets.newFeatureHint': 'Copy the feature intake prompt to the clipboard',
   'tickets.newFeatureLabel': 'New feature: copy prompt',
@@ -817,6 +818,7 @@ const EN = {
   'age.month': '15–30 days',
   'age.older': 'Over 30 days',
   'env.summary': 'Environment check {passed}/{total}',
+  'env.checkedAt': 'Checked {time}',
   'env.loading': 'Checking environment…',
   'env.noWorkspace':
     'This session has no workspace folder, so the environment cannot be checked. Reopen the panel inside a workspace.',
@@ -1254,6 +1256,7 @@ export interface MessageParams {
     readonly percent: string
   }
   'env.summary': { readonly passed: number; readonly total: number }
+  'env.checkedAt': { readonly time: string }
   'env.title.backendWith': { readonly backend: string }
   'env.title.skill': { readonly skill: string }
   'env.blockedBecause': { readonly title: string }

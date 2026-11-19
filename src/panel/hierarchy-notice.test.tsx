@@ -37,6 +37,8 @@ function snapshot(overrides: Partial<WorkspaceSnapshot> = {}): WorkspaceSnapshot
     source: 'live',
     stale: false,
     refreshError: null,
+    revision: null,
+    storeRevision: 0,
     ...overrides,
   }
 }

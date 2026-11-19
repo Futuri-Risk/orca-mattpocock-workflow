@@ -6,13 +6,15 @@
 
 - `github/`：通过 `git` 与 `gh` 读取 `github.com` 仓库的 issue；
 - `gitlab/`：通过 `git` 与 `glab` 读取 GitLab issue；列表带 `blocking_issues_count` 时直接判定支持原生阻塞，原生阻塞数在 `resolveBlockers` 补齐阶段读取：否则按实例主机只探测一次，支持时用一次批量 GraphQL 取回阻塞数，失败或空数组时退回 `Blocked by:` 行；要求 `glab` >= 1.126，更早版本未验证；
-- `gitea/`：通过 `git` 与 `tea` 读取 Gitea issue 与原生 issue 依赖（只读 `tea api --include`）；
-  依赖功能关闭时退回 `Blocked by:` 行。宿主选择后端时探测 `tea logins list --output json`。
-  Gitea 没有原生子工单：父级来自子票正文第一个非空行单独写的 `Part of #编号`，
-  在已有列表响应里解析、不新增请求，父子能力为约定；
+- `gitea/`：通过 `git` 与 `tea` 读取 Gitea issue；列表阶段只按正文 `Blocked by:` 行回退，
+  原生 issue 依赖在 `resolveBlockers` 补齐阶段读取（只读 `tea api --include`，并发 8），
+  依赖功能关闭（404）时整组按没有原生依赖处理并保留正文回退。宿主选择后端时探测
+  `tea logins list --output json`。Gitea 没有原生子工单：父级来自子票正文第一个非空行单独写的
+  `Part of #编号`，在已有列表响应里解析、不新增请求，父子能力为约定；
 - `markdown/`：读取工作区里 `.scratch/<feature>/issues/*.md` 的本地工单；`env.ts` 供环境检查确认工单目录与文件可解析；
 - `fs/`：环境检查用的文件系统能力（解析用户主目录、判断文件是否存在）与本地快照库
-  （`~/.orca-mattpocock-workflow/cache`，主目录不可写时退回系统临时目录）；
+  （`~/.orca-mattpocock-workflow/cache`，主目录不可写时退回系统临时目录）；快照库按缓存键一个目录，
+  内含 meta、每票文件与变化日志，提交顺序与回退语义见 `docs/adr/0001-directory-snapshot-library.md`；
 - `github/`、`gitlab/`、`gitea/` 里的 `env.ts`：环境检查的命令行探测（CLI 是否安装、是否登录、仓库是否可达）；
   Gitea 的登录列表与仓库访问复用工单后端的调用方式与解析函数。
 
@@ -28,7 +30,7 @@
 
 - 列表分页：GitHub 一次取一页（GraphQL 的 `first` 上限 100），返回 `nextCursor`，
   宿主用 `snapshot.loadMore` 按游标追加；GitLab、Gitea 与本地 Markdown 一次取全，没有 `nextCursor`。
-  增量刷新保留已追加的窗口与游标（合并结果不裁剪）；「全量刷新」或「只加载了一部分却没有游标」的
+  增量刷新保留已追加的窗口与游标（合并结果不裁剪）；Shift+点击刷新（全量）或「只加载了一部分却没有游标」的
   旧缓存才回到第一页。
 - 列表里的人员信息：每张票带分配人登录名（`assignees`），快照带当前登录用户（`viewer`）。
   GitHub 在同一次 GraphQL 查询里取 `viewer.login` 与 `assignees(first: 10)`；GitLab / Gitea 的

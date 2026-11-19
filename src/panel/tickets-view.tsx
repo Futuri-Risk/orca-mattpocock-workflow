@@ -457,21 +457,18 @@ function Header(props: {
           data-testid="refresh"
           data-hover="soft"
           disabled={props.busy}
-          onClick={props.onRefresh}
+          title={t('tickets.refreshTitle')}
+          onClick={(event) => {
+            if (event.shiftKey) {
+              props.onRefreshFull()
+              return
+            }
+            props.onRefresh()
+          }}
           style={{ ...REFRESH_BUTTON_STYLE, opacity: props.busy ? 0.6 : 1 }}
         >
           <RefreshIcon />
           {props.busy ? t('common.refreshBusy') : t('common.refresh')}
-        </button>
-        <button
-          type="button"
-          data-testid="refresh-full"
-          data-hover="soft"
-          disabled={props.busy}
-          onClick={props.onRefreshFull}
-          style={{ ...SECONDARY_BUTTON_STYLE, opacity: props.busy ? 0.6 : 1 }}
-        >
-          {t('tickets.refreshFull')}
         </button>
       </div>
     </header>

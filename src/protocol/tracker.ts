@@ -248,8 +248,8 @@ export interface TicketSnapshot {
   readonly url?: string
 }
 
-/** 一个工作区的工单快照。 */
-export interface WorkspaceSnapshot {
+/** 整份快照与增量回包共用的元数据。 */
+export interface SnapshotMeta {
   /** 本快照来自哪个后端。 */
   readonly backend: BackendKind
   /**
@@ -275,7 +275,6 @@ export interface WorkspaceSnapshot {
    * 一次取全的后端始终为 false。
    */
   readonly hasMore: boolean
-  readonly tickets: readonly TicketSnapshot[]
   /**
    * 本次快照的父子能力来源。为 `none` 时面板禁用父子布局并说明原因；
    * 父子关系只用于布局，不参与判定、统计或指标。
@@ -301,7 +300,61 @@ export interface WorkspaceSnapshot {
   readonly stale: boolean
   /** 最近一次刷新失败的原因；没有失败时为 null。 */
   readonly refreshError: RpcErrorBody | null
+  /**
+   * 远端版本号：后端为当前仓库工单状态给出的可比较标识，刷新时作为 `ifRevision` 带回。
+   * 本地 Markdown 或后端给不出时为 null，此时刷新退回全量。
+   */
+  readonly revision: string | null
+  /**
+   * 本地快照库的提交序号：客户端刷新时带回它，宿主据此只回变化行与墓碑。
+   * 没有本地库时为 0。
+   */
+  readonly storeRevision: number
 }
+
+/** 一个工作区的工单快照。 */
+export interface WorkspaceSnapshot extends SnapshotMeta {
+  readonly tickets: readonly TicketSnapshot[]
+}
+
+/** 刷新时带回的基线：远端版本与本地库版本。 */
+export interface SnapshotBaseline {
+  readonly ifRevision?: string
+  readonly storeRevision?: number
+}
+
+/**
+ * not-modified 回包：远端版本没变，列表一行不动，只带回核对时刻。
+ * 客户端据此清掉「数据可能不是最新的」与本地缓存徽标。
+ */
+export interface SnapshotNotModified {
+  readonly kind: 'not-modified'
+  readonly revision: string | null
+  readonly storeRevision: number
+  /** 这次核对远端的时刻；界面把数据时间推进到它。 */
+  readonly fetchedAt: number
+}
+
+/**
+ * 增量回包：只带变化的行与墓碑，客户端把它合并进当前列表。
+ * 回包与整份快照同源：指标与计数仍由宿主在服务端算好。
+ */
+export interface SnapshotDelta extends SnapshotMeta {
+  readonly kind: 'delta'
+  /** 变化或新增的行；未提到的行保持原样。 */
+  readonly changed: readonly TicketSnapshot[]
+  /** 远端或本地已不存在的行。 */
+  readonly removed: readonly string[]
+}
+
+/** 整份快照回包：首次拉取、全量刷新或变化集不可用时使用。 */
+export interface SnapshotFull {
+  readonly kind: 'snapshot'
+  readonly snapshot: WorkspaceSnapshot
+}
+
+/** `snapshot.refresh` 的结果：整份、增量或 not-modified。 */
+export type SnapshotRefreshResult = SnapshotFull | SnapshotDelta | SnapshotNotModified
 
 /** 快照读取方法共用的参数。 */
 export interface SnapshotParams {
@@ -310,7 +363,7 @@ export interface SnapshotParams {
 }
 
 /** 刷新快照的参数。 */
-export interface SnapshotRefreshParams extends SnapshotParams {
+export interface SnapshotRefreshParams extends SnapshotParams, SnapshotBaseline {
   /**
    * 为 true 时忽略本地快照库，重新全量拉一次。
    * 缺省时能用增量就增量，缓存不可信时由界面显式要求全量。

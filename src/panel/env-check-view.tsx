@@ -19,6 +19,7 @@ import {
   ENV_BODY_STYLE,
   ENV_CARD_HIGHLIGHT_STYLE,
   ENV_CARD_STYLE,
+  ENV_CHECKED_AT_STYLE,
   ENV_DETAIL_STYLE,
   ENV_HEADER_STYLE,
   ENV_HIGHLIGHT_STYLE,
@@ -113,6 +114,13 @@ export function EnvCheckView(props: EnvCheckViewProps): React.ReactElement {
             total: report?.items.length ?? 0,
           })}
         </span>
+        {report === null ? null : (
+          <span data-testid="env-checked-at" style={ENV_CHECKED_AT_STYLE}>
+            {t('env.checkedAt', {
+              time: formatRelativeTime(report.checkedAt, Date.now(), t),
+            })}
+          </span>
+        )}
         <span data-testid="env-backend" style={ENV_BACKEND_STYLE}>
           {envBackendLabel(report?.backend ?? null, t)}
         </span>
@@ -313,7 +321,7 @@ function useEnvCheckRequest(client: PanelClient, workspaceRoot: string | undefin
 
       setPhase(keepResult ? 'refreshing' : 'loading')
       setError(null)
-      const result = await client.envCheck(workspaceRoot)
+      const result = await client.envCheck(workspaceRoot, keepResult ? { force: true } : undefined)
       if (current !== sequence.current) return
 
       if (result.ok) {

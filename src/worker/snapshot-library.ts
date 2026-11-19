@@ -14,8 +14,12 @@ import { isRecord } from '../core/json.ts'
 import { computeMetrics } from '../core/metrics.ts'
 import type { RepositoryAddress } from '../core/remote.ts'
 import { scopedKeysOf } from '../core/repository-scope.ts'
-import { withSkillActions } from '../core/skill-action.ts'
-import { SNAPSHOT_STORE_VERSION, type SnapshotStoreEntry } from '../core/snapshot-store.ts'
+import { withSkillActions, type SkillActionDecision } from '../core/skill-action.ts'
+import {
+  SNAPSHOT_STORE_VERSION,
+  type SnapshotStoreEntry,
+  type SnapshotStoreInput,
+} from '../core/snapshot-store.ts'
 import type {
   BlockerResolution,
   TicketLabelNames,
@@ -31,6 +35,7 @@ import {
   type RpcResult,
   type SnapshotCacheInfo,
   type SnapshotMetrics,
+  type TicketSnapshot,
   type WorkspaceSnapshot,
 } from '../protocol/tracker.ts'
 import type { ResolvedBackend } from './backend-resolver.ts'
@@ -64,6 +69,11 @@ export interface CachedWorkspace {
   snapshot: WorkspaceSnapshot
   /** 原生阻塞补齐能力；null 表示后端不实现，列表阶段已经定稿。 */
   readonly resolver: BlockerResolver | null
+  /**
+   * 这一代快照需要补齐的开放票引用；null 表示全部开放票。
+   * 增量刷新只补变更过的开放票，刷新成本才不随开放票总数增长。
+   */
+  readonly blockerTargets: readonly string[] | null
   pending: Promise<RpcResult<WorkspaceSnapshot>> | null
 }
 
@@ -160,6 +170,8 @@ export async function removeStored(deps: SnapshotLibraryDeps, key: string): Prom
  * @param workspaceRoot - 这次拉取所在的工作区根目录。
  * @param resolved - 解析出的后端。
  * @param raw - 后端返回的原始列表。
+ * @param metrics - 与列表同源算好的概览指标。
+ * @returns 新的本地库版本；没有库或写入失败时是 undefined。
  */
 export async function writeStored(
   deps: SnapshotLibraryDeps,
@@ -167,10 +179,11 @@ export async function writeStored(
   workspaceRoot: string,
   resolved: ResolvedBackend,
   raw: TrackerSnapshot,
-): Promise<void> {
+  metrics: SnapshotMetrics,
+): Promise<number | undefined> {
   const store = deps.store
-  if (store === undefined) return
-  const entry: SnapshotStoreEntry = {
+  if (store === undefined) return undefined
+  const entry: SnapshotStoreInput = {
     version: SNAPSHOT_STORE_VERSION,
     scopeRoot,
     workspaceRoot,
@@ -180,14 +193,15 @@ export async function writeStored(
     repositoryHost: resolved.kind === 'markdown' ? null : (resolved.address?.host ?? null),
     fetchedAt: raw.fetchedAt,
     viewer: raw.viewer,
-    loaded: raw.tickets.length,
     total: raw.total,
     ...(raw.nextCursor === undefined ? {} : { nextCursor: raw.nextCursor }),
     tickets: raw.tickets,
     hierarchy: raw.hierarchy,
+    revision: raw.revision,
+    metrics,
   }
   try {
-    await store.write(entry)
+    return await store.write(entry)
   } catch (error) {
     // 缓存写不进去不影响本次读取：面板照常有数据，只是下次没有缓存可用。
     deps.log('warn', LOG_EVENTS.snapshot, {
@@ -197,6 +211,7 @@ export async function writeStored(
       code: ERROR_CODES.internal,
       ...(error instanceof Error ? { reason: error.message } : {}),
     })
+    return undefined
   }
 }
 
@@ -217,7 +232,8 @@ export function buildStoredSnapshot(
 ): WorkspaceSnapshot {
   const raw = rawOf(stored)
   const tickets = withSkillActions(classifyTickets(raw.tickets, deps.labels), deps.labels)
-  const metrics = metricsOf(deps, stored.backend, raw, tickets, false)
+  // 写入时已从同一份票数据算好指标；只有写操作清空过它时才重算。
+  const metrics = stored.metrics ?? metricsOf(deps, stored.backend, raw, tickets, false)
   return {
     backend: stored.backend,
     repository: raw.repository,
@@ -233,27 +249,41 @@ export function buildStoredSnapshot(
     source: 'cache',
     stale: state.stale,
     refreshError: state.refreshError,
-    tickets: tickets.map((ticket) => ({
-      ref: ticket.ref,
-      number: ticket.number,
-      title: ticket.title,
-      state: ticket.state,
-      category: ticket.category,
-      status: ticket.status,
-      labels: ticket.labels,
-      author: ticket.author,
-      assignees: ticket.assignees,
-      skillAction: ticket.skillAction,
-      skillActionReason: ticket.skillActionReason,
-      createdAt: ticket.createdAt,
-      updatedAt: ticket.updatedAt,
-      openBlockers: ticket.openBlockers,
-      ...(ticket.closedAt === undefined ? {} : { closedAt: ticket.closedAt }),
-      ...(ticket.blockedBy === undefined ? {} : { blockedBy: ticket.blockedBy }),
-      ...(ticket.parent === undefined ? {} : { parent: ticket.parent }),
-      ...(ticket.url === undefined ? {} : { url: ticket.url }),
-    })),
+    revision: stored.revision?.id ?? null,
+    storeRevision: stored.storeRevision,
+    tickets: ticketSnapshotsOf(tickets),
   }
+}
+
+/**
+ * 把判定后的票映射成界面快照行。
+ * 整份快照与增量回包共用这一份，字段不会在两条路径上分叉。
+ * @param tickets - 已判定技能动作的票。
+ * @returns 快照行。
+ */
+export function ticketSnapshotsOf(
+  tickets: readonly (ClassifiedTicket & SkillActionDecision)[],
+): readonly TicketSnapshot[] {
+  return tickets.map((ticket) => ({
+    ref: ticket.ref,
+    number: ticket.number,
+    title: ticket.title,
+    state: ticket.state,
+    category: ticket.category,
+    status: ticket.status,
+    labels: ticket.labels,
+    author: ticket.author,
+    assignees: ticket.assignees,
+    skillAction: ticket.skillAction,
+    skillActionReason: ticket.skillActionReason,
+    createdAt: ticket.createdAt,
+    updatedAt: ticket.updatedAt,
+    openBlockers: ticket.openBlockers,
+    ...(ticket.closedAt === undefined ? {} : { closedAt: ticket.closedAt }),
+    ...(ticket.blockedBy === undefined ? {} : { blockedBy: ticket.blockedBy }),
+    ...(ticket.parent === undefined ? {} : { parent: ticket.parent }),
+    ...(ticket.url === undefined ? {} : { url: ticket.url }),
+  }))
 }
 
 /**
@@ -277,6 +307,8 @@ export function storedEntry(
     raw: rawOf(stored),
     snapshot,
     resolver: resolved?.tracker.resolveBlockers ?? null,
+    // 从库里恢复时不知道上次增量只补了哪些票：按全部开放票补齐。
+    blockerTargets: null,
     pending: null,
   }
 }
@@ -370,6 +402,7 @@ function rawOf(stored: SnapshotStoreEntry): TrackerSnapshot {
     tickets: stored.tickets,
     viewer: stored.viewer,
     hierarchy: stored.hierarchy,
+    revision: stored.revision,
     ...(stored.nextCursor === undefined ? {} : { nextCursor: stored.nextCursor }),
   }
 }

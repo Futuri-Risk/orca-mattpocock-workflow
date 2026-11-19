@@ -134,6 +134,11 @@ export interface EnvCheckReport {
 export interface EnvCheckParams {
   /** 当前工作区根目录。 */
   readonly workspaceRoot: string
+  /**
+   * 为 true 时绕过成功缓存与失败退避，立即重新探测。
+   * 用户手动点「重新检查」时用它；自动打开视图不传，由退避挡掉探测风暴。
+   */
+  readonly force?: boolean
 }
 
 /**

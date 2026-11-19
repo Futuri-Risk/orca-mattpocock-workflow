@@ -11,17 +11,21 @@ Adapters for external systems, one subdirectory per backend:
   instance host and, when supported, fetches blocking counts with one batch GraphQL query; on failure
   or an empty array it falls back to `Blocked by:` lines. Requires `glab` >= 1.126; earlier versions
   are untested.
-- `gitea/`: reads Gitea issues and native issue dependencies through `git` and `tea` (read-only
-  `tea api --include`); falls back to `Blocked by:` lines when the dependency feature is off. When
-  the host selects the backend it probes `tea logins list --output json`. Gitea has no native
-  sub-issues: the parent comes from a standalone `Part of #number` on the first non-empty line of the
-  child body, parsed from the list response with no extra request, and the capability is `convention`.
+- `gitea/`: reads Gitea issues through `git` and `tea`. The list phase only falls back to
+  `Blocked by:` lines; native issue dependencies are read in the `resolveBlockers` completion phase
+  (read-only `tea api --include`, concurrency 8). A 404 from the dependency API makes the whole batch
+  count as "no native dependencies" while the description fallback stays. When the host selects the
+  backend it probes `tea logins list --output json`. Gitea has no native sub-issues: the parent comes
+  from a standalone `Part of #number` on the first non-empty line of the child body, parsed from the
+  list response with no extra request, and the capability is `convention`.
 - `markdown/`: reads local tickets from `.scratch/<feature>/issues/*.md` in the workspace; `env.ts`
   lets the environment check confirm that the ticket directory and files can be parsed.
 - `fs/`: filesystem capabilities for the environment check (resolving the user's home directory,
   testing whether a file exists) and the local snapshot store
   (`~/.orca-mattpocock-workflow/cache`, falling back to the system temporary directory when the home
-  directory is not writable).
+  directory is not writable). The store keeps one directory per cache key with meta, one file per
+  ticket and a change log; commit order and fallback semantics are in
+  `docs/adr/0001-directory-snapshot-library.md`.
 - `env.ts` in `github/`, `gitlab/` and `gitea/`: CLI probes for the environment check (is the CLI
   installed, is it logged in, is the repository reachable). Gitea's login list and repository access
   reuse the ticket backend's calls and parsers.
@@ -40,8 +44,9 @@ They share repository detection, command execution and error mapping in `shared.
 - List pagination: GitHub fetches one page at a time (GraphQL `first` is capped at 100) and returns
   `nextCursor`; the host appends by cursor with `snapshot.loadMore`. GitLab, Gitea and local Markdown
   fetch everything at once and have no `nextCursor`. Incremental refreshes keep the appended window
-  and cursor (the merged result is not trimmed); only a full refresh, or an old cache that loaded
-  only part of the list without a cursor, goes back to the first page.
+  and cursor (the merged result is not trimmed); only a full refresh (Shift+click the refresh
+  button), or an old cache that loaded only part of the list without a cursor, goes back to the
+  first page.
 - People in the list: every ticket carries assignee logins (`assignees`), and the snapshot carries the
   signed-in user (`viewer`). GitHub fetches `viewer.login` and `assignees(first: 10)` in the same
   GraphQL query; GitLab / Gitea list responses already carry assignees, plus one `glab api user` /

@@ -84,9 +84,10 @@ worker 侧的 `workspace.readContext` 会带工作区 id（与 `workspace.list` 
 取 `viewer.login` 与 `assignees[].login`，GitLab / Gitea 的列表响应自带分配人、另发一次身份查询。
 本地 Markdown 没有创建人与分配人，因此不显示人员筛选行。
 
-本地快照库（`~/.orca-mattpocock-workflow/cache/`）保存当前用户与每张票的分配人；
-格式版本已升到 3，旧版本条目按没有缓存处理，升级后第一次打开会全量重拉一次。
-身份查询临时失败时沿用同一仓库上一次已知的身份，人员筛选不会因为一次抖动整行消失。
+本地快照库（`~/.orca-mattpocock-workflow/cache/`）按缓存键一个目录：写入时保存当前用户与每张票的
+分配人，提交顺序是「票文件 → 变化日志 → meta」。格式版本已升到 4，旧版本条目按没有缓存处理，
+升级后第一次打开会全量重拉一次。身份查询临时失败时沿用同一仓库上一次已知的身份，人员筛选不会
+因为一次抖动整行消失。
 
 远端后端的列表快照还带每张票的页面地址：GitHub 取 GraphQL 的 `url`，GitLab 取 `web_url`，
 Gitea 取 `html_url`，由后端原样给出，面板不拼地址（自建实例装在子路径下也不会拼错）。

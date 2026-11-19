@@ -19371,15 +19371,15 @@
         function getHydratableHoistableCache(type, keyAttribute, ownerDocument) {
           if (null === tagCaches) {
             var cache = /* @__PURE__ */ new Map();
-            var caches = tagCaches = /* @__PURE__ */ new Map();
-            caches.set(ownerDocument, cache);
+            var caches2 = tagCaches = /* @__PURE__ */ new Map();
+            caches2.set(ownerDocument, cache);
           } else
-            caches = tagCaches, cache = caches.get(ownerDocument), cache || (cache = /* @__PURE__ */ new Map(), caches.set(ownerDocument, cache));
+            caches2 = tagCaches, cache = caches2.get(ownerDocument), cache || (cache = /* @__PURE__ */ new Map(), caches2.set(ownerDocument, cache));
           if (cache.has(type)) return cache;
           cache.set(type, null);
           ownerDocument = ownerDocument.getElementsByTagName(type);
-          for (caches = 0; caches < ownerDocument.length; caches++) {
-            var node = ownerDocument[caches];
+          for (caches2 = 0; caches2 < ownerDocument.length; caches2++) {
+            var node = ownerDocument[caches2];
             if (!(node[internalHoistableMarker] || node[internalInstanceKey] || "link" === type && "stylesheet" === node.getAttribute("rel")) && node.namespaceURI !== SVG_NAMESPACE) {
               var nodeKey = node.getAttribute(keyAttribute) || "";
               nodeKey = type + nodeKey;
@@ -24019,7 +24019,7 @@
     "tickets.loadMoreHint": "\u7EE7\u7EED\u52A0\u8F7D\u540E\u9762\u7684\u5DE5\u5355",
     "tickets.loadingMore": "\u52A0\u8F7D\u4E2D\u2026",
     "tickets.loadMore": "\u52A0\u8F7D\u66F4\u591A",
-    "tickets.refreshFull": "\u5168\u91CF\u5237\u65B0",
+    "tickets.refreshTitle": "\u5237\u65B0\uFF08Shift+\u70B9\u51FB\uFF1A\u5FFD\u7565\u672C\u5730\u7F13\u5B58\u5168\u91CF\u91CD\u62C9\uFF09",
     "tickets.newFeature": "\u65B0\u5EFA\u9700\u6C42",
     "tickets.newFeatureHint": "\u628A\u9700\u6C42\u5165\u6C60\u63D0\u793A\u8BCD\u590D\u5236\u5230\u526A\u8D34\u677F",
     "tickets.newFeatureLabel": "\u65B0\u5EFA\u9700\u6C42\uFF1A\u590D\u5236\u63D0\u793A\u8BCD",
@@ -24162,6 +24162,7 @@
     "age.older": "\u8D85\u8FC7 30 \u5929",
     // ── 环境检查 ────────────────────────────────────────────────────────────
     "env.summary": "\u73AF\u5883\u68C0\u67E5 {passed}/{total}",
+    "env.checkedAt": "\u68C0\u67E5\u4E8E {time}",
     "env.loading": "\u6B63\u5728\u68C0\u67E5\u73AF\u5883\u2026",
     "env.noWorkspace": "\u5F53\u524D\u4F1A\u8BDD\u6CA1\u6709\u5DE5\u4F5C\u533A\u76EE\u5F55\uFF0C\u65E0\u6CD5\u68C0\u67E5\u73AF\u5883\u3002\u8BF7\u5728\u6253\u5F00\u7684\u5DE5\u4F5C\u533A\u91CC\u91CD\u65B0\u6253\u5F00\u9762\u677F\u3002",
     "env.title.home": "\u7528\u6237\u4E3B\u76EE\u5F55\u53EF\u89E3\u6790",
@@ -24550,7 +24551,7 @@
     "tickets.loadMoreHint": "Load more tickets",
     "tickets.loadingMore": "Loading\u2026",
     "tickets.loadMore": "Load more",
-    "tickets.refreshFull": "Full refresh",
+    "tickets.refreshTitle": "Refresh (Shift+click: refetch all, ignoring the local store)",
     "tickets.newFeature": "New feature",
     "tickets.newFeatureHint": "Copy the feature intake prompt to the clipboard",
     "tickets.newFeatureLabel": "New feature: copy prompt",
@@ -24689,6 +24690,7 @@
     "age.month": "15\u201330 days",
     "age.older": "Over 30 days",
     "env.summary": "Environment check {passed}/{total}",
+    "env.checkedAt": "Checked {time}",
     "env.loading": "Checking environment\u2026",
     "env.noWorkspace": "This session has no workspace folder, so the environment cannot be checked. Reopen the panel inside a workspace.",
     "env.title.home": "Home directory resolves",
@@ -25317,8 +25319,13 @@
     return {
       get: (workspaceRoot) => call(request, RPC_METHODS.snapshotGet, { workspaceRoot }, isSnapshotResult),
       refresh: (workspaceRoot, options) => {
-        const params = options?.full === true ? { workspaceRoot, full: true } : { workspaceRoot };
-        return call(request, RPC_METHODS.snapshotRefresh, params, isSnapshotResult);
+        const params = {
+          workspaceRoot,
+          ...options?.full === true ? { full: true } : {},
+          ...options?.ifRevision === void 0 ? {} : { ifRevision: options.ifRevision },
+          ...options?.storeRevision === void 0 ? {} : { storeRevision: options.storeRevision }
+        };
+        return call(request, RPC_METHODS.snapshotRefresh, params, isSnapshotRefreshResult);
       },
       loadMore: (workspaceRoot) => call(request, RPC_METHODS.snapshotLoadMore, { workspaceRoot }, isSnapshotResult),
       cache: (workspaceRoot, options) => {
@@ -25326,7 +25333,12 @@
         return call(request, RPC_METHODS.snapshotCache, params, isSnapshotCacheResult);
       },
       resolveBlockers: (workspaceRoot) => call(request, RPC_METHODS.snapshotResolveBlockers, { workspaceRoot }, isSnapshotResult),
-      envCheck: (workspaceRoot) => call(request, RPC_METHODS.envCheck, { workspaceRoot }, isEnvCheckResult),
+      envCheck: (workspaceRoot, options) => call(
+        request,
+        RPC_METHODS.envCheck,
+        options?.force === true ? { workspaceRoot, force: true } : { workspaceRoot },
+        isEnvCheckResult
+      ),
       getDetail: (workspaceRoot, ref, number) => call(request, RPC_METHODS.ticketGet, { workspaceRoot, ref, number }, isTicketDetailResult),
       updateTicket: (workspaceRoot, ref, number, patch) => call(
         request,
@@ -25402,6 +25414,51 @@
   function isSnapshotResult(value) {
     return isRpcResult(value, isWorkspaceSnapshot);
   }
+  function isSnapshotRefreshResult(value) {
+    return isRpcResult(value, isRefreshPayload);
+  }
+  function isRefreshPayload(value) {
+    if (typeof value !== "object" || value === null) return false;
+    if (!("kind" in value)) return false;
+    if (value.kind === "snapshot") {
+      return "snapshot" in value && isWorkspaceSnapshot(value.snapshot);
+    }
+    if (value.kind === "not-modified") {
+      return "revision" in value && (value.revision === null || typeof value.revision === "string") && "storeRevision" in value && typeof value.storeRevision === "number" && "fetchedAt" in value && typeof value.fetchedAt === "number";
+    }
+    if (value.kind !== "delta") return false;
+    return isDeltaPayload(value);
+  }
+  function isDeltaPayload(value) {
+    if (!("backend" in value) || typeof value.backend !== "string") return false;
+    if (!("repository" in value) || typeof value.repository !== "string") return false;
+    if (!("repositoryHost" in value)) return false;
+    if (value.repositoryHost !== null && typeof value.repositoryHost !== "string") return false;
+    if (!("revision" in value)) return false;
+    if (value.revision !== null && typeof value.revision !== "string") return false;
+    if (!("storeRevision" in value) || typeof value.storeRevision !== "number") return false;
+    if (!("fetchedAt" in value) || typeof value.fetchedAt !== "number") return false;
+    if (!("loaded" in value) || typeof value.loaded !== "number") return false;
+    if (!("total" in value) || typeof value.total !== "number") return false;
+    if (!("hasMore" in value) || typeof value.hasMore !== "boolean") return false;
+    if (!("viewer" in value)) return false;
+    if (value.viewer !== null && (typeof value.viewer !== "string" || value.viewer.length === 0)) {
+      return false;
+    }
+    if (!("hierarchy" in value) || typeof value.hierarchy !== "string") return false;
+    if (!("metrics" in value) || typeof value.metrics !== "object" || value.metrics === null) {
+      return false;
+    }
+    if (!("blockersFinalized" in value) || typeof value.blockersFinalized !== "boolean") return false;
+    if (!("source" in value) || !(value.source === "live" || value.source === "cache")) return false;
+    if (!("stale" in value) || typeof value.stale !== "boolean") return false;
+    if (!("refreshError" in value)) return false;
+    if (value.refreshError !== null && !isRpcErrorBody(value.refreshError)) return false;
+    if (!("changed" in value) || !Array.isArray(value.changed)) return false;
+    if (!value.changed.every(hasTicketFields)) return false;
+    if (!("removed" in value) || !Array.isArray(value.removed)) return false;
+    return value.removed.every((ref) => typeof ref === "string" && ref.length > 0);
+  }
   function isWorkspaceSnapshot(value) {
     if (typeof value !== "object" || value === null) return false;
     if (!("backend" in value) || typeof value.backend !== "string") return false;
@@ -25426,6 +25483,9 @@
     if (!("stale" in value) || typeof value.stale !== "boolean") return false;
     if (!("refreshError" in value)) return false;
     if (value.refreshError !== null && !isRpcErrorBody(value.refreshError)) return false;
+    if (!("revision" in value)) return false;
+    if (value.revision !== null && typeof value.revision !== "string") return false;
+    if (!("storeRevision" in value) || typeof value.storeRevision !== "number") return false;
     return true;
   }
   function parseWorkspaceCandidatesEvent(payload) {
@@ -26322,6 +26382,11 @@ ${MARKDOWN_SHEET}
     fontWeight: 600,
     whiteSpace: "nowrap"
   };
+  var ENV_CHECKED_AT_STYLE = {
+    color: COLORS.tertiary,
+    fontSize: 11,
+    whiteSpace: "nowrap"
+  };
   var ENV_BACKEND_STYLE = BACKEND_BADGE_STYLE;
   var ENV_BODY_STYLE = {
     display: "flex",
@@ -27096,6 +27161,9 @@ ${MARKDOWN_SHEET}
               passed: report?.items.filter((item) => item.status === "pass").length ?? 0,
               total: report?.items.length ?? 0
             }) }),
+            report === null ? null : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { "data-testid": "env-checked-at", style: ENV_CHECKED_AT_STYLE, children: t("env.checkedAt", {
+              time: formatRelativeTime(report.checkedAt, Date.now(), t)
+            }) }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { "data-testid": "env-backend", style: ENV_BACKEND_STYLE, children: envBackendLabel(report?.backend ?? null, t) }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
               "button",
@@ -27239,7 +27307,7 @@ ${MARKDOWN_SHEET}
         }
         setPhase(keepResult ? "refreshing" : "loading");
         setError(null);
-        const result = await client2.envCheck(workspaceRoot);
+        const result = await client2.envCheck(workspaceRoot, keepResult ? { force: true } : void 0);
         if (current !== sequence.current) return;
         if (result.ok) {
           setReport(result.result);
@@ -29605,21 +29673,89 @@ ${MARKDOWN_SHEET}
     if (snapshot?.stale === true) return t("error.staleData");
     return null;
   }
+  function applySnapshotDelta(current, delta) {
+    const removed = new Set(delta.removed);
+    const changed = new Map(delta.changed.map((ticket) => [ticket.ref, ticket]));
+    const tickets = current.tickets.flatMap((ticket) => {
+      if (removed.has(ticket.ref)) return [];
+      return [changed.get(ticket.ref) ?? ticket];
+    });
+    const present = new Set(tickets.map((ticket) => ticket.ref));
+    for (const ticket of delta.changed) {
+      if (present.has(ticket.ref)) continue;
+      tickets.push(ticket);
+      present.add(ticket.ref);
+    }
+    return {
+      backend: delta.backend,
+      repository: delta.repository,
+      repositoryHost: delta.repositoryHost,
+      fetchedAt: delta.fetchedAt,
+      viewer: delta.viewer,
+      loaded: delta.loaded,
+      total: delta.total,
+      hasMore: delta.hasMore,
+      hierarchy: delta.hierarchy,
+      metrics: delta.metrics,
+      blockersFinalized: delta.blockersFinalized,
+      source: delta.source,
+      stale: delta.stale,
+      refreshError: delta.refreshError,
+      revision: delta.revision,
+      storeRevision: delta.storeRevision,
+      tickets
+    };
+  }
+  function applyRefreshResult(current, result) {
+    if (result.kind === "snapshot") return result.snapshot;
+    if (result.kind === "not-modified") {
+      if (current === null) return null;
+      return {
+        ...current,
+        source: "live",
+        stale: false,
+        refreshError: null,
+        fetchedAt: result.fetchedAt,
+        revision: result.revision ?? current.revision,
+        storeRevision: result.storeRevision
+      };
+    }
+    return current === null ? null : applySnapshotDelta(current, result);
+  }
+  function snapshotBaselineOf(snapshot) {
+    if (snapshot === null) return null;
+    const hasRevision = snapshot.revision !== null;
+    const hasStore = snapshot.storeRevision > 0;
+    if (!hasRevision && !hasStore) return null;
+    return {
+      ...snapshot.revision === null ? {} : { ifRevision: snapshot.revision },
+      ...hasStore ? { storeRevision: snapshot.storeRevision } : {}
+    };
+  }
   function useSnapshotRequest(client2, workspaceRoot, reloadToken = 0) {
-    const { snapshot, error, refreshError, phase, appending, load, apply, append } = useSnapshotLoader(client2, workspaceRoot);
+    const {
+      snapshot,
+      error,
+      refreshError,
+      phase,
+      appending,
+      load,
+      applyRefresh,
+      append
+    } = useSnapshotLoader(client2, workspaceRoot);
     const autoRefreshed = React13.useRef(false);
     const run = React13.useCallback(
       async (mode) => {
         const applied = await load(mode);
-        if (applied === null) return;
-        if (applied.source === "live") {
+        if (applied === null || applied.snapshot === null) return;
+        if (applied.settled) {
           autoRefreshed.current = false;
           return;
         }
         if (autoRefreshed.current) return;
         autoRefreshed.current = true;
         const refreshed = await load("refresh");
-        if (refreshed !== null && refreshed.source === "live") autoRefreshed.current = false;
+        if (refreshed !== null && refreshed.settled) autoRefreshed.current = false;
       },
       [load]
     );
@@ -29646,7 +29782,7 @@ ${MARKDOWN_SHEET}
       phase,
       refresh,
       refreshFull,
-      apply,
+      applyRefresh,
       appending,
       loadMore
     };
@@ -29659,25 +29795,40 @@ ${MARKDOWN_SHEET}
     const [phase, setPhase] = React13.useState("loading");
     const [appending, setAppending] = React13.useState(false);
     const sequence = React13.useRef(0);
+    const current = React13.useRef(null);
     const hasData = React13.useRef(false);
     const workspace = React13.useRef(workspaceRoot);
     workspace.current = workspaceRoot;
     const appendingRef = React13.useRef(false);
+    const commit = React13.useCallback((next) => {
+      current.current = next;
+      hasData.current = true;
+      setSnapshot(next);
+      setError(null);
+      setRefreshError(null);
+      setPhase("ready");
+    }, []);
     const load = React13.useCallback(
       async (mode) => {
-        const current = sequence.current + 1;
-        sequence.current = current;
+        const request = sequence.current + 1;
+        sequence.current = request;
         if (workspaceRoot === void 0) {
-          setSnapshot(null);
+          current.current = null;
           hasData.current = false;
+          setSnapshot(null);
           setError({ code: "invalid-params", message: t("error.noWorkspaceTickets") });
           setPhase("error");
           return null;
         }
         setPhase(mode === "get" ? "loading" : "refreshing");
         setError(null);
-        const result = mode === "get" ? await client2.get(workspaceRoot) : await client2.refresh(workspaceRoot, { full: mode === "refresh-full" });
-        if (current !== sequence.current) return null;
+        const baseline = snapshotBaselineOf(current.current);
+        const options = {
+          ...mode === "refresh-full" ? { full: true } : {},
+          ...baseline ?? {}
+        };
+        const result = mode === "get" ? await client2.get(workspaceRoot) : Object.keys(options).length === 0 ? await client2.refresh(workspaceRoot) : await client2.refresh(workspaceRoot, options);
+        if (request !== sequence.current) return null;
         if (!result.ok) {
           if (mode === "get" || !hasData.current) {
             setError(result.error);
@@ -29686,31 +29837,41 @@ ${MARKDOWN_SHEET}
           }
           setRefreshError(result.error);
           setPhase("ready");
-          return null;
+          return { snapshot: current.current, settled: false };
         }
-        setSnapshot(result.result);
-        hasData.current = true;
-        setError(null);
-        setRefreshError(null);
-        setPhase("ready");
-        let applied = result.result;
+        const isRefresh = "kind" in result.result;
+        const next = isRefresh ? applyRefreshResult(current.current, result.result) : result.result;
+        if (next === null) {
+          const full = await client2.get(workspaceRoot);
+          if (request !== sequence.current) return null;
+          if (!full.ok) {
+            setError(full.error);
+            setPhase("error");
+            return null;
+          }
+          commit(full.result);
+          return { snapshot: full.result, settled: true };
+        }
+        commit(next);
+        let applied = next;
         if (!applied.blockersFinalized) {
           const finalized = await client2.resolveBlockers(workspaceRoot);
-          if (current !== sequence.current) return null;
+          if (request !== sequence.current) return null;
           if (finalized.ok) {
-            setSnapshot(finalized.result);
+            commit(finalized.result);
             applied = finalized.result;
           }
         }
-        return applied;
+        return { snapshot: applied, settled: mode !== "get" || applied.source === "live" };
       },
-      [client2, workspaceRoot, t]
+      [client2, commit, workspaceRoot, t]
     );
     React13.useEffect(() => {
+      current.current = null;
+      hasData.current = false;
       setSnapshot(null);
       setError(null);
       setRefreshError(null);
-      hasData.current = false;
     }, [workspaceRoot]);
     const append = React13.useCallback(async () => {
       if (appendingRef.current || workspaceRoot === void 0) return;
@@ -29724,34 +29885,44 @@ ${MARKDOWN_SHEET}
           if (hasData.current) setRefreshError(result.error);
           return;
         }
-        setSnapshot(result.result);
-        hasData.current = true;
-        setRefreshError(null);
-        setPhase("ready");
+        commit(result.result);
       } finally {
         appendingRef.current = false;
         setAppending(false);
       }
-    }, [client2, workspaceRoot]);
-    const apply = React13.useCallback(
-      (applied) => {
-        if (workspaceRoot === void 0 || workspace.current !== workspaceRoot) return;
-        const started = sequence.current;
-        setSnapshot(applied);
-        hasData.current = true;
-        setError(null);
-        setRefreshError(null);
-        setPhase("ready");
-        if (applied.blockersFinalized) return;
+    }, [client2, commit, workspaceRoot]);
+    const applyBlockersLater = React13.useCallback(
+      (applied, started = sequence.current) => {
+        if (applied.blockersFinalized || workspaceRoot === void 0) return;
         void client2.resolveBlockers(workspaceRoot).then((finalized) => {
           if (!finalized.ok) return;
           if (workspace.current !== workspaceRoot || sequence.current !== started) return;
-          setSnapshot(finalized.result);
+          commit(finalized.result);
         });
       },
-      [client2, workspaceRoot]
+      [client2, commit, workspaceRoot]
     );
-    return { snapshot, error, refreshError, phase, appending, load, apply, append };
+    const applyRefresh = React13.useCallback(
+      (result) => {
+        if (workspaceRoot === void 0 || workspace.current !== workspaceRoot) return;
+        const started = sequence.current;
+        const next = applyRefreshResult(current.current, result);
+        if (next === null) return;
+        commit(next);
+        applyBlockersLater(next, started);
+      },
+      [applyBlockersLater, commit, workspaceRoot]
+    );
+    return {
+      snapshot,
+      error,
+      refreshError,
+      phase,
+      appending,
+      load,
+      applyRefresh,
+      append
+    };
   }
 
   // src/panel/overview-view.tsx
@@ -31570,30 +31741,83 @@ ${MARKDOWN_SHEET}
 
   // src/panel/ticket-detail-hooks.ts
   var React21 = __toESM(require_react(), 1);
-  function useDetailRequest(client2, workspaceRoot, ref, number) {
+
+  // src/panel/detail-cache.ts
+  var DETAIL_CACHE_PER_WORKSPACE = 100;
+  var DETAIL_CACHE_WORKSPACES = 5;
+  function detailCacheDecision(hit, currentUpdatedAt) {
+    if (hit !== null && currentUpdatedAt !== void 0 && hit.updatedAt === currentUpdatedAt) {
+      return "hit";
+    }
+    return hit !== null ? "stale" : "miss";
+  }
+  var caches = /* @__PURE__ */ new Map();
+  function readDetailCache(workspaceRoot, ref) {
+    return caches.get(workspaceRoot)?.get(ref) ?? null;
+  }
+  function writeDetailCache(workspaceRoot, detail) {
+    let cache = caches.get(workspaceRoot);
+    if (cache === void 0) {
+      while (caches.size >= DETAIL_CACHE_WORKSPACES) {
+        const oldest = caches.keys().next().value;
+        if (oldest === void 0) break;
+        caches.delete(oldest);
+      }
+      cache = /* @__PURE__ */ new Map();
+      caches.set(workspaceRoot, cache);
+    }
+    cache.delete(detail.ref);
+    cache.set(detail.ref, { detail, updatedAt: detail.updatedAt });
+    while (cache.size > DETAIL_CACHE_PER_WORKSPACE) {
+      const oldest = cache.keys().next().value;
+      if (oldest === void 0) break;
+      cache.delete(oldest);
+    }
+  }
+
+  // src/panel/ticket-detail-hooks.ts
+  function useDetailRequest(client2, workspaceRoot, ref, number, currentUpdatedAt) {
     const [detail, setDetail] = React21.useState(null);
     const [error, setError] = React21.useState(null);
     const [phase, setPhase] = React21.useState("loading");
     const [attempt, setAttempt] = React21.useState(0);
+    const readId = React21.useRef(0);
     React21.useEffect(() => {
-      let active = true;
-      setDetail(null);
+      const current = readId.current + 1;
+      readId.current = current;
       setError(null);
-      setPhase("loading");
+      const hit = readDetailCache(workspaceRoot, ref);
+      const decision = detailCacheDecision(hit, currentUpdatedAt);
+      if (decision === "hit" && hit !== null) {
+        setDetail(hit.detail);
+        setPhase("ready");
+        return () => {
+          readId.current += 1;
+        };
+      }
+      if (decision === "stale" && hit !== null) {
+        setDetail(hit.detail);
+        setPhase("ready");
+      } else {
+        setDetail(null);
+        setPhase("loading");
+      }
       void client2.getDetail(workspaceRoot, ref, number).then((result) => {
-        if (!active) return;
+        if (readId.current !== current) return;
         if (result.ok) {
+          writeDetailCache(workspaceRoot, result.result);
           setDetail(result.result);
           setPhase("ready");
           return;
         }
+        if (decision === "stale") return;
         setError(result.error);
         setPhase("error");
       });
       return () => {
-        active = false;
+        readId.current += 1;
       };
-    }, [client2, workspaceRoot, ref, number, attempt]);
+    }, [client2, workspaceRoot, ref, number, currentUpdatedAt, attempt]);
     return {
       detail,
       error,
@@ -31601,22 +31825,38 @@ ${MARKDOWN_SHEET}
       reload: () => {
         setAttempt((value) => value + 1);
       },
-      replace: setDetail
+      replace: (next) => {
+        writeDetailCache(workspaceRoot, next);
+        setDetail(next);
+        setError(null);
+        setPhase("ready");
+      }
     };
   }
-  function refreshTicket(client2, target, hooks) {
+  function refreshOptionsOf(baseline) {
+    if (baseline === null) return void 0;
+    const options = {};
+    if (baseline.ifRevision !== void 0) options.ifRevision = baseline.ifRevision;
+    if (baseline.storeRevision !== void 0) options.storeRevision = baseline.storeRevision;
+    return Object.keys(options).length === 0 ? void 0 : options;
+  }
+  function refreshWithBaseline(client2, workspaceRoot, baseline) {
+    const options = refreshOptionsOf(baseline);
+    return options === void 0 ? client2.refresh(workspaceRoot) : client2.refresh(workspaceRoot, options);
+  }
+  function refreshTicket(client2, target, hooks, baseline = null) {
     const detail = client2.getDetail(target.workspaceRoot, target.ref, target.number).then((result) => {
       if (!hooks.isCurrent()) return;
       if (result.ok) hooks.onDetail(result.result);
       else hooks.onError(result.error);
     });
-    const snapshot = client2.refresh(target.workspaceRoot).then((result) => {
+    const snapshot = refreshWithBaseline(client2, target.workspaceRoot, baseline).then((result) => {
       if (!hooks.isCurrent() || !result.ok) return;
       hooks.onSnapshot(result.result);
     });
     return Promise.all([detail, snapshot]).then(() => void 0);
   }
-  function useDetailRefresh(client2, target, onDetail, onSnapshot) {
+  function useDetailRefresh(client2, target, onDetail, onSnapshot, baseline) {
     const [refreshing, setRefreshing] = React21.useState(false);
     const [error, setError] = React21.useState(null);
     const running = React21.useRef(false);
@@ -31641,15 +31881,20 @@ ${String(target.number)}`;
       setRefreshing(true);
       const started = key;
       const isCurrent = () => mounted.current && latest.current === started;
-      void refreshTicket(client2, target, {
-        isCurrent,
-        onDetail: (detail) => {
-          setError(null);
-          onDetail(detail);
+      void refreshTicket(
+        client2,
+        target,
+        {
+          isCurrent,
+          onDetail: (detail) => {
+            setError(null);
+            onDetail(detail);
+          },
+          onSnapshot,
+          onError: setError
         },
-        onSnapshot,
-        onError: setError
-      }).finally(() => {
+        baseline
+      ).finally(() => {
         running.current = false;
         if (mounted.current) setRefreshing(false);
       });
@@ -31679,7 +31924,7 @@ ${String(target.number)}`;
           }
           const [fresh, snapshot] = await Promise.all([
             client2.getDetail(options.workspaceRoot, options.ref, options.number),
-            client2.refresh(options.workspaceRoot)
+            refreshWithBaseline(client2, options.workspaceRoot, options.baseline)
           ]);
           if (snapshot.ok) options.onSnapshot(snapshot.result);
           if (!fresh.ok) {
@@ -31779,7 +32024,11 @@ ${String(target.number)}`;
           setDeleting(false);
           return;
         }
-        const snapshot = await client2.refresh(target.workspaceRoot);
+        const snapshot = await refreshWithBaseline(
+          client2,
+          target.workspaceRoot,
+          target.baseline
+        );
         if (snapshot.ok) target.onSnapshot(snapshot.result);
         target.onDeleted();
       })();
@@ -32493,7 +32742,13 @@ ${String(target.number)}`;
     const t = useMessages();
     const { client: client2, workspaceRoot } = props;
     const { ref, number, ticket } = props.target;
-    const request = useDetailRequest(client2, workspaceRoot, ref, number);
+    const request = useDetailRequest(
+      client2,
+      workspaceRoot,
+      ref,
+      number,
+      props.target.ticket?.updatedAt
+    );
     const detail = request.detail;
     const blockers = blockerItems(ticket, props.snapshotTickets);
     const canExpandBlockers = ticket !== null && ticket.skillActionReason === "blocked" && blockers.length > 0;
@@ -32507,20 +32762,23 @@ ${String(target.number)}`;
       ref,
       number,
       onUpdated: request.replace,
-      onSnapshot: props.onSnapshot
+      onSnapshot: props.onSnapshot,
+      baseline: props.baseline
     });
     const refresh = useDetailRefresh(
       client2,
       { workspaceRoot, ref, number },
       request.replace,
-      props.onSnapshot
+      props.onSnapshot,
+      props.baseline
     );
     const deletion = useTicketDeletion(client2, {
       workspaceRoot,
       ref,
       number,
       onSnapshot: props.onSnapshot,
-      onDeleted: props.onBack
+      onDeleted: props.onBack,
+      baseline: props.baseline
     });
     const options = useTicketOptions(client2, workspaceRoot, detail?.capabilities.labels === true);
     const actions = useTicketActions(workspaceRoot, props.copy, client2);
@@ -33914,24 +34172,19 @@ ${String(target.number)}`;
             "data-testid": "refresh",
             "data-hover": "soft",
             disabled: props.busy,
-            onClick: props.onRefresh,
+            title: t("tickets.refreshTitle"),
+            onClick: (event) => {
+              if (event.shiftKey) {
+                props.onRefreshFull();
+                return;
+              }
+              props.onRefresh();
+            },
             style: { ...REFRESH_BUTTON_STYLE, opacity: props.busy ? 0.6 : 1 },
             children: [
               /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(RefreshIcon, {}),
               props.busy ? t("common.refreshBusy") : t("common.refresh")
             ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
-          "button",
-          {
-            type: "button",
-            "data-testid": "refresh-full",
-            "data-hover": "soft",
-            disabled: props.busy,
-            onClick: props.onRefreshFull,
-            style: { ...SECONDARY_BUTTON_STYLE, opacity: props.busy ? 0.6 : 1 },
-            children: t("tickets.refreshFull")
           }
         )
       ] })
@@ -34364,7 +34617,8 @@ ${String(target.number)}`;
           backRef: props.backRef,
           onBack: props.onBackDetail,
           onOpenBlocker: props.onOpenBlocker,
-          onSnapshot: props.request.apply,
+          onSnapshot: props.request.applyRefresh,
+          baseline: snapshotBaselineOf(snapshot),
           onOpenEnvCheck: props.onOpenEnvCheck
         },
         open.target.ref

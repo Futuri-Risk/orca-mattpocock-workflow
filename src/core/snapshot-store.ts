@@ -1,18 +1,37 @@
 /**
- * 本地快照库的条目模型：缓存文件里存什么、怎么校验。
+ * 本地快照库的条目模型：目录里的 meta、每票文件与变化集该长什么样。
  *
- * 一个仓库一条记录：同一仓库的多个 worktree 共享同一份工单状态，记录里的
- * `workspaceRoot` 表示这份数据是在哪个工作区拉到的（本地 Markdown 的缓存键）。
+ * 一个缓存键一个目录：meta 是提交点，票文件只存后端原始数据，变化集从追加日志派生。
+ * meta 里的 `storeRevision` 是单调递增的提交序号；`revision` 是远端的版本号，
+ * 两者回答不同的问题（本地库里有什么 / 远端变了吗），不能混用。
  *
- * 纯逻辑：core 不做 IO。文件读写在 adapters/fs，条目能不能用在这里判定——
- * 格式版本不符或内容损坏时按「没有缓存」处理，不让一次坏文件卡住面板。
+ * 纯逻辑：core 不做 IO。目录读写在 adapters/fs，内容能不能用在这里判定——
+ * 格式版本不符或单个文件损坏时按「没有缓存」处理，不让一次坏文件卡住面板，
+ * 也不影响其它工作区的缓存。
  */
 import type { BackendKind } from '../protocol/backend.ts'
+import type {
+  AttentionItem,
+  MetricGap,
+  MetricValue,
+  PressureDimension,
+  PressureDimensionReport,
+  PressureMetric,
+  PressureReport,
+  PressureTier,
+  SnapshotMetrics,
+} from '../protocol/tracker.ts'
 import { isRecord } from './json.ts'
-import type { Ticket, TicketAuthor, TicketHierarchy, TicketState } from './ticket.ts'
+import type {
+  SourceRevision,
+  Ticket,
+  TicketAuthor,
+  TicketHierarchy,
+  TicketState,
+} from './ticket.ts'
 
 /** 本地快照库的格式版本。版本不符的条目一律按没有缓存处理。 */
-export const SNAPSHOT_STORE_VERSION = 3
+export const SNAPSHOT_STORE_VERSION = 4
 
 /** 缓存文件里存的后端类型。 */
 const BACKENDS: readonly BackendKind[] = ['github', 'gitlab', 'gitea', 'markdown']
@@ -56,70 +75,145 @@ export interface SnapshotStoreEntry {
   readonly tickets: readonly Ticket[]
   /** 这份快照的父子能力来源；与工单的 `parent` 一起进出缓存。 */
   readonly hierarchy: TicketHierarchy
+  /** 远端版本号；本地 Markdown 或后端给不出时为 null。 */
+  readonly revision: SourceRevision | null
+  /** 本地库的提交序号；没有本地库时为 0。 */
+  readonly storeRevision: number
+  /**
+   * 写入时从同一份票数据算好的概览指标；读侧直接使用，不再重算。
+   * 写操作改票后清空，下一次刷新写回。
+   */
+  readonly metrics?: SnapshotMetrics
 }
 
 /**
- * 把条目序列化成缓存文件的内容。
- * @param entry - 要保存的条目。
+ * 写入用的条目：库版本与已加载数由存储层在提交时决定，
+ * 调用方给不了也不该给，避免出现「传了却被忽略」的字段。
+ */
+export type SnapshotStoreInput = Omit<SnapshotStoreEntry, 'loaded' | 'storeRevision'>
+
+/** meta 文件的内容：条目的全部字段，票数据换成引用列表。 */
+export interface SnapshotStoreMeta {
+  readonly version: number
+  readonly storeRevision: number
+  readonly scopeRoot: string
+  readonly workspaceRoot: string
+  readonly backend: BackendKind
+  readonly repository: string
+  readonly repositoryKey: string
+  readonly repositoryHost: string | null
+  readonly fetchedAt: number
+  readonly viewer: string | null
+  readonly total: number
+  readonly nextCursor?: string
+  readonly hierarchy: TicketHierarchy
+  readonly revision: SourceRevision | null
+  /** 当前提交里的票引用，顺序就是列表顺序。 */
+  readonly ticketRefs: readonly string[]
+  /** 这张表里当前被确认不存在的票引用。票重新出现时由写入路径清掉。 */
+  readonly tombstones: readonly string[]
+  /** 写入时算好的概览指标；读侧零计算。 */
+  readonly metrics?: SnapshotMetrics
+}
+
+/**
+ * 按版本区间读到的变化集。
+ *
+ * `tickets` 只包含最终状态是「存在」的变更票，`removed` 只包含最终状态是「不存在」
+ * 的墓碑；同一张票在区间里先删后加只出现在 `tickets`，先加后删只出现在 `removed`。
+ */
+export interface SnapshotStoreChangeSet {
+  readonly fromRevision: number
+  readonly revision: number
+  readonly tickets: readonly Ticket[]
+  readonly removed: readonly string[]
+}
+
+/**
+ * 把 meta 序列化成目录里的 meta 文件。
+ * @param meta - 要保存的 meta。
  * @returns JSON 文本。
  */
-export function serializeSnapshotStoreEntry(entry: SnapshotStoreEntry): string {
+export function serializeSnapshotStoreMeta(meta: SnapshotStoreMeta): string {
   return JSON.stringify({
-    version: entry.version,
-    scopeRoot: entry.scopeRoot,
-    workspaceRoot: entry.workspaceRoot,
-    backend: entry.backend,
-    repository: entry.repository,
-    repositoryKey: entry.repositoryKey,
-    repositoryHost: entry.repositoryHost,
-    fetchedAt: entry.fetchedAt,
-    viewer: entry.viewer,
-    loaded: entry.loaded,
-    total: entry.total,
-    ...(entry.nextCursor === undefined ? {} : { nextCursor: entry.nextCursor }),
-    tickets: entry.tickets,
-    hierarchy: entry.hierarchy,
+    version: meta.version,
+    storeRevision: meta.storeRevision,
+    scopeRoot: meta.scopeRoot,
+    workspaceRoot: meta.workspaceRoot,
+    backend: meta.backend,
+    repository: meta.repository,
+    repositoryKey: meta.repositoryKey,
+    repositoryHost: meta.repositoryHost,
+    fetchedAt: meta.fetchedAt,
+    viewer: meta.viewer,
+    total: meta.total,
+    ...(meta.nextCursor === undefined ? {} : { nextCursor: meta.nextCursor }),
+    hierarchy: meta.hierarchy,
+    revision: meta.revision,
+    ticketRefs: meta.ticketRefs,
+    tombstones: meta.tombstones,
+    ...(meta.metrics === undefined ? {} : { metrics: meta.metrics }),
   })
 }
 
 /**
- * 解析缓存文件的内容。
+ * 解析 meta 文件。
  * @param raw - 文件里的 JSON 文本。
- * @returns 可用的条目；格式版本不符或内容损坏时返回 undefined。
+ * @returns 可用的 meta；格式版本不符或内容损坏时返回 undefined。
  */
-export function parseSnapshotStoreEntry(raw: string): SnapshotStoreEntry | undefined {
+export function parseSnapshotStoreMeta(raw: string): SnapshotStoreMeta | undefined {
   let payload: unknown
   try {
     payload = JSON.parse(raw)
   } catch {
     return undefined
   }
-  return readEntry(payload)
+  return readMeta(payload)
 }
 
 /**
- * 校验一份已解析的 JSON。
- * @param value - 解析后的内容。
- * @returns 可用的条目；任何一项不合要求都返回 undefined。
+ * 把一张票序列化成票文件。
+ * @param ticket - 要保存的票。
+ * @returns JSON 文本。
  */
-function readEntry(value: unknown): SnapshotStoreEntry | undefined {
+export function serializeSnapshotTicket(ticket: Ticket): string {
+  return JSON.stringify(ticket)
+}
+
+/**
+ * 解析一张票文件。
+ * @param raw - 文件里的 JSON 文本。
+ * @returns 可用的票；内容损坏时返回 undefined。
+ */
+export function parseSnapshotTicket(raw: string): Ticket | undefined {
+  let payload: unknown
+  try {
+    payload = JSON.parse(raw)
+  } catch {
+    return undefined
+  }
+  return readTicket(payload)
+}
+
+/** 校验一份已解析的 meta。 */
+function readMeta(value: unknown): SnapshotStoreMeta | undefined {
   if (!isRecord(value)) return undefined
   if (value.version !== SNAPSHOT_STORE_VERSION) return undefined
 
+  const storeRevision = readCount(value.storeRevision)
   const workspaceRoot = readString(value.workspaceRoot)
   const scopeRoot = readString(value.scopeRoot)
   const repository = readString(value.repository)
   const repositoryKey = readString(value.repositoryKey)
   const fetchedAt = readNumber(value.fetchedAt)
-  const loaded = readNumber(value.loaded)
   const total = readNumber(value.total)
   if (
+    storeRevision === undefined ||
     workspaceRoot === undefined ||
     scopeRoot === undefined ||
     repository === undefined ||
     repositoryKey === undefined ||
     fetchedAt === undefined ||
-    loaded === undefined ||
     total === undefined
   ) {
     return undefined
@@ -141,16 +235,23 @@ function readEntry(value: unknown): SnapshotStoreEntry | undefined {
     return undefined
   }
 
-  const tickets = readTickets(value.tickets)
-  if (tickets === undefined) return undefined
-
   const hierarchy = value.hierarchy
   if (typeof hierarchy !== 'string' || !HIERARCHIES.includes(hierarchy as TicketHierarchy)) {
     return undefined
   }
 
+  const revision = readSourceRevision(value.revision)
+  if (revision === undefined) return undefined
+
+  const ticketRefs = readStringArray(value.ticketRefs)
+  const tombstones = readStringArray(value.tombstones)
+  if (ticketRefs === undefined || tombstones === undefined) return undefined
+  // 指标损坏时只丢指标，读侧退回重算；票数据仍然可用。
+  const metrics = readMetrics(value.metrics)
+
   return {
     version: SNAPSHOT_STORE_VERSION,
+    storeRevision,
     scopeRoot,
     workspaceRoot,
     backend: backend as BackendKind,
@@ -159,24 +260,198 @@ function readEntry(value: unknown): SnapshotStoreEntry | undefined {
     repositoryHost: repositoryHost ?? null,
     fetchedAt,
     viewer,
-    loaded,
     total,
     ...(nextCursor === undefined ? {} : { nextCursor }),
-    tickets,
     hierarchy: hierarchy as TicketHierarchy,
+    revision,
+    ticketRefs,
+    tombstones,
+    ...(metrics === undefined ? {} : { metrics }),
   }
 }
 
-/** 校验工单数组；任何一张票不合法就整份作废。 */
-function readTickets(value: unknown): readonly Ticket[] | undefined {
-  if (!Array.isArray(value)) return undefined
-  const tickets: Ticket[] = []
-  for (const item of value) {
-    const ticket = readTicket(item)
-    if (ticket === undefined) return undefined
-    tickets.push(ticket)
+/** 校验写入时算好的概览指标；形状不对时当作没有，读侧重算。 */
+function readMetrics(value: unknown): SnapshotMetrics | undefined {
+  if (!isRecord(value)) return undefined
+  const counts = ['openBacklog', 'readyCapacity', 'blockedRatio', 'needsTriage', 'stalled'] as const
+  for (const key of counts) {
+    if (typeof value[key] !== 'number') return undefined
   }
-  return tickets
+
+  const metricKeys = [
+    'staleCount',
+    'staleRatio',
+    'oldestUpdateDays',
+    'longestBlockerChain',
+    'openedLast30Days',
+    'closedLast30Days',
+    'netFlow',
+  ] as const
+  const metrics: Partial<Record<(typeof metricKeys)[number], MetricValue>> = {}
+  for (const key of metricKeys) {
+    const metric = readMetricValue(value[key])
+    if (metric === undefined) return undefined
+    metrics[key] = metric
+  }
+
+  const coverage = value.coverage
+  if (!isRecord(coverage) || typeof coverage.truncated !== 'boolean') return undefined
+  const pressure = readPressure(value.pressure)
+  if (pressure === undefined) return undefined
+  const attention = readAttention(value.attention)
+  if (attention === undefined) return undefined
+
+  return {
+    openBacklog: value.openBacklog as number,
+    readyCapacity: value.readyCapacity as number,
+    blockedRatio: value.blockedRatio as number,
+    needsTriage: value.needsTriage as number,
+    stalled: value.stalled as number,
+    staleCount: metrics.staleCount as MetricValue,
+    staleRatio: metrics.staleRatio as MetricValue,
+    oldestUpdateDays: metrics.oldestUpdateDays as MetricValue,
+    longestBlockerChain: metrics.longestBlockerChain as MetricValue,
+    openedLast30Days: metrics.openedLast30Days as MetricValue,
+    closedLast30Days: metrics.closedLast30Days as MetricValue,
+    netFlow: metrics.netFlow as MetricValue,
+    coverage: { truncated: coverage.truncated },
+    pressure,
+    attention,
+  }
+}
+
+const GAPS: readonly MetricGap[] = ['no-timestamps', 'no-closed-time', 'no-dependency-edges']
+
+function readMetricValue(value: unknown): MetricValue | undefined {
+  if (!isRecord(value)) return undefined
+  const metric = value.value
+  if (metric !== null && typeof metric !== 'number') return undefined
+  const gap = value.gap
+  if (gap !== null && (typeof gap !== 'string' || !GAPS.includes(gap as MetricGap))) {
+    return undefined
+  }
+  return { value: metric, gap: gap as MetricGap | null }
+}
+
+const TIERS: readonly PressureTier[] = ['light', 'normal', 'tight']
+const DIMENSIONS: readonly PressureDimension[] = ['scale', 'blocking', 'freshness']
+const PRESSURE_METRICS: readonly PressureMetric[] = [
+  'backlog',
+  'netFlow',
+  'blockedRatio',
+  'staleRatio',
+  'stalled',
+]
+
+function readPressure(value: unknown): PressureReport | undefined {
+  if (!isRecord(value)) return undefined
+  const tier = readTier(value.tier)
+  if (tier === undefined || !Array.isArray(value.dimensions)) return undefined
+  const dimensions: PressureDimensionReport[] = []
+  for (const item of value.dimensions) {
+    const dimension = readPressureDimension(item)
+    if (dimension === undefined) return undefined
+    dimensions.push(dimension)
+  }
+  return { tier, dimensions }
+}
+
+function readTier(value: unknown): PressureTier | undefined {
+  if (typeof value !== 'string' || !TIERS.includes(value as PressureTier)) return undefined
+  return value as PressureTier
+}
+
+function readPressureDimension(value: unknown): PressureDimensionReport | undefined {
+  if (!isRecord(value)) return undefined
+  const dimension = value.dimension
+  if (
+    typeof dimension !== 'string' ||
+    !DIMENSIONS.includes(dimension as PressureDimension)
+  ) {
+    return undefined
+  }
+  const tier = value.tier === null ? null : readTier(value.tier)
+  if (tier === undefined) return undefined
+  if (!Array.isArray(value.signals) || !Array.isArray(value.triggers) || !Array.isArray(value.gaps)) {
+    return undefined
+  }
+  if (typeof value.provisional !== 'boolean') return undefined
+
+  const signals = value.signals.map(readSignal)
+  if (signals.some((signal) => signal === undefined)) return undefined
+  const triggers = value.triggers.map(readPressureMetric)
+  if (triggers.some((trigger) => trigger === undefined)) return undefined
+  const gaps = value.gaps.map(readGap)
+  if (gaps.some((gap) => gap === undefined)) return undefined
+
+  return {
+    dimension: dimension as PressureDimension,
+    tier,
+    signals: signals as { readonly metric: PressureMetric; readonly value: number }[],
+    triggers: triggers as PressureMetric[],
+    gaps: gaps as MetricGap[],
+    provisional: value.provisional,
+  }
+}
+
+function readSignal(
+  value: unknown,
+): { readonly metric: PressureMetric; readonly value: number } | undefined {
+  if (!isRecord(value) || typeof value.value !== 'number') return undefined
+  const metric = readPressureMetric(value.metric)
+  return metric === undefined ? undefined : { metric, value: value.value }
+}
+
+function readPressureMetric(value: unknown): PressureMetric | undefined {
+  if (typeof value !== 'string' || !PRESSURE_METRICS.includes(value as PressureMetric)) {
+    return undefined
+  }
+  return value as PressureMetric
+}
+
+function readGap(value: unknown): MetricGap | undefined {
+  if (typeof value !== 'string' || !GAPS.includes(value as MetricGap)) return undefined
+  return value as MetricGap
+}
+
+const ATTENTION_REASONS: readonly AttentionItem['reason'][] = [
+  'untriaged-bug',
+  'stale',
+  'most-blocking',
+  'oldest-stalled',
+]
+
+function readAttention(value: unknown): readonly AttentionItem[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const items: AttentionItem[] = []
+  for (const item of value) {
+    if (!isRecord(item)) return undefined
+    const ref = readString(item.ref)
+    const title = readString(item.title)
+    const reason = item.reason
+    if (
+      ref === undefined ||
+      title === undefined ||
+      typeof reason !== 'string' ||
+      !ATTENTION_REASONS.includes(reason as AttentionItem['reason'])
+    ) {
+      return undefined
+    }
+    const evidence = item.evidence
+    if (evidence !== null && typeof evidence !== 'number') return undefined
+    items.push({ ref, title, reason: reason as AttentionItem['reason'], evidence })
+  }
+  return items
+}
+
+/** 校验远端版本；null 合法，字段损坏时 undefined。 */
+function readSourceRevision(value: unknown): SourceRevision | null | undefined {
+  if (value === null) return null
+  if (!isRecord(value)) return undefined
+  const id = readString(value.id)
+  const total = readCount(value.total)
+  if (id === undefined || total === undefined) return undefined
+  return { id, total }
 }
 
 /** 校验一张票。 */
@@ -296,6 +571,12 @@ function readString(value: unknown): string | undefined {
 /** 读一个有限数字。 */
 function readNumber(value: unknown): number | undefined {
   if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
+  return value
+}
+
+/** 读一个非负整数。 */
+function readCount(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) return undefined
   return value
 }
 

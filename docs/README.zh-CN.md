@@ -26,6 +26,7 @@
 | 核心逻辑 | [src/core](../src/core/README.md) | [src/core](../src/core/README.zh-CN.md) |
 | 面板 | [src/panel](../src/panel/README.md) | [src/panel](../src/panel/README.zh-CN.md) |
 | 协议 | [src/protocol](../src/protocol/README.md) | [src/protocol](../src/protocol/README.zh-CN.md) |
+| 快照库决策 | [ADR 0001](adr/0001-directory-snapshot-library.md) | [ADR 0001](adr/0001-directory-snapshot-library.zh-CN.md) |
 | 技能 | [skills](../skills/README.md) | [skills](../skills/README.zh-CN.md) |
 
 代理运行文档（只有中文）：

@@ -103,11 +103,12 @@ GitHub fetches `viewer.login` and `assignees[].login` in the same GraphQL query;
 responses already carry assignees, plus one separate identity lookup. Local Markdown has no creators
 or assignees, so the people-filter row is not shown.
 
-The local snapshot store (`~/.orca-mattpocock-workflow/cache/`) keeps the signed-in user and each
-ticket's assignees. Its format version is now 3; entries of older versions are treated as no cache,
-so the first open after upgrading does one full refetch. When the identity lookup fails
-transiently, the last known identity for the same repository is kept, so one hiccup does not make
-the people-filter row disappear.
+The local snapshot store (`~/.orca-mattpocock-workflow/cache/`) keeps one directory per cache key:
+each write stores the signed-in user and each ticket's assignees, committing in the order
+"ticket files → change log → meta". Its format version is now 4; entries of older versions are
+treated as no cache, so the first open after upgrading does one full refetch. When the identity
+lookup fails transiently, the last known identity for the same repository is kept, so one hiccup
+does not make the people-filter row disappear.
 
 Remote backends also include each ticket's page URL in the list snapshot: GitHub takes the GraphQL
 `url`, GitLab takes `web_url`, and Gitea takes `html_url`. The backend supplies it verbatim so the

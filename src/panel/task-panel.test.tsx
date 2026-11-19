@@ -6,8 +6,8 @@ import { MESSAGES } from '../protocol/i18n.ts'
 import {
   TICKET_DELETE_CONFIRMATION,
   type RpcResult,
+  type SnapshotRefreshResult,
   type TicketDetail,
-  type WorkspaceSnapshot,
 } from '../protocol/tracker.ts'
 import {
   click,
@@ -19,10 +19,12 @@ import {
   setupDom,
   teardownDom,
 } from './dom-test-support.ts'
+import { clearDetailCache } from './detail-cache.ts'
 import type { PromptCopy } from './injection.ts'
 import { TaskPanel } from './task-panel.tsx'
 import {
   deferred,
+  full,
   makeDetail,
   makeSnapshot,
   makeTicket,
@@ -72,6 +74,7 @@ async function typeInto(input: HTMLInputElement, value: string): Promise<void> {
 }
 
 beforeEach(() => {
+  clearDetailCache()
   setupDom()
 })
 
@@ -93,7 +96,7 @@ describe('任务面板的详情刷新', () => {
     )
     const getDetail = vi.fn<PanelClient['getDetail']>(async () => ok(makeDetail()))
     const refresh = vi.fn<PanelClient['refresh']>(async () =>
-      ok(makeSnapshot({ tickets: [closed] })),
+      ok(full(makeSnapshot({ tickets: [closed] }))),
     )
     await render(
       <TaskPanel client={clientWith({ get, getDetail, refresh })} workspaceRoot="/a" copy={COPY} />,
@@ -113,7 +116,7 @@ describe('任务面板的详情刷新', () => {
 
   it('切换工作区后，旧工作区还在路上的刷新结果不写进新工作区', async () => {
     const staleDetail = deferred<RpcResult<TicketDetail>>()
-    const staleSnapshot = deferred<RpcResult<WorkspaceSnapshot>>()
+    const staleSnapshot = deferred<RpcResult<SnapshotRefreshResult>>()
     const snapshotA = makeSnapshot({ tickets: [makeTicket({ title: 'A 票' })] })
     const snapshotB = makeSnapshot({
       repository: 'acme/other',
@@ -140,7 +143,7 @@ describe('任务面板的详情刷新', () => {
 
     await settleWith(() => {
       staleDetail.resolve(ok(makeDetail({ title: 'STALE 旧仓库' })))
-      staleSnapshot.resolve(ok(snapshotA))
+      staleSnapshot.resolve(ok(full(snapshotA)))
     })
 
     expect(find('ticket-detail')).toBeNull()
@@ -174,7 +177,7 @@ describe('删除后的共享快照', () => {
       ),
     )
     const refresh = vi.fn<PanelClient['refresh']>(async () =>
-      ok(makeSnapshot({ tickets: [kept] })),
+      ok(full(makeSnapshot({ tickets: [kept] }))),
     )
     const deleteTicket = vi.fn<PanelClient['deleteTicket']>(async () =>
       ok({ deleted: true as const }),
@@ -205,13 +208,67 @@ describe('删除后的共享快照', () => {
   })
 })
 
+describe('列表头部的刷新按钮', () => {
+  it('点击增量刷新，Shift+点击全量刷新，不并排第二个按钮', async () => {
+    const get = vi.fn<PanelClient['get']>(async () => ok(makeSnapshot()))
+    const getDetail = vi.fn<PanelClient['getDetail']>(async () => ok(makeDetail()))
+    const refresh = vi.fn<PanelClient['refresh']>(async () => ok(full(makeSnapshot())))
+    await render(
+      <TaskPanel
+        client={clientWith({ get, getDetail, refresh })}
+        workspaceRoot="/ws"
+        copy={COPY}
+      />,
+    )
+
+    await click(mustFind('refresh'))
+    expect(refresh).toHaveBeenLastCalledWith('/ws')
+
+    await settleWith(() => {
+      mustFind('refresh').dispatchEvent(
+        new MouseEvent('click', { bubbles: true, shiftKey: true }),
+      )
+    })
+
+    expect(refresh).toHaveBeenLastCalledWith('/ws', { full: true })
+    expect(find('refresh-full')).toBeNull()
+  })
+})
+
+describe('详情缓存', () => {
+  it('再次打开看过的票不发详情请求', async () => {
+    const ticket = makeTicket()
+    const snapshot = makeSnapshot({ tickets: [ticket] })
+    const get = vi.fn<PanelClient['get']>(async () => ok(snapshot))
+    const getDetail = vi.fn<PanelClient['getDetail']>(async () => ok(makeDetail()))
+    const refresh = vi.fn<PanelClient['refresh']>(async () => ok(full(snapshot)))
+    await render(
+      <TaskPanel
+        client={clientWith({ get, getDetail, refresh })}
+        workspaceRoot="/ws"
+        copy={COPY}
+      />,
+    )
+
+    await click(mustFind('ticket-row'))
+    expect(getDetail).toHaveBeenCalledTimes(1)
+    await click(mustFind('detail-back'))
+    await settle()
+
+    await click(mustFind('ticket-row'))
+    await settle()
+
+    expect(getDetail).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('标题的键盘入口', () => {
   it.each(['Enter', ' '])('标题块按 %j 打开详情', async (key) => {
     const get = vi.fn<PanelClient['get']>(async () =>
       ok(makeSnapshot({ tickets: [makeTicket()] })),
     )
     const getDetail = vi.fn<PanelClient['getDetail']>(async () => ok(makeDetail()))
-    const refresh = vi.fn<PanelClient['refresh']>(async () => ok(makeSnapshot()))
+    const refresh = vi.fn<PanelClient['refresh']>(async () => ok(full(makeSnapshot())))
     await render(
       <TaskPanel
         client={clientWith({ get, getDetail, refresh })}

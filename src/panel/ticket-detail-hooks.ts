@@ -9,12 +9,19 @@ import * as React from 'react'
 
 import type {
   RpcErrorBody,
+  RpcResult,
+  SnapshotBaseline,
+  SnapshotRefreshResult,
   TicketDetail,
   TicketOptions,
   TicketPatch,
-  WorkspaceSnapshot,
 } from '../protocol/tracker.ts'
 import { copyText } from './clipboard.ts'
+import {
+  detailCacheDecision,
+  readDetailCache,
+  writeDetailCache,
+} from './detail-cache.ts'
 import { errorText } from './error-text.ts'
 import { useMessages, type Translate } from './i18n.ts'
 import type { PanelClient } from './transport.ts'
@@ -29,39 +36,77 @@ export interface DetailRequest {
   readonly replace: (detail: TicketDetail) => void
 }
 
+/**
+ * 读取一张票的详情；同一张票再次进入时先看内存缓存。
+ *
+ * 列表快照里的 `updatedAt` 与缓存一致时直接秒开、不发请求；
+ * 票已变更时先显示缓存，再后台静默拉新；缓存失败保留已显示内容。
+ * @param client - 面板客户端。
+ * @param workspaceRoot - 工作区根目录。
+ * @param ref - 工单引用。
+ * @param number - 数字编号；本地 Markdown 为 null。
+ * @param currentUpdatedAt - 当前列表快照里这张票的更新时间。
+ * @returns 详情、错误、阶段、重试入口与写回入口。
+ */
 export function useDetailRequest(
   client: PanelClient,
   workspaceRoot: string,
   ref: string,
   number: number | null,
+  currentUpdatedAt: string | undefined,
 ): DetailRequest {
   const [detail, setDetail] = React.useState<TicketDetail | null>(null)
   const [error, setError] = React.useState<RpcErrorBody | null>(null)
   const [phase, setPhase] = React.useState<'loading' | 'ready' | 'error'>('loading')
   const [attempt, setAttempt] = React.useState(0)
+  // 换票、重试或卸载都让在路上的读取作废，旧结果不覆盖新票。
+  const readId = React.useRef(0)
 
   React.useEffect(() => {
-    let active = true
-    // 换一张票时先清空，避免显示上一张票的残留内容。
-    setDetail(null)
+    const current = readId.current + 1
+    readId.current = current
     setError(null)
-    setPhase('loading')
+
+    const hit = readDetailCache(workspaceRoot, ref)
+    const decision = detailCacheDecision(hit, currentUpdatedAt)
+
+    if (decision === 'hit' && hit !== null) {
+      // 缓存命中且列表显示这张票没变更：秒开，不进入加载阶段、不发请求。
+      setDetail(hit.detail)
+      setPhase('ready')
+      return () => {
+        readId.current += 1
+      }
+    }
+
+    if (decision === 'stale' && hit !== null) {
+      // 票已变更或拿不到列表时间：先显示缓存，后台静默拉新。
+      setDetail(hit.detail)
+      setPhase('ready')
+    } else {
+      // 没有缓存：清空上一张票的残留内容，进入加载态。
+      setDetail(null)
+      setPhase('loading')
+    }
 
     void client.getDetail(workspaceRoot, ref, number).then((result) => {
-      if (!active) return
+      if (readId.current !== current) return
       if (result.ok) {
+        writeDetailCache(workspaceRoot, result.result)
         setDetail(result.result)
         setPhase('ready')
         return
       }
+      // 有缓存时后台拉新失败：保留已显示内容，不把详情切成错误页。
+      if (decision === 'stale') return
       setError(result.error)
       setPhase('error')
     })
 
     return () => {
-      active = false
+      readId.current += 1
     }
-  }, [client, workspaceRoot, ref, number, attempt])
+  }, [client, workspaceRoot, ref, number, currentUpdatedAt, attempt])
 
   return {
     detail,
@@ -70,7 +115,13 @@ export function useDetailRequest(
     reload: () => {
       setAttempt((value) => value + 1)
     },
-    replace: setDetail,
+    replace: (next) => {
+      // 写操作落地的新详情同时成为缓存基准：再进入时按新更新时间上票。
+      writeDetailCache(workspaceRoot, next)
+      setDetail(next)
+      setError(null)
+      setPhase('ready')
+    },
   }
 }
 
@@ -81,12 +132,50 @@ export interface DetailRefreshTarget {
   readonly number: number | null
 }
 
+/** 刷新参数里与基线有关的字段。 */
+type RefreshBaselineOptions = {
+  readonly ifRevision?: string
+  readonly storeRevision?: number
+}
+
+/**
+ * 详情刷新带回列表基线：远端版本没变时宿主可以回 not-modified，
+ * 库里有详情页没见过的写入时只回变化行。
+ * @param baseline - 当前面板快照的版本；没有快照时为 null。
+ * @returns 刷新参数里的版本字段；没有基线时 undefined。
+ */
+function refreshOptionsOf(
+  baseline: SnapshotBaseline | null,
+): RefreshBaselineOptions | undefined {
+  if (baseline === null) return undefined
+  const options: { ifRevision?: string; storeRevision?: number } = {}
+  if (baseline.ifRevision !== undefined) options.ifRevision = baseline.ifRevision
+  if (baseline.storeRevision !== undefined) options.storeRevision = baseline.storeRevision
+  return Object.keys(options).length === 0 ? undefined : options
+}
+
+/**
+ * 带基线刷新；没有基线时保持单参数调用，调用方与日志里不会多出一个 undefined。
+ * @param client - 面板客户端。
+ * @param workspaceRoot - 当前工作区。
+ * @param baseline - 当前列表快照的版本基线。
+ * @returns 刷新结果。
+ */
+function refreshWithBaseline(
+  client: PanelClient,
+  workspaceRoot: string,
+  baseline: SnapshotBaseline | null,
+): Promise<RpcResult<SnapshotRefreshResult>> {
+  const options = refreshOptionsOf(baseline)
+  return options === undefined ? client.refresh(workspaceRoot) : client.refresh(workspaceRoot, options)
+}
+
 /** 刷新结果落地的回调；`isCurrent` 为 false 时全部丢弃。 */
 export interface DetailRefreshHooks {
   /** 视图仍在且目标没变时才返回 true；在途结果据此决定是否落地。 */
   readonly isCurrent: () => boolean
   readonly onDetail: (detail: TicketDetail) => void
-  readonly onSnapshot: (snapshot: WorkspaceSnapshot) => void
+  readonly onSnapshot: (result: SnapshotRefreshResult) => void
   readonly onError: (error: RpcErrorBody) => void
 }
 
@@ -98,12 +187,14 @@ export interface DetailRefreshHooks {
  * @param client - 面板客户端。
  * @param target - 工作区与工单定位。
  * @param hooks - 落地回调与过期判断。
+ * @param baseline - 当前列表快照的版本基线；没有快照时为 null。
  * @returns 两个请求都结束后 resolve。
  */
 export function refreshTicket(
   client: PanelClient,
   target: DetailRefreshTarget,
   hooks: DetailRefreshHooks,
+  baseline: SnapshotBaseline | null = null,
 ): Promise<void> {
   const detail = client
     .getDetail(target.workspaceRoot, target.ref, target.number)
@@ -112,7 +203,7 @@ export function refreshTicket(
       if (result.ok) hooks.onDetail(result.result)
       else hooks.onError(result.error)
     })
-  const snapshot = client.refresh(target.workspaceRoot).then((result) => {
+  const snapshot = refreshWithBaseline(client, target.workspaceRoot, baseline).then((result) => {
     if (!hooks.isCurrent() || !result.ok) return
     hooks.onSnapshot(result.result)
   })
@@ -137,13 +228,15 @@ export interface DetailRefresh {
  * @param target - 当前打开的工单。
  * @param onDetail - 读取成功后的详情。
  * @param onSnapshot - 列表快照读取成功后的回调。
+ * @param baseline - 当前列表快照的版本基线；没有快照时为 null。
  * @returns 刷新中标志、刷新错误与触发入口。
  */
 export function useDetailRefresh(
   client: PanelClient,
   target: DetailRefreshTarget,
   onDetail: (detail: TicketDetail) => void,
-  onSnapshot: (snapshot: WorkspaceSnapshot) => void,
+  onSnapshot: (result: SnapshotRefreshResult) => void,
+  baseline: SnapshotBaseline | null,
 ): DetailRefresh {
   const [refreshing, setRefreshing] = React.useState(false)
   const [error, setError] = React.useState<RpcErrorBody | null>(null)
@@ -172,15 +265,20 @@ export function useDetailRefresh(
     setRefreshing(true)
     const started = key
     const isCurrent = (): boolean => mounted.current && latest.current === started
-    void refreshTicket(client, target, {
-      isCurrent,
-      onDetail: (detail) => {
-        setError(null)
-        onDetail(detail)
+    void refreshTicket(
+      client,
+      target,
+      {
+        isCurrent,
+        onDetail: (detail) => {
+          setError(null)
+          onDetail(detail)
+        },
+        onSnapshot,
+        onError: setError,
       },
-      onSnapshot,
-      onError: setError,
-    }).finally(() => {
+      baseline,
+    ).finally(() => {
       running.current = false
       // 旧目标的结果不落地，但「刷新中」不能因此卡死：目标变了也恢复按钮。
       if (mounted.current) setRefreshing(false)
@@ -204,7 +302,9 @@ export function useTicketMutation(
     readonly number: number | null
     readonly onUpdated: (detail: TicketDetail) => void
     /** 写操作后重建的快照：技能动作可能变了，详情头部据此更新徽标。 */
-    readonly onSnapshot: (snapshot: WorkspaceSnapshot) => void
+    readonly onSnapshot: (result: SnapshotRefreshResult) => void
+    /** 当前列表快照的版本基线；没有快照时为 null。 */
+    readonly baseline: SnapshotBaseline | null
   },
 ): TicketMutation {
   const [busy, setBusy] = React.useState(false)
@@ -234,7 +334,7 @@ export function useTicketMutation(
         // 列表徽标要同步；详情复查成功才替换显示值（不做乐观更新）。
         const [fresh, snapshot] = await Promise.all([
           client.getDetail(options.workspaceRoot, options.ref, options.number),
-          client.refresh(options.workspaceRoot),
+          refreshWithBaseline(client, options.workspaceRoot, options.baseline),
         ])
         if (snapshot.ok) options.onSnapshot(snapshot.result)
         if (!fresh.ok) {
@@ -379,8 +479,10 @@ export function useTicketDeletion(
     readonly ref: string
     readonly number: number | null
     /** 删除后重建的快照：面板据此移除这一行，不必等下一次列表重新挂载。 */
-    readonly onSnapshot: (snapshot: WorkspaceSnapshot) => void
+    readonly onSnapshot: (result: SnapshotRefreshResult) => void
     readonly onDeleted: () => void
+    /** 当前列表快照的版本基线；没有快照时为 null。 */
+    readonly baseline: SnapshotBaseline | null
   },
 ): TicketDeletion {
   const [confirming, setConfirming] = React.useState(false)
@@ -399,7 +501,11 @@ export function useTicketDeletion(
         return
       }
       // 删除已落地：刷新列表快照再返回，列表里不会残留这张票。
-      const snapshot = await client.refresh(target.workspaceRoot)
+      const snapshot = await refreshWithBaseline(
+        client,
+        target.workspaceRoot,
+        target.baseline,
+      )
       if (snapshot.ok) target.onSnapshot(snapshot.result)
       target.onDeleted()
     })()

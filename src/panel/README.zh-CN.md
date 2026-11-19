@@ -34,7 +34,9 @@ Orca 右侧栏里的 MattWorkflow 面板（`ui: "html"`，独立 frame 里跑的
   人员计数也在这里算；界面只渲染结果，不重复判定。
 - `tickets-view.tsx`：列表视图。状态分段控件下方的人员筛选行只在快照带当前用户时渲染，
   两个胶囊开关带计数，任一开关打开时出现「清除」，行尾显示 `@登录名`。
-- `ticket-detail-view.tsx` / `ticket-detail-hooks.ts`：工单详情视图与数据 hooks。头部的手动刷新
+- `ticket-detail-view.tsx` / `ticket-detail-hooks.ts` / `detail-cache.ts`：工单详情视图与数据 hooks。
+  详情按「工作区 + 引用」在内存里缓存；再次打开列表里 `updatedAt` 未变的票不发请求；
+  票已变更时先显示缓存、后台静默拉新。头部的手动刷新
   保留已加载内容重读这张票，并并行增量刷新列表快照；失败只在头部下方说明，不清空详情。
 - `ticket-blockers.tsx`：详情头部的「阻塞 N」disclosure 与展开的阻塞项。只消费快照行上的
   `blockedBy`：按后端顺序去重、排除已知关闭的引用；点一条只把引用交给面板，不注入提示词。
@@ -42,7 +44,8 @@ Orca 右侧栏里的 MattWorkflow 面板（`ui: "html"`，独立 frame 里跑的
 - `detail-navigation.ts`：详情目标与返回栈。列表打开清栈，详情里打开阻塞项压栈，返回与 Esc
   弹栈；按引用打开时快照里没有行也照常读取，只是不渲染技能徽标与阻塞入口。
 - `snapshot-request.ts` 的面板层实例：列表、概览与详情共用同一份快照；详情刷新、写操作或删除
-  拿到的快照通过 `apply` 写回，未定稿时继续补齐阻塞信息，阻塞项标题与列表数据一起更新。
+  拿到的结果通过 `applyRefresh` 写回，它接受整份快照、delta 或 not-modified；未定稿时继续补齐
+  阻塞信息，阻塞项标题与列表数据一起更新。
 - `ticket-tree.ts`：列表布局的纯函数。把已筛选、排序的可见票构造成渲染行：父子模式给出深度、
   是否有子票、展开状态、父级是否在列表外与后代数；循环与自引用降级为顶层行，不丢票。
   `ancestorRefs` / `expandAncestors` 供从概览定位时展开祖先链。
