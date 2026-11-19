@@ -32889,13 +32889,13 @@ ${String(target.number)}`;
     if (props.rows.length === 0) {
       return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { "data-testid": "empty", style: EMPTY_STYLE, children: props.emptyText });
     }
-    const reserveCollapseSlot = props.layout === "hierarchy" && props.rows.some((row) => row.hasChildren);
+    const hasCollapsible = props.layout === "hierarchy" && props.rows.some((row) => row.hasChildren);
     return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { role: "list", "data-testid": "ticket-list", style: LIST_STYLE, children: props.rows.map((row) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
       TicketRow,
       {
         row,
         layout: props.layout,
-        reserveCollapseSlot,
+        reserveCollapseSlot: hasCollapsible && (row.hasChildren || row.depth > 0),
         copied: row.ticket.ref === props.copied && row.ticket.skillAction !== "none",
         focused: row.ticket.ref === props.focused,
         now: props.now,

@@ -119,10 +119,14 @@ describe('工单列表布局渲染', () => {
     expect(count(markup, 'data-testid="ticket-collapse-spacer"')).toBe(0)
   })
 
-  it('有父票时叶子行保留占位，同层标题左缘对齐', () => {
-    const markup = render([ticket('#1'), ticket('#2', '#1'), ticket('#4')], 'hierarchy')
+  it('有父票时只有子级叶子行保留占位，顶层叶子不空出一块被误认成子级', () => {
+    const markup = render(
+      [ticket('#1'), ticket('#2', '#1'), ticket('#3', '#1'), ticket('#4')],
+      'hierarchy',
+    )
 
     expect(count(markup, 'data-testid="ticket-collapse"')).toBe(1)
+    // #2、#3 是子级叶子：留占位与同层父票的标题对齐；顶层叶子 #4 不留。
     expect(count(markup, 'data-testid="ticket-collapse-spacer"')).toBe(2)
   })
 

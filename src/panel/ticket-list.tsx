@@ -102,9 +102,9 @@ export function TicketList(props: TicketListProps): React.ReactElement {
     )
   }
 
-  // 只有列表里真有可折叠的父票时才给每行留折叠槽位；全是叶子就不留，
+  // 只有列表里真有可折叠的父票时才考虑留折叠槽位；全是叶子就不留，
   // 否则父子模式下每张卡片左侧都会白空一块。
-  const reserveCollapseSlot =
+  const hasCollapsible =
     props.layout === 'hierarchy' && props.rows.some((row) => row.hasChildren)
 
   return (
@@ -114,7 +114,9 @@ export function TicketList(props: TicketListProps): React.ReactElement {
           key={row.ticket.ref}
           row={row}
           layout={props.layout}
-          reserveCollapseSlot={reserveCollapseSlot}
+          // 顶层叶子不留槽位：左侧空白会被误认成子级缩进。
+          // 子级叶子仍留，和同层父票的标题左缘对齐。
+          reserveCollapseSlot={hasCollapsible && (row.hasChildren || row.depth > 0)}
           copied={row.ticket.ref === props.copied && row.ticket.skillAction !== 'none'}
           focused={row.ticket.ref === props.focused}
           now={props.now}
