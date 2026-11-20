@@ -37,9 +37,9 @@ for the local Markdown backend.
 The cache-key choice lives in one place: `storeKeyOf` (managed backends use repository scope, local
 Markdown uses workspace scope). Introduced in #7.
 
-The panel's view preference (filter, sort key, direction, the two people toggles and layout) follows the same rule, but the panel
-cannot see repository scope, so it uses the repository identity from the snapshot instead:
-`viewPreferenceKey` (`src/panel/view-preference.ts`).
+The panel's view preference (filter, sort key, direction, the two people toggles, the two row-detail
+toggles and layout) follows the same rule, but the panel cannot see repository scope, so it uses the
+repository identity from the snapshot instead: `viewPreferenceKey` (`src/panel/view-preference.ts`).
 
 _Avoid_: calling repository scope "repository root" or "repo root" — that reads as the git top-level
 directory of the current worktree, and an attached worktree's top-level directory is exactly not the

@@ -48,6 +48,7 @@ function list(
       emptyText={ZH['tickets.emptyRepo']}
       copied={null}
       now={NOW}
+      rowDetails={{ showUpdatedAt: false, showAssignee: false }}
       backend="github"
       workspaceRoot="/workspace"
       client={createPanelClient(() => Promise.reject(new Error('渲染时不应发请求')))}

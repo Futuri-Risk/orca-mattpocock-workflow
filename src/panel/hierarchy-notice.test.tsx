@@ -17,6 +17,8 @@ const FLAT: ViewPreference = {
   assignedToMe: false,
   createdByMe: false,
   layout: 'flat',
+  showUpdatedAt: false,
+  showAssignee: false,
 }
 const HIERARCHY: ViewPreference = { ...FLAT, layout: 'hierarchy' }
 

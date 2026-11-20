@@ -1,10 +1,12 @@
 /**
- * 工单行元信息的样式：标签徽标、创建人头像与用户名、相对创建时间。
- * 从 task-panel-styles 拆出来，避免面板样式文件过长；颜色都走宿主主题变量。
+ * 工单行相关的样式：元信息徽标、创建人、相对时间、分配人，
+ * 以及工具栏「行内信息」弹出菜单。从 task-panel-styles 拆出来，避免面板样式文件过长；
+ * 颜色都走宿主主题变量。
  */
 import type { CSSProperties } from 'react'
 
 import { COLORS } from './task-panel-styles.ts'
+import { MENU_STYLE, MENU_WRAPPER_STYLE } from './ticket-timeline-styles.ts'
 
 /** 标题下的一行小字：状态在前、分类在后，都是次要信息。 */
 export const CARD_META_STYLE: CSSProperties = {
@@ -78,6 +80,87 @@ export const ROW_AGE_STYLE: CSSProperties = {
   fontSize: 11,
   lineHeight: '18px',
   whiteSpace: 'nowrap',
+}
+
+/** 行内的相对更新时间：与创建时间同一套说法与层级。 */
+export const ROW_UPDATED_STYLE: CSSProperties = {
+  ...ROW_AGE_STYLE,
+}
+
+/** 分配人：第一个登录名加可选的 `+N`，整体是一段次要信息。 */
+export const ROW_ASSIGNEE_STYLE: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 3,
+  minWidth: 0,
+  color: COLORS.secondary,
+  fontSize: 11,
+  lineHeight: '18px',
+}
+
+/** 登录名过长时省略，保证 `+N` 始终完整可见。 */
+export const ROW_ASSIGNEE_LOGIN_STYLE: CSSProperties = {
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  maxWidth: '18ch',
+}
+
+/** 多出来的分配人数量，沿用标签 `+N` 的轻量写法。 */
+export const ROW_ASSIGNEE_MORE_STYLE: CSSProperties = {
+  flex: 'none',
+  color: COLORS.tertiary,
+}
+
+/** 工具栏里的「行内信息」入口：和排序控件同一高度，打开时保持轻量。 */
+export const ROW_DETAILS_TRIGGER_STYLE: CSSProperties = {
+  border: 'none',
+  borderRadius: 8,
+  padding: '2px 8px',
+  background: COLORS.track,
+  color: COLORS.secondary,
+  cursor: 'pointer',
+  font: 'inherit',
+  fontSize: 12,
+  lineHeight: '20px',
+  whiteSpace: 'nowrap',
+}
+
+/** 弹出菜单相对入口定位；沿用详情头部「更多」菜单的定位。 */
+export const ROW_DETAILS_WRAPPER_STYLE: CSSProperties = MENU_WRAPPER_STYLE
+
+/** 菜单面板：沿用详情头部「更多」菜单的表面与阴影，只补上纵向排列。 */
+export const ROW_DETAILS_MENU_STYLE: CSSProperties = {
+  ...MENU_STYLE,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+}
+
+/** 一个复选项：勾选标记占固定宽度，文字不因状态切换而左右跳动。 */
+export const ROW_DETAILS_ITEM_STYLE: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  border: 'none',
+  borderRadius: 6,
+  padding: '4px 8px',
+  background: 'transparent',
+  color: COLORS.text,
+  cursor: 'pointer',
+  font: 'inherit',
+  fontSize: 12,
+  lineHeight: '18px',
+  textAlign: 'left',
+  whiteSpace: 'nowrap',
+}
+
+/** 勾选标记的固定槽位；未选中时留空，不靠颜色表达状态。 */
+export const ROW_DETAILS_CHECK_STYLE: CSSProperties = {
+  display: 'inline-block',
+  width: '1em',
+  color: COLORS.accent,
+  flex: 'none',
 }
 
 /**

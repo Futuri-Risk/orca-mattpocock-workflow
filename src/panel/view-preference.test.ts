@@ -34,6 +34,8 @@ describe('视图偏好按仓库归并', () => {
       assignedToMe: true,
       createdByMe: false,
       layout: 'hierarchy',
+      showUpdatedAt: false,
+      showAssignee: false,
     } as const
 
     await writeViewPreference(store, viewPreferenceKey(github, MAIN), sorted)
@@ -52,6 +54,8 @@ describe('视图偏好按仓库归并', () => {
       assignedToMe: false,
       createdByMe: false,
       layout: 'flat',
+      showUpdatedAt: false,
+      showAssignee: false,
     })
     const other = { ...github, repository: 'o/other' }
 
@@ -70,6 +74,8 @@ describe('视图偏好按仓库归并', () => {
       assignedToMe: false,
       createdByMe: false,
       layout: 'flat',
+      showUpdatedAt: false,
+      showAssignee: false,
     })
 
     await expect(
@@ -90,6 +96,8 @@ describe('视图偏好按仓库归并', () => {
       assignedToMe: false,
       createdByMe: false,
       layout: 'hierarchy',
+      showUpdatedAt: false,
+      showAssignee: false,
     } as const
     await writeViewPreference(store, MAIN, legacy)
 
@@ -116,6 +124,8 @@ describe('视图偏好按仓库归并', () => {
       assignedToMe: false,
       createdByMe: false,
       layout: 'flat',
+      showUpdatedAt: false,
+      showAssignee: false,
     })
   })
 
@@ -147,6 +157,112 @@ describe('视图偏好按仓库归并', () => {
   })
 })
 
+describe('行内信息开关', () => {
+  it('默认不显示更新时间与分配人', () => {
+    expect(DEFAULT_VIEW.showUpdatedAt).toBe(false)
+    expect(DEFAULT_VIEW.showAssignee).toBe(false)
+  })
+
+  it('两个开关按 true 写入后原样读回', async () => {
+    const store = memoryStore()
+    const details = {
+      filter: 'open',
+      sortKey: 'status',
+      direction: 'asc',
+      assignedToMe: false,
+      createdByMe: false,
+      layout: 'flat',
+      showUpdatedAt: true,
+      showAssignee: true,
+    } as const
+
+    await writeViewPreference(store, viewPreferenceKey(github, MAIN), details)
+
+    await expect(
+      readViewPreference(store, viewPreferenceKey(github, MAIN)),
+    ).resolves.toEqual(details)
+  })
+
+  it('旧记录缺字段时按 false 读，筛选、排序与布局保留', async () => {
+    const store = memoryStore()
+    const key = viewPreferenceKey(github, MAIN)
+    if (key === undefined) throw new Error('需要偏好键')
+    store.data.set(
+      'view-preferences',
+      JSON.stringify({
+        version: 1,
+        entries: {
+          [key]: {
+            filter: 'blocked',
+            sortKey: 'updated',
+            direction: 'desc',
+            layout: 'hierarchy',
+            savedAt: 1,
+          },
+        },
+      }),
+    )
+
+    await expect(readViewPreference(store, key)).resolves.toEqual({
+      filter: 'blocked',
+      sortKey: 'updated',
+      direction: 'desc',
+      assignedToMe: false,
+      createdByMe: false,
+      layout: 'hierarchy',
+      showUpdatedAt: false,
+      showAssignee: false,
+    })
+  })
+
+  it('单个开关非法时只回退该字段，另一个开关与其它字段保留', async () => {
+    const store = memoryStore()
+    const key = viewPreferenceKey(github, MAIN)
+    if (key === undefined) throw new Error('需要偏好键')
+    store.data.set(
+      'view-preferences',
+      JSON.stringify({
+        version: 1,
+        entries: {
+          [key]: {
+            filter: 'closed',
+            sortKey: 'title',
+            direction: 'asc',
+            layout: 'flat',
+            showUpdatedAt: true,
+            showAssignee: 'yes',
+            savedAt: 1,
+          },
+        },
+      }),
+    )
+
+    await expect(readViewPreference(store, key)).resolves.toEqual({
+      filter: 'closed',
+      sortKey: 'title',
+      direction: 'asc',
+      assignedToMe: false,
+      createdByMe: false,
+      layout: 'flat',
+      showUpdatedAt: true,
+      showAssignee: false,
+    })
+  })
+
+  it('行内信息开关按仓库各自保存，不互相污染', async () => {
+    const store = memoryStore()
+    const other = { ...github, repository: 'o/other' }
+    await writeViewPreference(store, viewPreferenceKey(github, MAIN), {
+      ...DEFAULT_VIEW,
+      showUpdatedAt: true,
+    })
+
+    await expect(
+      readViewPreference(store, viewPreferenceKey(other, MAIN)),
+    ).resolves.toEqual(DEFAULT_VIEW)
+  })
+})
+
 describe('人员开关的读写与回退', () => {
   it('默认视图不按人员过滤', () => {
     expect(DEFAULT_VIEW.assignedToMe).toBe(false)
@@ -162,6 +278,8 @@ describe('人员开关的读写与回退', () => {
       assignedToMe: true,
       createdByMe: true,
       layout: 'flat',
+      showUpdatedAt: false,
+      showAssignee: false,
     } as const
 
     await writeViewPreference(store, viewPreferenceKey(github, MAIN), people)
@@ -190,6 +308,8 @@ describe('人员开关的读写与回退', () => {
       assignedToMe: false,
       createdByMe: false,
       layout: 'flat',
+      showUpdatedAt: false,
+      showAssignee: false,
     })
   })
 
@@ -221,6 +341,8 @@ describe('人员开关的读写与回退', () => {
       assignedToMe: false,
       createdByMe: true,
       layout: 'flat',
+      showUpdatedAt: false,
+      showAssignee: false,
     })
   })
 

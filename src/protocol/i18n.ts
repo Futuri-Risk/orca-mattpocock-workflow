@@ -145,6 +145,12 @@ const ZH_CN = {
   'tickets.sort.number': '编号',
   'tickets.sort.title': '标题',
   'tickets.ageTitle': '创建：{created}；更新：{updated}',
+  'tickets.rowDetails': '行内信息',
+  'tickets.rowDetails.updatedAt': '更新时间',
+  'tickets.rowDetails.assignee': '分配人',
+  'tickets.updatedAtLabel': '更新时间：{time}',
+  'tickets.assigneeLabel': '分配人：{login}',
+  'tickets.assigneeLabelMore': '分配人：{login}，另有 {count} 人',
   'tickets.refCopyLabel': '复制工单链接 {ref}',
   'tickets.refCopyHint': '复制工单链接：{url}',
   'tickets.refCopiedNotice': '已复制工单链接 {ref}。',
@@ -728,6 +734,12 @@ const EN = {
   'tickets.sort.number': 'Number',
   'tickets.sort.title': 'Title',
   'tickets.ageTitle': 'Created: {created}; updated: {updated}',
+  'tickets.rowDetails': 'Row details',
+  'tickets.rowDetails.updatedAt': 'Updated',
+  'tickets.rowDetails.assignee': 'Assignee',
+  'tickets.updatedAtLabel': 'Updated: {time}',
+  'tickets.assigneeLabel': 'Assignee: {login}',
+  'tickets.assigneeLabelMore': 'Assignee: {login}, {count} more',
   'tickets.refCopyLabel': 'Copy link to {ref}',
   'tickets.refCopyHint': 'Copy link: {url}',
   'tickets.refCopiedNotice': 'Copied ticket link {ref}.',
@@ -1214,6 +1226,9 @@ export interface MessageParams {
   'tickets.people.viewer': { readonly login: string }
   'tickets.people.viewerHint': { readonly login: string }
   'tickets.ageTitle': { readonly created: string; readonly updated: string }
+  'tickets.updatedAtLabel': { readonly time: string }
+  'tickets.assigneeLabel': { readonly login: string }
+  'tickets.assigneeLabelMore': { readonly login: string; readonly count: number }
   'tickets.refCopyLabel': { readonly ref: string }
   'tickets.refCopyHint': { readonly url: string }
   'tickets.refCopiedNotice': { readonly ref: string }

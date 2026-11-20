@@ -82,7 +82,18 @@ import {
   type TicketFilter,
   type TicketSortKey,
 } from './ticket-view.ts'
-import { useViewPreference } from './view-preference.ts'
+import {
+  useViewPreference,
+  type RowDetailFlags,
+  type RowDetailKey,
+} from './view-preference.ts'
+import {
+  ROW_DETAILS_CHECK_STYLE,
+  ROW_DETAILS_ITEM_STYLE,
+  ROW_DETAILS_MENU_STYLE,
+  ROW_DETAILS_TRIGGER_STYLE,
+  ROW_DETAILS_WRAPPER_STYLE,
+} from './ticket-row-styles.ts'
 
 /** 全量刷新是次要动作：描边按钮，和刷新按钮并排但不同层级。 */
 const SECONDARY_BUTTON_STYLE: React.CSSProperties = {
@@ -135,7 +146,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
   const clock = props.now ?? Date.now
   const { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore } =
     props.request
-  const { preference, setFilter, toggleSort, togglePerson, clearPeople, setLayout } =
+  const { preference, setFilter, toggleSort, togglePerson, clearPeople, setLayout, toggleRowDetail } =
     useViewPreference(props.workspaceRoot, snapshot)
   const nowValue = useNow(clock)
   const actions = useTicketActions(props.workspaceRoot, props.copy, props.client)
@@ -223,8 +234,10 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             filter={preference.filter}
             sortKey={preference.sortKey}
             direction={preference.direction}
+            rowDetails={preference}
             onFilter={setFilter}
             onSort={toggleSort}
+            onToggleRowDetail={toggleRowDetail}
           />
           {/* 认不出当前用户时整行不出现：不放永远点不出结果的按钮。 */}
           <PeopleFilterRow
@@ -245,6 +258,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             copied={actions.copied}
             focused={focused}
             now={nowValue}
+            rowDetails={preference}
             client={props.client}
             workspaceRoot={props.workspaceRoot}
             onOpenEnvCheck={props.onOpenEnvCheck}
@@ -314,6 +328,7 @@ function TicketRows(props: {
   readonly copied: string | null
   readonly focused: string | null
   readonly now: number
+  readonly rowDetails: RowDetailFlags
   readonly client: PanelClient
   readonly workspaceRoot: string | undefined
   readonly onOpenEnvCheck: (code: ErrorCode) => void
@@ -349,6 +364,7 @@ function TicketRows(props: {
         copied={props.copied}
         focused={props.focused}
         now={props.now}
+        rowDetails={props.rowDetails}
         backend={props.snapshot.backend}
         workspaceRoot={props.workspaceRoot}
         client={props.client}
@@ -592,8 +608,10 @@ function Toolbar(props: {
   readonly filter: TicketFilter
   readonly sortKey: TicketSortKey
   readonly direction: SortDirection
+  readonly rowDetails: RowDetailFlags
   readonly onFilter: (filter: TicketFilter) => void
   readonly onSort: (key: TicketSortKey) => void
+  readonly onToggleRowDetail: (key: RowDetailKey) => void
 }): React.ReactElement {
   const t = useMessages()
   const ascending = props.direction === 'asc'
@@ -649,7 +667,126 @@ function Toolbar(props: {
           {ascending ? '↑' : '↓'}
         </button>
       </div>
+      <RowDetailsMenu
+        rowDetails={props.rowDetails}
+        onToggle={props.onToggleRowDetail}
+      />
     </div>
+  )
+}
+
+/**
+ * 工具栏的「行内信息」弹出菜单：两个独立的复选项。
+ * 打开时焦点落在第一个选项；Escape 收起并把焦点送回入口，点菜单外任意处也收起。
+ */
+function RowDetailsMenu(props: {
+  readonly rowDetails: RowDetailFlags
+  readonly onToggle: (key: RowDetailKey) => void
+}): React.ReactElement {
+  const t = useMessages()
+  const [open, setOpen] = React.useState(false)
+  const wrapper = React.useRef<HTMLDivElement>(null)
+  const trigger = React.useRef<HTMLButtonElement>(null)
+  const menuId = React.useId()
+
+  React.useEffect(() => {
+    if (!open) return
+    const onPointer = (event: MouseEvent): void => {
+      if (wrapper.current?.contains(event.target as Node) !== true) setOpen(false)
+    }
+    document.addEventListener('mousedown', onPointer)
+    return () => {
+      document.removeEventListener('mousedown', onPointer)
+    }
+  }, [open])
+
+  const close = (): void => {
+    setOpen(false)
+    trigger.current?.focus()
+  }
+
+  return (
+    <div
+      ref={wrapper}
+      style={ROW_DETAILS_WRAPPER_STYLE}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && open) {
+          // 只收起菜单，不冒泡触发别处的 Esc 行为。
+          event.stopPropagation()
+          close()
+        }
+      }}
+    >
+      <button
+        ref={trigger}
+        type="button"
+        data-testid="row-details"
+        data-hover="soft"
+        title={t('tickets.rowDetails')}
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        onClick={() => {
+          setOpen((value) => !value)
+        }}
+        style={ROW_DETAILS_TRIGGER_STYLE}
+      >
+        {t('tickets.rowDetails')}
+      </button>
+      {open ? (
+        <div
+          id={menuId}
+          role="group"
+          data-testid="row-details-menu"
+          aria-label={t('tickets.rowDetails')}
+          style={ROW_DETAILS_MENU_STYLE}
+        >
+          <RowDetailToggle
+            testId="row-details-updated"
+            label={t('tickets.rowDetails.updatedAt')}
+            checked={props.rowDetails.showUpdatedAt}
+            autoFocus
+            onToggle={() => {
+              props.onToggle('showUpdatedAt')
+            }}
+          />
+          <RowDetailToggle
+            testId="row-details-assignee"
+            label={t('tickets.rowDetails.assignee')}
+            checked={props.rowDetails.showAssignee}
+            onToggle={() => {
+              props.onToggle('showAssignee')
+            }}
+          />
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+/** 一个复选项：可见勾选标记与 `aria-checked` 同时表达状态。 */
+function RowDetailToggle(props: {
+  readonly testId: string
+  readonly label: string
+  readonly checked: boolean
+  readonly autoFocus?: boolean
+  readonly onToggle: () => void
+}): React.ReactElement {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      data-testid={props.testId}
+      data-hover="soft"
+      aria-checked={props.checked}
+      autoFocus={props.autoFocus ?? false}
+      onClick={props.onToggle}
+      style={ROW_DETAILS_ITEM_STYLE}
+    >
+      <span aria-hidden="true" style={ROW_DETAILS_CHECK_STYLE}>
+        {props.checked ? '✓' : ''}
+      </span>
+      {props.label}
+    </button>
   )
 }
 

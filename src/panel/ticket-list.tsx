@@ -44,10 +44,15 @@ import {
   LABEL_BADGE_STYLE,
   PARENT_BADGE_STYLE,
   ROW_AGE_STYLE,
+  ROW_ASSIGNEE_LOGIN_STYLE,
+  ROW_ASSIGNEE_MORE_STYLE,
+  ROW_ASSIGNEE_STYLE,
+  ROW_UPDATED_STYLE,
 } from './ticket-row-styles.ts'
 import { CopyFailure, type CopyState } from './ticket-detail-fields.tsx'
 import { useCopyLink } from './ticket-detail-hooks.ts'
 import { VISUALLY_HIDDEN_STYLE } from './ticket-detail-styles.ts'
+import type { RowDetailFlags } from './view-preference.ts'
 import { UserAvatar } from './user-avatar.tsx'
 import type { TicketLayout, TicketTreeRow } from './ticket-tree.ts'
 import {
@@ -71,6 +76,8 @@ export interface TicketListProps {
   readonly focused?: string | null | undefined
   /** 当前时间（毫秒），用于行内的相对创建时间。 */
   readonly now: number
+  /** 行内可选信息的显示开关。 */
+  readonly rowDetails: RowDetailFlags
   /** 当前快照的后端：本地 Markdown 不提供建 worktree 入口。 */
   readonly backend: BackendKind
   readonly workspaceRoot: string | undefined
@@ -120,6 +127,7 @@ export function TicketList(props: TicketListProps): React.ReactElement {
           copied={row.ticket.ref === props.copied && row.ticket.skillAction !== 'none'}
           focused={row.ticket.ref === props.focused}
           now={props.now}
+          rowDetails={props.rowDetails}
           backend={props.backend}
           workspaceRoot={props.workspaceRoot}
           client={props.client}
@@ -144,6 +152,8 @@ function TicketRow(props: {
   readonly copied: boolean
   readonly focused: boolean
   readonly now: number
+  /** 行内可选信息的显示开关。 */
+  readonly rowDetails: RowDetailFlags
   /** 当前快照的后端：本地 Markdown 不提供建 worktree 入口。 */
   readonly backend: BackendKind
   readonly workspaceRoot: string | undefined
@@ -192,6 +202,7 @@ function TicketRow(props: {
               display={display}
               focused={props.focused}
               now={props.now}
+              rowDetails={props.rowDetails}
               row={props.row}
               hierarchy={hierarchy}
               copy={link.copy}
@@ -207,6 +218,7 @@ function TicketRow(props: {
             display={display}
             focused={props.focused}
             now={props.now}
+            rowDetails={props.rowDetails}
             row={props.row}
             hierarchy={hierarchy}
             copy={link.copy}
@@ -253,6 +265,8 @@ function RowContent(props: {
   readonly display: { readonly text: string; readonly full?: string }
   readonly focused: boolean
   readonly now: number
+  /** 行内可选信息的显示开关。 */
+  readonly rowDetails: RowDetailFlags
   readonly row: TicketTreeRow
   readonly hierarchy: boolean
   readonly copy: CopyState
@@ -285,7 +299,13 @@ function RowContent(props: {
           {props.ticket.title}
         </span>
       </span>
-      <MetaRow ticket={props.ticket} now={props.now} row={props.row} hierarchy={props.hierarchy} />
+      <MetaRow
+        ticket={props.ticket}
+        now={props.now}
+        rowDetails={props.rowDetails}
+        row={props.row}
+        hierarchy={props.hierarchy}
+      />
     </div>
   )
 }
@@ -396,6 +416,7 @@ const ACTION_COLUMN_STYLE: React.CSSProperties = {
 function MetaRow(props: {
   readonly ticket: TicketSnapshot
   readonly now: number
+  readonly rowDetails: RowDetailFlags
   readonly row: TicketTreeRow
   readonly hierarchy: boolean
 }): React.ReactElement {
@@ -447,6 +468,7 @@ function MetaRow(props: {
           now={props.now}
         />
       )}
+      <RowDetails ticket={ticket} now={props.now} rowDetails={props.rowDetails} />
     </span>
   )
 }
@@ -482,6 +504,67 @@ function AuthorMeta(props: {
           {age}
         </span>
       )}
+    </>
+  )
+}
+
+/**
+ * 行内可选信息：相对更新时间与分配人登录名。
+ * 两个开关都在这里判断；关闭或后端没给数据时整段不渲染，不留空容器。
+ * @param props - 当前票、当前时间与两个显示开关。
+ * @returns 更新时间与分配人两段，或 null。
+ */
+function RowDetails(props: {
+  readonly ticket: TicketSnapshot
+  readonly now: number
+  readonly rowDetails: RowDetailFlags
+}): React.ReactElement | null {
+  const t = useMessages()
+  const updated = props.rowDetails.showUpdatedAt
+    ? formatRelativeTime(props.ticket.updatedAt, props.now, t)
+    : ''
+  const assignees = props.ticket.assignees
+  const first = assignees[0]
+  const more = assignees.length - 1
+
+  if (
+    updated.length === 0 &&
+    (first === undefined || !props.rowDetails.showAssignee)
+  ) {
+    return null
+  }
+
+  return (
+    <>
+      {updated.length === 0 ? null : (
+        <span
+          data-testid="ticket-updated-at"
+          title={t('tickets.ageTitle', {
+            created: props.ticket.createdAt,
+            updated: props.ticket.updatedAt,
+          })}
+          style={ROW_UPDATED_STYLE}
+        >
+          {/* 泛型 span 的 aria-label 在部分读屏器里会被忽略；把完整说法放进可见文本前的隐藏串。 */}
+          <span style={VISUALLY_HIDDEN_STYLE}>
+            {t('tickets.updatedAtLabel', { time: updated })}
+          </span>
+          <span aria-hidden="true">{updated}</span>
+        </span>
+      )}
+      {props.rowDetails.showAssignee && first !== undefined ? (
+        <span data-testid="ticket-assignee" style={ROW_ASSIGNEE_STYLE}>
+          <span style={VISUALLY_HIDDEN_STYLE}>
+            {more > 0
+              ? t('tickets.assigneeLabelMore', { login: `@${first}`, count: more })
+              : t('tickets.assigneeLabel', { login: `@${first}` })}
+          </span>
+          <span aria-hidden="true" style={ROW_ASSIGNEE_LOGIN_STYLE}>@{first}</span>
+          {more > 0 ? (
+            <span aria-hidden="true" style={ROW_ASSIGNEE_MORE_STYLE}>+{String(more)}</span>
+          ) : null}
+        </span>
+      ) : null}
     </>
   )
 }

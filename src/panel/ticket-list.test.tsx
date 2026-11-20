@@ -11,7 +11,11 @@ import { createPanelClient } from './transport.ts'
 const ZH = MESSAGES['zh-CN']
 const NOW = Date.parse('2026-06-01T00:00:00Z')
 
-function ticket(ref: string, parent?: string): TicketSnapshot {
+function ticket(
+  ref: string,
+  parent?: string,
+  overrides: Partial<TicketSnapshot> = {},
+): TicketSnapshot {
   return {
     ref,
     number: Number.parseInt(ref.replace(/^#/, ''), 10),
@@ -28,6 +32,7 @@ function ticket(ref: string, parent?: string): TicketSnapshot {
     updatedAt: '2026-05-02T00:00:00Z',
     openBlockers: 0,
     ...(parent === undefined ? {} : { parent }),
+    ...overrides,
   }
 }
 
@@ -41,6 +46,7 @@ function render(
   layout: TicketLayout,
   collapsed: ReadonlySet<string> = new Set(),
   backend: 'github' | 'gitea' = 'github',
+  details: { readonly showUpdatedAt?: boolean; readonly showAssignee?: boolean } = {},
 ): string {
   const rows = buildTicketRows(tickets, layout, collapsed)
   return renderToStaticMarkup(
@@ -52,6 +58,10 @@ function render(
       now={NOW}
       backend={backend}
       workspaceRoot="/workspace"
+      rowDetails={{
+        showUpdatedAt: details.showUpdatedAt ?? false,
+        showAssignee: details.showAssignee ?? false,
+      }}
       client={createPanelClient(() => Promise.reject(new Error('渲染时不应发请求')))}
       onOpenEnvCheck={() => undefined}
       onPick={() => undefined}
@@ -191,6 +201,94 @@ describe('工单列表布局渲染', () => {
 
     expect(markup).toContain('<span data-testid="ticket-ref"')
     expect(markup).not.toMatch(/<button[^>]*data-testid="ticket-ref"/)
+  })
+})
+
+describe('行内更新时间与分配人', () => {
+  it('两个开关都关时行内不出现更新时间与分配人的 DOM', () => {
+    const markup = render(
+      [ticket('#1', undefined, { assignees: ['alice'] })],
+      'flat',
+      new Set(),
+      'github',
+      { showUpdatedAt: false, showAssignee: false },
+    )
+
+    expect(markup).not.toContain('ticket-updated-at')
+    expect(markup).not.toContain('ticket-assignee')
+    expect(markup).not.toContain('@alice')
+  })
+
+  it('打开更新时间时显示相对时间，悬停给出创建与更新时刻', () => {
+    const markup = render([ticket('#1')], 'flat', new Set(), 'github', {
+      showUpdatedAt: true,
+    })
+
+    expect(markup).toContain('data-testid="ticket-updated-at"')
+    expect(markup).toContain('30 天前')
+    expect(markup).toContain(
+      ZH['tickets.ageTitle']
+        .replace('{created}', '2026-05-01T00:00:00Z')
+        .replace('{updated}', '2026-05-02T00:00:00Z'),
+    )
+  })
+
+  it('打开分配人时显示第一个登录名；空数组不渲染占位', () => {
+    const assigned = render(
+      [ticket('#1', undefined, { assignees: ['alice'] })],
+      'flat',
+      new Set(),
+      'github',
+      { showAssignee: true },
+    )
+    const none = render([ticket('#1')], 'flat', new Set(), 'github', {
+      showAssignee: true,
+    })
+
+    expect(assigned).toContain('data-testid="ticket-assignee"')
+    expect(assigned).toContain('@alice')
+    expect(none).not.toContain('ticket-assignee')
+  })
+
+  it('多个分配人只显示第一个并追加 +N', () => {
+    const markup = render(
+      [ticket('#1', undefined, { assignees: ['alice', 'bob', 'carol'] })],
+      'flat',
+      new Set(),
+      'github',
+      { showAssignee: true },
+    )
+
+    expect(markup).toContain('@alice')
+    expect(markup).toContain('+2')
+    expect(markup).not.toContain('@bob')
+  })
+
+  it('更新时间无法解析时不显示这一段，也不留空占位', () => {
+    const markup = render(
+      [ticket('#1', undefined, { updatedAt: 'not-a-time' })],
+      'flat',
+      new Set(),
+      'github',
+      { showUpdatedAt: true },
+    )
+
+    expect(markup).not.toContain('ticket-updated-at')
+  })
+
+  it('更新时间排在分配人之前', () => {
+    const markup = render(
+      [ticket('#1', undefined, { assignees: ['alice'] })],
+      'flat',
+      new Set(),
+      'github',
+      { showUpdatedAt: true, showAssignee: true },
+    )
+
+    const updated = markup.indexOf('data-testid="ticket-updated-at"')
+    const assignee = markup.indexOf('data-testid="ticket-assignee"')
+    expect(updated).toBeGreaterThanOrEqual(0)
+    expect(updated).toBeLessThan(assignee)
   })
 })
 

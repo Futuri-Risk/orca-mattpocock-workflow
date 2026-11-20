@@ -1,5 +1,5 @@
 /**
- * 视图偏好：按仓库记住筛选、排序键、方向、两个人员开关与布局。
+ * 视图偏好：按仓库记住筛选、排序键、方向、两个人员开关、行内信息开关与布局。
  *
  * 存在 Orca 的插件私有存储里：一个键放一份 JSON 字符串，里面是「偏好键 → 偏好」的映射，
  * 最多保留 50 个条目。存储不可用或数据损坏时静默退回默认视图，不影响面板其余功能。
@@ -21,14 +21,25 @@ import {
   type TicketSortKey,
 } from './ticket-view.ts'
 
+/** 行内信息的两个显示开关；默认都关闭。 */
+export interface RowDetailFlags {
+  /** 行内是否显示相对更新时间。 */
+  readonly showUpdatedAt: boolean
+  /** 行内是否显示分配人登录名。 */
+  readonly showAssignee: boolean
+}
+
 /** 面板的一份视图偏好。 */
-export interface ViewPreference extends PeopleFilter {
+export interface ViewPreference extends PeopleFilter, RowDetailFlags {
   readonly filter: TicketFilter
   readonly sortKey: TicketSortKey
   readonly direction: SortDirection
   /** 列表布局；默认平铺，按仓库记住。 */
   readonly layout: TicketLayout
 }
+
+/** 行内信息开关的字段名。 */
+export type RowDetailKey = keyof RowDetailFlags
 
 /** 没有存档时使用的视图：只看未关闭工单，可接的排在前面，不按人员过滤，平铺布局。 */
 export const DEFAULT_VIEW: ViewPreference = {
@@ -38,6 +49,8 @@ export const DEFAULT_VIEW: ViewPreference = {
   assignedToMe: false,
   createdByMe: false,
   layout: 'flat',
+  showUpdatedAt: false,
+  showAssignee: false,
 }
 
 /** 插件私有存储的最小形状。 */
@@ -61,6 +74,8 @@ interface StoredEntry extends PeopleFilter {
   readonly sortKey: TicketSortKey
   readonly direction: SortDirection
   readonly layout: TicketLayout
+  readonly showUpdatedAt: boolean
+  readonly showAssignee: boolean
   readonly savedAt: number
 }
 
@@ -142,6 +157,8 @@ export async function readViewPreference(
     createdByMe: stored.createdByMe,
     // 旧存档没有布局字段：默认平铺，界面不因升级突然换成树。
     layout: isLayout(stored.layout) ? stored.layout : DEFAULT_VIEW.layout,
+    showUpdatedAt: stored.showUpdatedAt,
+    showAssignee: stored.showAssignee,
   }
 }
 
@@ -170,6 +187,8 @@ export function writeViewPreference(
       assignedToMe: preference.assignedToMe,
       createdByMe: preference.createdByMe,
       layout: preference.layout,
+      showUpdatedAt: preference.showUpdatedAt,
+      showAssignee: preference.showAssignee,
       savedAt: now(),
     }
     const map: PreferenceMap = { version: STORAGE_VERSION, entries: evictOldest(next) }
@@ -226,6 +245,8 @@ function toEntry(value: unknown): StoredEntry | null {
     assignedToMe: 'assignedToMe' in value && value.assignedToMe === true,
     createdByMe: 'createdByMe' in value && value.createdByMe === true,
     layout,
+    showUpdatedAt: 'showUpdatedAt' in value && value.showUpdatedAt === true,
+    showAssignee: 'showAssignee' in value && value.showAssignee === true,
     savedAt,
   }
 }
@@ -275,13 +296,15 @@ export interface ViewPreferenceControls {
   /** 一键关掉两个人员开关；状态筛选与排序不动。 */
   readonly clearPeople: () => void
   readonly setLayout: (layout: TicketLayout) => void
+  /** 切换一个行内信息开关；另一个开关不受影响。 */
+  readonly toggleRowDetail: (key: RowDetailKey) => void
 }
 
 /**
  * 读取并按仓库维护视图偏好。存储不可用时全部退回默认视图。
  * @param workspaceRoot - 当前工作区根路径。
  * @param snapshot - 当前快照；偏好键由它的仓库身份决定，还没拿到时用默认视图。
- * @returns 当前偏好与筛选、排序、布局入口。
+ * @returns 当前偏好与筛选、排序、人员开关、行内信息开关、布局入口。
  */
 export function useViewPreference(
   workspaceRoot: string | undefined,
@@ -320,6 +343,10 @@ export function useViewPreference(
     [store, key],
   )
 
+  const toggleField = (key: PersonFilterKey | RowDetailKey): void => {
+    apply({ ...preference, [key]: !preference[key] })
+  }
+
   return {
     preference,
     setFilter: (filter) => {
@@ -335,15 +362,14 @@ export function useViewPreference(
       }
       apply({ ...preference, sortKey: key, direction: defaultSortDirection(key) })
     },
-    togglePerson: (key) => {
-      apply({ ...preference, [key]: !preference[key] })
-    },
+    togglePerson: toggleField,
     clearPeople: () => {
       apply({ ...preference, assignedToMe: false, createdByMe: false })
     },
     setLayout: (layout) => {
       apply({ ...preference, layout })
     },
+    toggleRowDetail: toggleField,
   }
 }
 
