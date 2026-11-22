@@ -1,5 +1,5 @@
 /**
- * 视图偏好：按仓库记住筛选、排序键、方向、两个人员开关、行内信息开关与布局。
+ * 视图偏好：按仓库记住筛选、排序键、方向、两个人员开关、四个行内显示开关与布局。
  *
  * 存在 Orca 的插件私有存储里：一个键放一份 JSON 字符串，里面是「偏好键 → 偏好」的映射，
  * 最多保留 50 个条目。存储不可用或数据损坏时静默退回默认视图，不影响面板其余功能。
@@ -21,16 +21,23 @@ import {
   type TicketSortKey,
 } from './ticket-view.ts'
 
-/** 行内信息的两个显示开关；默认都关闭。 */
-export interface RowDetailFlags {
+/**
+ * 行内可配置显示的四个字段。前两个默认打开，保持加入开关前的行内容；
+ * 更新时间与分配人默认关闭，不看这两项的用户不受影响。
+ */
+export interface RowFields {
+  /** 行内是否显示创建人头像与用户名。 */
+  readonly showAuthor: boolean
+  /** 行内是否显示相对创建时间。 */
+  readonly showCreatedAt: boolean
   /** 行内是否显示相对更新时间。 */
   readonly showUpdatedAt: boolean
   /** 行内是否显示分配人登录名。 */
-  readonly showAssignee: boolean
+  readonly showAssignees: boolean
 }
 
 /** 面板的一份视图偏好。 */
-export interface ViewPreference extends PeopleFilter, RowDetailFlags {
+export interface ViewPreference extends PeopleFilter, RowFields {
   readonly filter: TicketFilter
   readonly sortKey: TicketSortKey
   readonly direction: SortDirection
@@ -38,8 +45,16 @@ export interface ViewPreference extends PeopleFilter, RowDetailFlags {
   readonly layout: TicketLayout
 }
 
-/** 行内信息开关的字段名。 */
-export type RowDetailKey = keyof RowDetailFlags
+/** 行内显示开关的字段名。 */
+export type RowField = keyof RowFields
+
+/** 行内显示开关的默认值：创建人与创建时间打开，更新时间与分配人关闭。 */
+export const DEFAULT_ROW_FIELDS: RowFields = {
+  showAuthor: true,
+  showCreatedAt: true,
+  showUpdatedAt: false,
+  showAssignees: false,
+}
 
 /** 没有存档时使用的视图：只看未关闭工单，可接的排在前面，不按人员过滤，平铺布局。 */
 export const DEFAULT_VIEW: ViewPreference = {
@@ -49,8 +64,7 @@ export const DEFAULT_VIEW: ViewPreference = {
   assignedToMe: false,
   createdByMe: false,
   layout: 'flat',
-  showUpdatedAt: false,
-  showAssignee: false,
+  ...DEFAULT_ROW_FIELDS,
 }
 
 /** 插件私有存储的最小形状。 */
@@ -69,13 +83,11 @@ const STORAGE_VERSION = 1
 const MAX_ENTRIES = 50
 
 /** 一个工作区存下来的偏好。 */
-interface StoredEntry extends PeopleFilter {
+interface StoredEntry extends PeopleFilter, RowFields {
   readonly filter: TicketFilter
   readonly sortKey: TicketSortKey
   readonly direction: SortDirection
   readonly layout: TicketLayout
-  readonly showUpdatedAt: boolean
-  readonly showAssignee: boolean
   readonly savedAt: number
 }
 
@@ -148,17 +160,19 @@ export async function readViewPreference(
   const stored = entries[key] ?? (legacyKey === undefined ? undefined : entries[legacyKey])
   if (stored === undefined) return DEFAULT_VIEW
 
+  // 旧记录缺字段时的回退已在 toEntry 里逐字段完成：两个人员开关与更新 / 分配人
+  // 按 false 读，创建人与创建时间按 true 读，布局按平铺读。
   return {
-    filter: isFilter(stored.filter) ? stored.filter : DEFAULT_VIEW.filter,
-    sortKey: isSortKey(stored.sortKey) ? stored.sortKey : DEFAULT_VIEW.sortKey,
-    direction: isDirection(stored.direction) ? stored.direction : DEFAULT_VIEW.direction,
-    // 旧记录没有这两个字段时按 false 读；非法值在 toEntry 里已逐字段回落。
+    filter: stored.filter,
+    sortKey: stored.sortKey,
+    direction: stored.direction,
     assignedToMe: stored.assignedToMe,
     createdByMe: stored.createdByMe,
-    // 旧存档没有布局字段：默认平铺，界面不因升级突然换成树。
-    layout: isLayout(stored.layout) ? stored.layout : DEFAULT_VIEW.layout,
+    layout: stored.layout,
+    showAuthor: stored.showAuthor,
+    showCreatedAt: stored.showCreatedAt,
     showUpdatedAt: stored.showUpdatedAt,
-    showAssignee: stored.showAssignee,
+    showAssignees: stored.showAssignees,
   }
 }
 
@@ -187,8 +201,10 @@ export function writeViewPreference(
       assignedToMe: preference.assignedToMe,
       createdByMe: preference.createdByMe,
       layout: preference.layout,
+      showAuthor: preference.showAuthor,
+      showCreatedAt: preference.showCreatedAt,
       showUpdatedAt: preference.showUpdatedAt,
-      showAssignee: preference.showAssignee,
+      showAssignees: preference.showAssignees,
       savedAt: now(),
     }
     const map: PreferenceMap = { version: STORAGE_VERSION, entries: evictOldest(next) }
@@ -233,21 +249,29 @@ async function loadEntries(store: PreferenceStore): Promise<Record<string, Store
 
 function toEntry(value: unknown): StoredEntry | null {
   if (typeof value !== 'object' || value === null) return null
-  if (!('filter' in value) || !isFilter(value.filter)) return null
-  if (!('sortKey' in value) || !isSortKey(value.sortKey)) return null
-  if (!('direction' in value) || !isDirection(value.direction)) return null
-  const savedAt = 'savedAt' in value && typeof value.savedAt === 'number' ? value.savedAt : 0
-  const layout = 'layout' in value && isLayout(value.layout) ? value.layout : DEFAULT_VIEW.layout
+  const record = value as Readonly<Record<string, unknown>>
+  if (!isFilter(record.filter)) return null
+  if (!isSortKey(record.sortKey)) return null
+  if (!isDirection(record.direction)) return null
   return {
-    filter: value.filter,
-    sortKey: value.sortKey,
-    direction: value.direction,
-    assignedToMe: 'assignedToMe' in value && value.assignedToMe === true,
-    createdByMe: 'createdByMe' in value && value.createdByMe === true,
-    layout,
-    showUpdatedAt: 'showUpdatedAt' in value && value.showUpdatedAt === true,
-    showAssignee: 'showAssignee' in value && value.showAssignee === true,
-    savedAt,
+    filter: record.filter,
+    sortKey: record.sortKey,
+    direction: record.direction,
+    assignedToMe: isBoolean(record.assignedToMe) ? record.assignedToMe : DEFAULT_VIEW.assignedToMe,
+    createdByMe: isBoolean(record.createdByMe) ? record.createdByMe : DEFAULT_VIEW.createdByMe,
+    layout: isLayout(record.layout) ? record.layout : DEFAULT_VIEW.layout,
+    // 四个行内显示开关按各自默认值回退：创建人与创建时间默认开，另两个默认关。
+    showAuthor: isBoolean(record.showAuthor) ? record.showAuthor : DEFAULT_VIEW.showAuthor,
+    showCreatedAt: isBoolean(record.showCreatedAt)
+      ? record.showCreatedAt
+      : DEFAULT_VIEW.showCreatedAt,
+    showUpdatedAt: isBoolean(record.showUpdatedAt)
+      ? record.showUpdatedAt
+      : DEFAULT_VIEW.showUpdatedAt,
+    showAssignees: isBoolean(record.showAssignees)
+      ? record.showAssignees
+      : DEFAULT_VIEW.showAssignees,
+    savedAt: typeof record.savedAt === 'number' ? record.savedAt : 0,
   }
 }
 
@@ -286,6 +310,11 @@ function isLayout(value: unknown): value is TicketLayout {
   return typeof value === 'string' && Object.hasOwn(LAYOUTS, value)
 }
 
+/** 行内显示开关只接受布尔值；其它类型按字段默认值回退。 */
+function isBoolean(value: unknown): value is boolean {
+  return typeof value === 'boolean'
+}
+
 /** 视图偏好的当前值与修改入口。 */
 export interface ViewPreferenceControls {
   readonly preference: ViewPreference
@@ -296,15 +325,15 @@ export interface ViewPreferenceControls {
   /** 一键关掉两个人员开关；状态筛选与排序不动。 */
   readonly clearPeople: () => void
   readonly setLayout: (layout: TicketLayout) => void
-  /** 切换一个行内信息开关；另一个开关不受影响。 */
-  readonly toggleRowDetail: (key: RowDetailKey) => void
+  /** 切换一个行内显示开关；其余开关不受影响。 */
+  readonly toggleRowField: (field: RowField) => void
 }
 
 /**
  * 读取并按仓库维护视图偏好。存储不可用时全部退回默认视图。
  * @param workspaceRoot - 当前工作区根路径。
  * @param snapshot - 当前快照；偏好键由它的仓库身份决定，还没拿到时用默认视图。
- * @returns 当前偏好与筛选、排序、人员开关、行内信息开关、布局入口。
+ * @returns 当前偏好与筛选、排序、人员开关、行内显示开关、布局入口。
  */
 export function useViewPreference(
   workspaceRoot: string | undefined,
@@ -343,8 +372,8 @@ export function useViewPreference(
     [store, key],
   )
 
-  const toggleField = (key: PersonFilterKey | RowDetailKey): void => {
-    apply({ ...preference, [key]: !preference[key] })
+  const toggleField = (field: PersonFilterKey | RowField): void => {
+    apply({ ...preference, [field]: !preference[field] })
   }
 
   return {
@@ -369,7 +398,7 @@ export function useViewPreference(
     setLayout: (layout) => {
       apply({ ...preference, layout })
     },
-    toggleRowDetail: toggleField,
+    toggleRowField: toggleField,
   }
 }
 

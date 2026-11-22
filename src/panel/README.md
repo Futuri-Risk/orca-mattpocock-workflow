@@ -35,10 +35,14 @@ The MattWorkflow panel in Orca's right sidebar (`ui: "html"`, a React app runnin
   call is rejected and it falls back to a hidden textarea + `execCommand('copy')`. Only when both
   paths fail does it show a read-only, fully selected text box for the user to press ⌘C.
 - `view-preference.ts`: remembers filters, sorting, the two people toggles (assigned to me / created by
-  me), the two row-detail toggles (updated time / assignee) and the layout (flat / tree) per repository
-  in Orca's plugin-private storage (one JSON map, at most 50 entries; multiple worktrees of the same
-  repository share one). Old saves without people, row-detail or layout fields, invalid fields or
-  unavailable storage fall back to toggles off and the flat layout.
+  me), the four row-display toggles (author / created time / updated time / assignees) and the layout
+  (flat / tree) per repository in Orca's plugin-private storage (one JSON map, at most 50 entries;
+  multiple worktrees of the same repository share one). Author and created time default on, updated
+  time and assignees default off, so remote-backend rows look the same as before the toggles
+  existed. Local Markdown rows gain one created-time line because the time area no longer depends
+  on the author (see the list bullet). Old saves without people, row-display or layout fields fall
+  back field by field (people, updated time and assignees off, author and created time on, flat
+  layout); invalid fields or unavailable storage take the same defaults.
 - `ticket-view.ts`: the list's presentation logic. Status filter → people filter → sort is composed
   once here, and people counts are computed here too; the UI only renders the result and never
   re-derives verdicts.
@@ -83,9 +87,16 @@ The MattWorkflow panel in Orca's right sidebar (`ui: "html"`, a React app runnin
   A number with a remote link is its own copy button: clicking it writes the clipboard without
   opening the detail and briefly shows "Copied"; when the clipboard is unavailable the row explains
   why and offers a read-only address. Without a link the number stays plain text and clicking it
-  still opens the detail; clicking the title always opens the detail. The toolbar's "Row details"
-  menu toggles a relative updated time and the first assignee login (`@login`, plus `+N` for more);
-  both are off by default and remembered per repository.
+  still opens the detail; clicking the title always opens the detail.
+- `row-display-control.tsx`: the toolbar's "Row details" icon and its popover with four row-display
+  toggles: author, created time, updated time and assignees. Author and created time are on by
+  default; updated time and assignees are off. Assignees show plain remote logins (no `@`, at most
+  two, then `+N`), and local Markdown hides that toggle because it has no assignees. The time area is
+  independent of the author: a row without a creator still shows "Created X", and turning the author
+  off keeps the created time. Because of that decoupling, local Markdown rows now show "Created X"
+  by default where they previously showed no time; turn the created-time toggle off per repository
+  to restore the old look. The popover closes on an outside click and on Esc (returning focus to the
+  trigger); toggling a field never changes filters, sorting or loaded rows.
 - `capabilities.ts`: panel-side capability diagnostics (panel bridge, clipboard, worker
   reachability), merged for display with the worker-side capabilities in the environment check.
 - `i18n.ts`: UI language. Resolves the `language` setting (`auto` / `zh-CN` / `en`) and the host's

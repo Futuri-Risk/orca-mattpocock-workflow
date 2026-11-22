@@ -19,6 +19,9 @@ Orca 插件：在右侧栏运行 [mattpocock/skills](https://github.com/mattpoco
   点工单编号把该票在代码托管服务上的页面地址写进剪贴板（本地 Markdown 没有远端链接，
   编号仍是普通文字）；点标题仍然打开详情；
   能开工的远端工单还有一个「建 worktree」动作，一次点击就建出 Orca 托管的 worktree。
+  工具栏的「行内显示」图标点开四个开关：创建人、创建时间、更新时间与分配人，前两项默认打开。
+  分配人显示裸远端登录名（最多两个，其余折成 `+N`）。时间区不再依附创建人，因此本地 Markdown
+  的列表行默认从「没有时间」变成「创建 X」；按仓库关掉「创建时间」即可恢复原样。
 - **概览**：一屏给出压力总览（规模 / 阻塞 / 时效）、关键数字、状态与分类构成、最该先看的票。
 - **详情**：单张票的时间线、字段、原生阻塞关系。头部可手动刷新：重读这张票并同步列表快照，
   不用退回列表再点进来。被阻塞时头部的「阻塞 N」可展开成阻塞项：每条显示引用、标题与状态，
@@ -38,7 +41,7 @@ Orca 插件的能力由宿主给定，下面是本插件在这些边界内给出
 | 注册运行时技能 `/mattwf-feature`、`/mattwf-bug` | 技能文件随插件分发，环境检查里一键安装 | Orca 插件不能贡献技能（`contributes.skills` 是保留点） |
 | 插件私有 HTTP 路由 | 面板 ↔ worker 进程内桥（`orca.plugin.request`） | Orca 面板与 worker 同属一个插件，直接用桥 |
 | 宿主数据根下的缓存目录 | `~/.orca-mattpocock-workflow/cache/` | Orca 没有对应数据根 |
-| 浏览器 `localStorage` 记视图偏好 | `orca.storage` | 插件私有存储，按仓库记筛选、排序与人员开关 |
+| 浏览器 `localStorage` 记视图偏好 | `orca.storage` | 插件私有存储，按仓库记筛选、排序、人员开关与行内显示开关 |
 | 宿主 `subprocess` 服务 | worker 内 `node:child_process` | worker 是独立 Node 进程 |
 
 「建 worktree」只走 Orca 自己的命令行（`orca worktree create`），不用裸 `git worktree`：

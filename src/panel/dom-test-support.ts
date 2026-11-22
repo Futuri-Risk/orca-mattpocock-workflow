@@ -92,3 +92,24 @@ export async function settleWith(action: () => void): Promise<void> {
     await Promise.resolve()
   })
 }
+
+/** 在 act 里派发一次指针按下；浮层点击外部收起用。 */
+export async function pointerDown(target: EventTarget): Promise<void> {
+  await act(async () => {
+    target.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+  })
+  await settle()
+}
+
+/** 在 act 里派发一次按键。 */
+export async function keyDown(target: EventTarget, key: string): Promise<void> {
+  await act(async () => {
+    target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+  })
+  await settle()
+}
+
+/** 等链式 Promise（偏好写回等）落地；多轮微任务逐层结算。 */
+export async function flush(): Promise<void> {
+  for (let round = 0; round < 8; round += 1) await settle()
+}

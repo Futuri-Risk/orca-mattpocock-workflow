@@ -23,6 +23,7 @@ import { makeTicket } from './ticket-detail-test-support.ts'
 import { TicketList } from './ticket-list.tsx'
 import { buildTicketRows } from './ticket-tree.ts'
 import { createPanelClient } from './transport.ts'
+import { DEFAULT_ROW_FIELDS } from './view-preference.ts'
 
 const ZH = MESSAGES['zh-CN']
 const NOW = Date.parse('2026-06-01T00:00:00Z')
@@ -48,7 +49,7 @@ function list(
       emptyText={ZH['tickets.emptyRepo']}
       copied={null}
       now={NOW}
-      rowDetails={{ showUpdatedAt: false, showAssignee: false }}
+      rowFields={DEFAULT_ROW_FIELDS}
       backend="github"
       workspaceRoot="/workspace"
       client={createPanelClient(() => Promise.reject(new Error('渲染时不应发请求')))}

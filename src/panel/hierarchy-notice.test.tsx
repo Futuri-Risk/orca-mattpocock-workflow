@@ -6,20 +6,11 @@ import { MESSAGES } from '../protocol/i18n.ts'
 import { emptyMetrics } from '../protocol/snapshot-test-support.ts'
 import type { WorkspaceSnapshot } from '../protocol/tracker.ts'
 import { HierarchyNotice } from './hierarchy-notice.tsx'
-import type { ViewPreference } from './view-preference.ts'
+import { DEFAULT_VIEW, type ViewPreference } from './view-preference.ts'
 
 const ZH = MESSAGES['zh-CN']
 
-const FLAT: ViewPreference = {
-  filter: 'open',
-  sortKey: 'status',
-  direction: 'asc',
-  assignedToMe: false,
-  createdByMe: false,
-  layout: 'flat',
-  showUpdatedAt: false,
-  showAssignee: false,
-}
+const FLAT: ViewPreference = DEFAULT_VIEW
 const HIERARCHY: ViewPreference = { ...FLAT, layout: 'hierarchy' }
 
 function snapshot(overrides: Partial<WorkspaceSnapshot> = {}): WorkspaceSnapshot {

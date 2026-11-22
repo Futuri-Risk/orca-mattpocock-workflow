@@ -3,13 +3,17 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { MESSAGES } from '../protocol/i18n.ts'
-import type { TicketSnapshot } from '../protocol/tracker.ts'
+import type { TicketAuthor, TicketSnapshot } from '../protocol/tracker.ts'
 import { TicketList } from './ticket-list.tsx'
 import { buildTicketRows, type TicketLayout } from './ticket-tree.ts'
 import { createPanelClient } from './transport.ts'
+import { DEFAULT_ROW_FIELDS, type RowFields } from './view-preference.ts'
 
 const ZH = MESSAGES['zh-CN']
 const NOW = Date.parse('2026-06-01T00:00:00Z')
+
+/** 有展示名、没有头像的创建人：行内显示名字与首字母色块。 */
+const ALICE: TicketAuthor = { login: 'alice', displayName: 'Alice', avatarUrl: null }
 
 function ticket(
   ref: string,
@@ -46,7 +50,7 @@ function render(
   layout: TicketLayout,
   collapsed: ReadonlySet<string> = new Set(),
   backend: 'github' | 'gitea' = 'github',
-  details: { readonly showUpdatedAt?: boolean; readonly showAssignee?: boolean } = {},
+  fields: Partial<RowFields> = {},
 ): string {
   const rows = buildTicketRows(tickets, layout, collapsed)
   return renderToStaticMarkup(
@@ -58,10 +62,7 @@ function render(
       now={NOW}
       backend={backend}
       workspaceRoot="/workspace"
-      rowDetails={{
-        showUpdatedAt: details.showUpdatedAt ?? false,
-        showAssignee: details.showAssignee ?? false,
-      }}
+      rowFields={{ ...DEFAULT_ROW_FIELDS, ...fields }}
       client={createPanelClient(() => Promise.reject(new Error('渲染时不应发请求')))}
       onOpenEnvCheck={() => undefined}
       onPick={() => undefined}
@@ -73,6 +74,12 @@ function render(
 
 function count(markup: string, needle: string): number {
   return markup.split(needle).length - 1
+}
+
+/** 取某个 testid 的 span 内文；这些元素内部没有嵌套 span。 */
+function textOf(markup: string, testId: string): string {
+  const pattern = new RegExp(`data-testid="${testId}"[^>]*>(.*?)</span>`, 'su')
+  return markup.match(pattern)?.[1] ?? ''
 }
 
 /** 行按钮在文档里的顺序与层级标记。 */
@@ -204,91 +211,139 @@ describe('工单列表布局渲染', () => {
   })
 })
 
-describe('行内更新时间与分配人', () => {
-  it('两个开关都关时行内不出现更新时间与分配人的 DOM', () => {
-    const markup = render(
-      [ticket('#1', undefined, { assignees: ['alice'] })],
-      'flat',
-      new Set(),
-      'github',
-      { showUpdatedAt: false, showAssignee: false },
-    )
+describe('行内显示字段', () => {
+  it('默认显示创建人与裸创建时间，不显示更新时间与分配人', () => {
+    const markup = render([
+      ticket('#1', undefined, { author: ALICE, assignees: ['alice'] }),
+    ], 'flat')
 
-    expect(markup).not.toContain('ticket-updated-at')
-    expect(markup).not.toContain('ticket-assignee')
-    expect(markup).not.toContain('@alice')
+    expect(markup).toContain('data-testid="ticket-author"')
+    expect(markup).toContain('Alice')
+    expect(textOf(markup, 'ticket-age')).toBe('31 天前')
+    expect(textOf(markup, 'ticket-age')).not.toContain('更新')
+    expect(markup).not.toContain('ticket-assignees')
   })
 
-  it('打开更新时间时显示相对时间，悬停给出创建与更新时刻', () => {
-    const markup = render([ticket('#1')], 'flat', new Set(), 'github', {
+  it('打开更新时间时显示创建与更新两段，悬停给出绝对时刻', () => {
+    const markup = render([ticket('#1', undefined, { author: ALICE })], 'flat', new Set(), 'github', {
       showUpdatedAt: true,
     })
 
-    expect(markup).toContain('data-testid="ticket-updated-at"')
-    expect(markup).toContain('30 天前')
+    expect(textOf(markup, 'ticket-age')).toBe('创建 31 天前 · 更新 30 天前')
     expect(markup).toContain(
-      ZH['tickets.ageTitle']
+      `title="${ZH['tickets.ageTitle']
         .replace('{created}', '2026-05-01T00:00:00Z')
-        .replace('{updated}', '2026-05-02T00:00:00Z'),
+        .replace('{updated}', '2026-05-02T00:00:00Z')}"`,
     )
   })
 
-  it('打开分配人时显示第一个登录名；空数组不渲染占位', () => {
-    const assigned = render(
-      [ticket('#1', undefined, { assignees: ['alice'] })],
+  it('关闭创建人时时间仍在，并加「创建」前缀', () => {
+    const markup = render([ticket('#1', undefined, { author: ALICE })], 'flat', new Set(), 'github', {
+      showAuthor: false,
+    })
+
+    expect(markup).not.toContain('ticket-author')
+    expect(markup).not.toContain('ticket-avatar')
+    expect(textOf(markup, 'ticket-age')).toBe('创建 31 天前')
+  })
+
+  it('没有创建人的行默认显示创建时间', () => {
+    const markup = render([ticket('#1')], 'flat')
+
+    expect(markup).not.toContain('ticket-author')
+    expect(textOf(markup, 'ticket-age')).toBe('创建 31 天前')
+  })
+
+  it('关闭创建时间后时间区消失，创建人仍在', () => {
+    const markup = render([ticket('#1', undefined, { author: ALICE })], 'flat', new Set(), 'github', {
+      showCreatedAt: false,
+    })
+
+    expect(markup).toContain('ticket-author')
+    expect(markup).not.toContain('ticket-age')
+  })
+
+  it('打开分配人时显示裸登录名，不加 @', () => {
+    const markup = render(
+      [ticket('#1', undefined, { assignees: ['alice', 'bob'] })],
       'flat',
       new Set(),
       'github',
-      { showAssignee: true },
+      { showAssignees: true },
     )
-    const none = render([ticket('#1')], 'flat', new Set(), 'github', {
-      showAssignee: true,
-    })
 
-    expect(assigned).toContain('data-testid="ticket-assignee"')
-    expect(assigned).toContain('@alice')
-    expect(none).not.toContain('ticket-assignee')
+    expect(markup).toContain('data-testid="ticket-assignees"')
+    expect(textOf(markup, 'ticket-assignee')).toBe('alice, bob')
+    expect(markup).not.toContain('@alice')
+    expect(markup).toContain(
+      `aria-label="${ZH['tickets.row.assigneesLabel'].replace('{names}', 'alice, bob')}"`,
+    )
   })
 
-  it('多个分配人只显示第一个并追加 +N', () => {
+  it('分配人为空数组时不渲染图标或占位', () => {
+    const markup = render([ticket('#1')], 'flat', new Set(), 'github', { showAssignees: true })
+
+    expect(markup).not.toContain('ticket-assignees')
+  })
+
+  it('分配人超过两个时只显示前两个并追加 +N，悬停说明列出全部', () => {
     const markup = render(
       [ticket('#1', undefined, { assignees: ['alice', 'bob', 'carol'] })],
       'flat',
       new Set(),
       'github',
-      { showAssignee: true },
+      { showAssignees: true },
     )
 
-    expect(markup).toContain('@alice')
-    expect(markup).toContain('+2')
-    expect(markup).not.toContain('@bob')
+    expect(textOf(markup, 'ticket-assignee')).toBe('alice, bob')
+    expect(textOf(markup, 'ticket-assignee-more')).toBe('+1')
+    expect(markup).toContain(
+      `title="${ZH['tickets.row.assigneesMoreTitle']
+        .replace('{count}', '1')
+        .replace('{names}', 'alice, bob, carol')}"`,
+    )
   })
 
-  it('更新时间无法解析时不显示这一段，也不留空占位', () => {
+  it('更新时间无法解析时省略更新段，创建时间照常显示', () => {
     const markup = render(
-      [ticket('#1', undefined, { updatedAt: 'not-a-time' })],
+      [ticket('#1', undefined, { author: ALICE, updatedAt: 'not-a-time' })],
       'flat',
       new Set(),
       'github',
       { showUpdatedAt: true },
     )
 
-    expect(markup).not.toContain('ticket-updated-at')
+    expect(textOf(markup, 'ticket-age')).toBe('创建 31 天前')
+    expect(textOf(markup, 'ticket-age')).not.toContain('更新')
   })
 
-  it('更新时间排在分配人之前', () => {
+  it('两段时间都无法解析且没有创建人时整个时间区不渲染', () => {
     const markup = render(
-      [ticket('#1', undefined, { assignees: ['alice'] })],
+      [ticket('#1', undefined, { createdAt: 'not-a-time', updatedAt: 'also-bad' })],
       'flat',
       new Set(),
       'github',
-      { showUpdatedAt: true, showAssignee: true },
+      { showUpdatedAt: true },
     )
 
-    const updated = markup.indexOf('data-testid="ticket-updated-at"')
-    const assignee = markup.indexOf('data-testid="ticket-assignee"')
-    expect(updated).toBeGreaterThanOrEqual(0)
-    expect(updated).toBeLessThan(assignee)
+    expect(markup).not.toContain('ticket-age')
+  })
+
+  it('分配人排在创建人与时间之前', () => {
+    const markup = render(
+      [ticket('#1', undefined, { author: ALICE, assignees: ['alice'] })],
+      'flat',
+      new Set(),
+      'github',
+      { showAssignees: true },
+    )
+
+    const assignees = markup.indexOf('data-testid="ticket-assignees"')
+    const author = markup.indexOf('data-testid="ticket-author"')
+    const age = markup.indexOf('data-testid="ticket-age"')
+    expect(assignees).toBeGreaterThanOrEqual(0)
+    expect(assignees).toBeLessThan(author)
+    expect(author).toBeLessThan(age)
   })
 })
 

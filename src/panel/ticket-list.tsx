@@ -16,6 +16,7 @@ import type {
 } from '../protocol/tracker.ts'
 import { authorName, authorTitle } from './author-text.ts'
 import { useMessages } from './i18n.ts'
+import { PersonIcon } from './icons.tsx'
 import { formatRelativeTime } from './relative-time.ts'
 import { SkillActionBadge } from './skill-action-badge.tsx'
 import type { PanelClient } from './transport.ts'
@@ -36,6 +37,10 @@ import {
   STATUS_DOT_STYLE,
 } from './task-panel-styles.ts'
 import {
+  ASSIGNEE_GROUP_STYLE,
+  ASSIGNEE_ICON_STYLE,
+  ASSIGNEE_MORE_STYLE,
+  ASSIGNEE_NAME_STYLE,
   AUTHOR_NAME_STYLE,
   CARD_MAIN_STYLE,
   CARD_META_STYLE,
@@ -44,15 +49,11 @@ import {
   LABEL_BADGE_STYLE,
   PARENT_BADGE_STYLE,
   ROW_AGE_STYLE,
-  ROW_ASSIGNEE_LOGIN_STYLE,
-  ROW_ASSIGNEE_MORE_STYLE,
-  ROW_ASSIGNEE_STYLE,
-  ROW_UPDATED_STYLE,
 } from './ticket-row-styles.ts'
 import { CopyFailure, type CopyState } from './ticket-detail-fields.tsx'
 import { useCopyLink } from './ticket-detail-hooks.ts'
 import { VISUALLY_HIDDEN_STYLE } from './ticket-detail-styles.ts'
-import type { RowDetailFlags } from './view-preference.ts'
+import type { RowFields } from './view-preference.ts'
 import { UserAvatar } from './user-avatar.tsx'
 import type { TicketLayout, TicketTreeRow } from './ticket-tree.ts'
 import {
@@ -77,7 +78,7 @@ export interface TicketListProps {
   /** 当前时间（毫秒），用于行内的相对创建时间。 */
   readonly now: number
   /** 行内可选信息的显示开关。 */
-  readonly rowDetails: RowDetailFlags
+  readonly rowFields: RowFields
   /** 当前快照的后端：本地 Markdown 不提供建 worktree 入口。 */
   readonly backend: BackendKind
   readonly workspaceRoot: string | undefined
@@ -94,6 +95,9 @@ const REF_DISPLAY_LIMIT = 40
 
 /** 分类之外最多显示几个标签；超出的折成 `+N`，窄面板不被撑破。 */
 const MAX_EXTRA_LABELS = 3
+
+/** 行内最多显示几个分配人登录名；超出的折成 `+N`，完整名单在悬停说明里。 */
+const MAX_ROW_ASSIGNEES = 2
 
 /**
  * 渲染过滤、排序后的工单。
@@ -127,7 +131,7 @@ export function TicketList(props: TicketListProps): React.ReactElement {
           copied={row.ticket.ref === props.copied && row.ticket.skillAction !== 'none'}
           focused={row.ticket.ref === props.focused}
           now={props.now}
-          rowDetails={props.rowDetails}
+          rowFields={props.rowFields}
           backend={props.backend}
           workspaceRoot={props.workspaceRoot}
           client={props.client}
@@ -153,7 +157,7 @@ function TicketRow(props: {
   readonly focused: boolean
   readonly now: number
   /** 行内可选信息的显示开关。 */
-  readonly rowDetails: RowDetailFlags
+  readonly rowFields: RowFields
   /** 当前快照的后端：本地 Markdown 不提供建 worktree 入口。 */
   readonly backend: BackendKind
   readonly workspaceRoot: string | undefined
@@ -202,7 +206,7 @@ function TicketRow(props: {
               display={display}
               focused={props.focused}
               now={props.now}
-              rowDetails={props.rowDetails}
+              rowFields={props.rowFields}
               row={props.row}
               hierarchy={hierarchy}
               copy={link.copy}
@@ -218,7 +222,7 @@ function TicketRow(props: {
             display={display}
             focused={props.focused}
             now={props.now}
-            rowDetails={props.rowDetails}
+            rowFields={props.rowFields}
             row={props.row}
             hierarchy={hierarchy}
             copy={link.copy}
@@ -266,7 +270,7 @@ function RowContent(props: {
   readonly focused: boolean
   readonly now: number
   /** 行内可选信息的显示开关。 */
-  readonly rowDetails: RowDetailFlags
+  readonly rowFields: RowFields
   readonly row: TicketTreeRow
   readonly hierarchy: boolean
   readonly copy: CopyState
@@ -302,7 +306,7 @@ function RowContent(props: {
       <MetaRow
         ticket={props.ticket}
         now={props.now}
-        rowDetails={props.rowDetails}
+        rowFields={props.rowFields}
         row={props.row}
         hierarchy={props.hierarchy}
       />
@@ -416,7 +420,7 @@ const ACTION_COLUMN_STYLE: React.CSSProperties = {
 function MetaRow(props: {
   readonly ticket: TicketSnapshot
   readonly now: number
-  readonly rowDetails: RowDetailFlags
+  readonly rowFields: RowFields
   readonly row: TicketTreeRow
   readonly hierarchy: boolean
 }): React.ReactElement {
@@ -460,31 +464,64 @@ function MetaRow(props: {
           +{String(hidden)}
         </span>
       ) : null}
-      {ticket.author === null ? null : (
-        <AuthorMeta
-          author={ticket.author}
-          createdAt={ticket.createdAt}
-          updatedAt={ticket.updatedAt}
-          now={props.now}
-        />
-      )}
-      <RowDetails ticket={ticket} now={props.now} rowDetails={props.rowDetails} />
+      {props.rowFields.showAssignees && ticket.assignees.length > 0 ? (
+        <AssigneeMeta assignees={ticket.assignees} />
+      ) : null}
+      {props.rowFields.showAuthor && ticket.author !== null ? (
+        <AuthorMeta author={ticket.author} />
+      ) : null}
+      <TimeMeta
+        createdAt={ticket.createdAt}
+        updatedAt={ticket.updatedAt}
+        now={props.now}
+        fields={props.rowFields}
+        authorShown={props.rowFields.showAuthor && ticket.author !== null}
+      />
     </span>
   )
 }
 
-/** 创建人区：头像、用户名与相对创建时间；时间沿用面板头部的说法。 */
-function AuthorMeta(props: {
-  readonly author: TicketAuthor
-  readonly createdAt: string
-  readonly updatedAt: string
-  readonly now: number
-}): React.ReactElement {
+/** 分配人区：小人图标后接裸远端登录名，最多两个，其余折成 `+N`；不读头像。 */
+function AssigneeMeta(props: { readonly assignees: readonly string[] }): React.ReactElement {
+  const t = useMessages()
+  const separator = t('tickets.row.assigneesSeparator')
+  const all = props.assignees.join(separator)
+  const shown = props.assignees.slice(0, MAX_ROW_ASSIGNEES)
+  const hidden = props.assignees.length - shown.length
+
+  return (
+    <span
+      role="group"
+      data-testid="ticket-assignees"
+      aria-label={t('tickets.row.assigneesLabel', { names: all })}
+      title={t('tickets.row.assigneesLabel', { names: all })}
+      style={ASSIGNEE_GROUP_STYLE}
+    >
+      <span aria-hidden="true" style={ASSIGNEE_ICON_STYLE}>
+        <PersonIcon />
+      </span>
+      <span data-testid="ticket-assignee" style={ASSIGNEE_NAME_STYLE}>
+        {shown.join(separator)}
+      </span>
+      {hidden > 0 ? (
+        <span
+          data-testid="ticket-assignee-more"
+          title={t('tickets.row.assigneesMoreTitle', { count: hidden, names: all })}
+          style={ASSIGNEE_MORE_STYLE}
+        >
+          +{String(hidden)}
+        </span>
+      ) : null}
+    </span>
+  )
+}
+
+/** 创建人区：头像与用户名；时间独立成块，没有创建人的行也能显示时间。 */
+function AuthorMeta(props: { readonly author: TicketAuthor }): React.ReactElement {
   const t = useMessages()
   const { author } = props
   const name = authorName(author)
   const full = authorTitle(author, t)
-  const age = formatRelativeTime(props.createdAt, props.now, t)
 
   return (
     <>
@@ -492,80 +529,51 @@ function AuthorMeta(props: {
       <span data-testid="ticket-author" title={full} style={AUTHOR_NAME_STYLE}>
         {name}
       </span>
-      {age.length === 0 ? null : (
-        <span
-          data-testid="ticket-age"
-          title={t('tickets.ageTitle', {
-            created: props.createdAt,
-            updated: props.updatedAt,
-          })}
-          style={ROW_AGE_STYLE}
-        >
-          {age}
-        </span>
-      )}
     </>
   )
 }
 
 /**
- * 行内可选信息：相对更新时间与分配人登录名。
- * 两个开关都在这里判断；关闭或后端没给数据时整段不渲染，不留空容器。
- * @param props - 当前票、当前时间与两个显示开关。
- * @returns 更新时间与分配人两段，或 null。
+ * 行内时间区：创建与更新两段各自受开关控制，都关掉或都解析失败时不渲染。
+ * 创建人就在同一行且只显示创建时间时，保持加入开关前的裸相对时间；
+ * 与更新时间同排、创建人被藏起来或这一行没有创建人时，加「创建」前缀点明含义。
+ * 任一时间无法解析时省略对应段。
  */
-function RowDetails(props: {
-  readonly ticket: TicketSnapshot
+function TimeMeta(props: {
+  readonly createdAt: string
+  readonly updatedAt: string
   readonly now: number
-  readonly rowDetails: RowDetailFlags
+  readonly fields: RowFields
+  /** 这一行当前是否真的渲染了创建人。 */
+  readonly authorShown: boolean
 }): React.ReactElement | null {
   const t = useMessages()
-  const updated = props.rowDetails.showUpdatedAt
-    ? formatRelativeTime(props.ticket.updatedAt, props.now, t)
+  const createdAge = props.fields.showCreatedAt
+    ? formatRelativeTime(props.createdAt, props.now, t)
     : ''
-  const assignees = props.ticket.assignees
-  const first = assignees[0]
-  const more = assignees.length - 1
+  const updatedAge = props.fields.showUpdatedAt
+    ? formatRelativeTime(props.updatedAt, props.now, t)
+    : ''
+  const segments: string[] = []
 
-  if (
-    updated.length === 0 &&
-    (first === undefined || !props.rowDetails.showAssignee)
-  ) {
-    return null
+  if (createdAge.length > 0) {
+    const bare = !props.fields.showUpdatedAt && props.authorShown
+    segments.push(bare ? createdAge : t('tickets.row.created', { age: createdAge }))
   }
+  if (updatedAge.length > 0) segments.push(t('tickets.row.updated', { age: updatedAge }))
+  if (segments.length === 0) return null
 
   return (
-    <>
-      {updated.length === 0 ? null : (
-        <span
-          data-testid="ticket-updated-at"
-          title={t('tickets.ageTitle', {
-            created: props.ticket.createdAt,
-            updated: props.ticket.updatedAt,
-          })}
-          style={ROW_UPDATED_STYLE}
-        >
-          {/* 泛型 span 的 aria-label 在部分读屏器里会被忽略；把完整说法放进可见文本前的隐藏串。 */}
-          <span style={VISUALLY_HIDDEN_STYLE}>
-            {t('tickets.updatedAtLabel', { time: updated })}
-          </span>
-          <span aria-hidden="true">{updated}</span>
-        </span>
-      )}
-      {props.rowDetails.showAssignee && first !== undefined ? (
-        <span data-testid="ticket-assignee" style={ROW_ASSIGNEE_STYLE}>
-          <span style={VISUALLY_HIDDEN_STYLE}>
-            {more > 0
-              ? t('tickets.assigneeLabelMore', { login: `@${first}`, count: more })
-              : t('tickets.assigneeLabel', { login: `@${first}` })}
-          </span>
-          <span aria-hidden="true" style={ROW_ASSIGNEE_LOGIN_STYLE}>@{first}</span>
-          {more > 0 ? (
-            <span aria-hidden="true" style={ROW_ASSIGNEE_MORE_STYLE}>+{String(more)}</span>
-          ) : null}
-        </span>
-      ) : null}
-    </>
+    <span
+      data-testid="ticket-age"
+      title={t('tickets.ageTitle', {
+        created: props.createdAt,
+        updated: props.updatedAt,
+      })}
+      style={ROW_AGE_STYLE}
+    >
+      {segments.join(t('tickets.row.timeSeparator'))}
+    </span>
   )
 }
 

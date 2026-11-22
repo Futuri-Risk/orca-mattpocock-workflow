@@ -29,8 +29,8 @@
 缓存键的选择只写在一处：`storeKeyOf`（托管后端用仓库作用域，本地 Markdown 用工作区作用域）。
 引入于 #7。
 
-面板的视图偏好（筛选、排序键、方向、两个人员开关、两个行内信息开关与布局）走同一条规则，但面板拿不到仓库作用域，
-用快照里的仓库身份代替：`viewPreferenceKey`（`src/panel/view-preference.ts`）。
+面板的视图偏好（筛选、排序键、方向、两个人员开关、四个行内显示开关（创建人、创建时间、更新时间、分配人）与布局）
+走同一条规则，但面板拿不到仓库作用域，用快照里的仓库身份代替：`viewPreferenceKey`（`src/panel/view-preference.ts`）。
 
 _避免_：把仓库作用域叫成「仓库根」「repo root」——那容易被理解成当前 worktree 的 git 顶层目录，
 而附属 worktree 的顶层目录恰恰不是仓库作用域。

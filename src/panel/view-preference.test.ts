@@ -6,6 +6,7 @@ import {
   viewPreferenceKey,
   writeViewPreference,
   type PreferenceStore,
+  type ViewPreference,
 } from './view-preference.ts'
 
 function memoryStore(): PreferenceStore & { readonly data: Map<string, unknown> } {
@@ -24,19 +25,37 @@ const MAIN = '/repo/main'
 const WORKTREE = '/worktrees/bugfix-10'
 const github = { backend: 'github', repositoryHost: 'github.com', repository: 'o/r' } as const
 
+/** 一份完整的偏好；测试只覆盖关心的字段。 */
+function preference(overrides: Partial<ViewPreference> = {}): ViewPreference {
+  return { ...DEFAULT_VIEW, ...overrides }
+}
+
+/** 直接改写存档里的一个条目，模拟旧版本写下的记录。 */
+function seedEntry(
+  store: PreferenceStore & { readonly data: Map<string, unknown> },
+  key: string,
+  entry: Readonly<Record<string, unknown>>,
+): void {
+  store.data.set(
+    'view-preferences',
+    JSON.stringify({ version: 1, entries: { [key]: { ...entry, savedAt: 1 } } }),
+  )
+}
+
+function storedKey(overrides: Partial<typeof github> = {}): string {
+  const key = viewPreferenceKey({ ...github, ...overrides }, MAIN)
+  if (key === undefined) throw new Error('偏好键不应为空')
+  return key
+}
+
 describe('视图偏好按仓库归并', () => {
   it('同一仓库的两个 worktree 共用一份偏好', async () => {
     const store = memoryStore()
-    const sorted = {
-      filter: 'open',
-      sortKey: 'status',
+    const sorted = preference({
       direction: 'desc',
       assignedToMe: true,
-      createdByMe: false,
       layout: 'hierarchy',
-      showUpdatedAt: false,
-      showAssignee: false,
-    } as const
+    })
 
     await writeViewPreference(store, viewPreferenceKey(github, MAIN), sorted)
 
@@ -47,16 +66,11 @@ describe('视图偏好按仓库归并', () => {
 
   it('不同仓库各自一份', async () => {
     const store = memoryStore()
-    await writeViewPreference(store, viewPreferenceKey(github, MAIN), {
-      filter: 'closed',
-      sortKey: 'number',
-      direction: 'desc',
-      assignedToMe: false,
-      createdByMe: false,
-      layout: 'flat',
-      showUpdatedAt: false,
-      showAssignee: false,
-    })
+    await writeViewPreference(
+      store,
+      viewPreferenceKey(github, MAIN),
+      preference({ filter: 'closed', sortKey: 'number', direction: 'desc' }),
+    )
     const other = { ...github, repository: 'o/other' }
 
     await expect(
@@ -67,16 +81,11 @@ describe('视图偏好按仓库归并', () => {
   it('本地 Markdown 按工作区隔离', async () => {
     const store = memoryStore()
     const markdown = { backend: 'markdown', repositoryHost: null, repository: 'local' } as const
-    await writeViewPreference(store, viewPreferenceKey(markdown, MAIN), {
-      filter: 'all',
-      sortKey: 'title',
-      direction: 'asc',
-      assignedToMe: false,
-      createdByMe: false,
-      layout: 'flat',
-      showUpdatedAt: false,
-      showAssignee: false,
-    })
+    await writeViewPreference(
+      store,
+      viewPreferenceKey(markdown, MAIN),
+      preference({ filter: 'all', sortKey: 'title', direction: 'asc' }),
+    )
 
     await expect(
       readViewPreference(store, viewPreferenceKey(markdown, WORKTREE), WORKTREE),
@@ -89,16 +98,7 @@ describe('视图偏好按仓库归并', () => {
 
   it('升级前按工作区存的偏好仍然读得到', async () => {
     const store = memoryStore()
-    const legacy = {
-      filter: 'blocked',
-      sortKey: 'updated',
-      direction: 'asc',
-      assignedToMe: false,
-      createdByMe: false,
-      layout: 'hierarchy',
-      showUpdatedAt: false,
-      showAssignee: false,
-    } as const
+    const legacy = preference({ filter: 'blocked', sortKey: 'updated', layout: 'hierarchy' })
     await writeViewPreference(store, MAIN, legacy)
 
     await expect(
@@ -108,45 +108,32 @@ describe('视图偏好按仓库归并', () => {
 
   it('旧存档没有布局字段时默认平铺', async () => {
     const store = memoryStore()
-    const legacy = { filter: 'closed', sortKey: 'updated', direction: 'desc' } as const
-    await writeViewPreference(store, viewPreferenceKey(github, MAIN), DEFAULT_VIEW)
-    // 直接改写存档，模拟升级前写下的条目：布局字段缺失。
-    const key = viewPreferenceKey(github, MAIN)
-    if (key === undefined) throw new Error('偏好键不应为空')
-    const map = JSON.parse(String(store.data.get('view-preferences'))) as {
-      entries: Record<string, unknown>
-    }
-    map.entries[key] = { ...legacy, savedAt: 1 }
-    store.data.set('view-preferences', JSON.stringify(map))
+    const key = storedKey()
+    seedEntry(store, key, { filter: 'closed', sortKey: 'updated', direction: 'desc' })
 
     await expect(readViewPreference(store, key, MAIN)).resolves.toEqual({
-      ...legacy,
+      filter: 'closed',
+      sortKey: 'updated',
+      direction: 'desc',
       assignedToMe: false,
       createdByMe: false,
       layout: 'flat',
+      showAuthor: true,
+      showCreatedAt: true,
       showUpdatedAt: false,
-      showAssignee: false,
+      showAssignees: false,
     })
   })
 
   it('布局字段非法时退回平铺', async () => {
     const store = memoryStore()
-    await writeViewPreference(store, viewPreferenceKey(github, MAIN), {
-      ...DEFAULT_VIEW,
-      layout: 'flat',
-    })
-    const key = viewPreferenceKey(github, MAIN)
-    if (key === undefined) throw new Error('偏好键不应为空')
-    const map = JSON.parse(String(store.data.get('view-preferences'))) as {
-      entries: Record<string, unknown>
-    }
-    map.entries[key] = { ...DEFAULT_VIEW, layout: 'rows', savedAt: 1 }
-    store.data.set('view-preferences', JSON.stringify(map))
+    const key = storedKey()
+    seedEntry(store, key, { ...preference(), layout: 'rows' })
 
-    const preference = await readViewPreference(store, key, MAIN)
+    const stored = await readViewPreference(store, key, MAIN)
 
-    expect(preference.layout).toBe('flat')
-    expect(preference.filter).toBe(DEFAULT_VIEW.filter)
+    expect(stored.layout).toBe('flat')
+    expect(stored.filter).toBe(DEFAULT_VIEW.filter)
   })
 
   it('存储不可用时退回默认视图（含平铺布局）', async () => {
@@ -157,51 +144,42 @@ describe('视图偏好按仓库归并', () => {
   })
 })
 
-describe('行内信息开关', () => {
-  it('默认不显示更新时间与分配人', () => {
+describe('行内显示开关', () => {
+  it('默认显示创建人与创建时间，不显示更新时间与分配人', () => {
+    expect(DEFAULT_VIEW.showAuthor).toBe(true)
+    expect(DEFAULT_VIEW.showCreatedAt).toBe(true)
     expect(DEFAULT_VIEW.showUpdatedAt).toBe(false)
-    expect(DEFAULT_VIEW.showAssignee).toBe(false)
+    expect(DEFAULT_VIEW.showAssignees).toBe(false)
   })
 
-  it('两个开关按 true 写入后原样读回', async () => {
+  it('四个开关写入后原样读回', async () => {
     const store = memoryStore()
-    const details = {
-      filter: 'open',
-      sortKey: 'status',
-      direction: 'asc',
-      assignedToMe: false,
-      createdByMe: false,
-      layout: 'flat',
+    const details = preference({
+      filter: 'closed',
+      sortKey: 'number',
+      direction: 'desc',
+      showAuthor: false,
+      showCreatedAt: false,
       showUpdatedAt: true,
-      showAssignee: true,
-    } as const
+      showAssignees: true,
+    })
 
     await writeViewPreference(store, viewPreferenceKey(github, MAIN), details)
 
-    await expect(
-      readViewPreference(store, viewPreferenceKey(github, MAIN)),
-    ).resolves.toEqual(details)
+    await expect(readViewPreference(store, viewPreferenceKey(github, MAIN))).resolves.toEqual(
+      details,
+    )
   })
 
-  it('旧记录缺字段时按 false 读，筛选、排序与布局保留', async () => {
+  it('旧记录缺四个字段时按各自默认值读，其余偏好保留', async () => {
     const store = memoryStore()
-    const key = viewPreferenceKey(github, MAIN)
-    if (key === undefined) throw new Error('需要偏好键')
-    store.data.set(
-      'view-preferences',
-      JSON.stringify({
-        version: 1,
-        entries: {
-          [key]: {
-            filter: 'blocked',
-            sortKey: 'updated',
-            direction: 'desc',
-            layout: 'hierarchy',
-            savedAt: 1,
-          },
-        },
-      }),
-    )
+    const key = storedKey()
+    seedEntry(store, key, {
+      filter: 'blocked',
+      sortKey: 'updated',
+      direction: 'desc',
+      layout: 'hierarchy',
+    })
 
     await expect(readViewPreference(store, key)).resolves.toEqual({
       filter: 'blocked',
@@ -210,32 +188,26 @@ describe('行内信息开关', () => {
       assignedToMe: false,
       createdByMe: false,
       layout: 'hierarchy',
+      showAuthor: true,
+      showCreatedAt: true,
       showUpdatedAt: false,
-      showAssignee: false,
+      showAssignees: false,
     })
   })
 
-  it('单个开关非法时只回退该字段，另一个开关与其它字段保留', async () => {
+  it('单个开关非法时只回退该字段，其余开关与偏好保留', async () => {
     const store = memoryStore()
-    const key = viewPreferenceKey(github, MAIN)
-    if (key === undefined) throw new Error('需要偏好键')
-    store.data.set(
-      'view-preferences',
-      JSON.stringify({
-        version: 1,
-        entries: {
-          [key]: {
-            filter: 'closed',
-            sortKey: 'title',
-            direction: 'asc',
-            layout: 'flat',
-            showUpdatedAt: true,
-            showAssignee: 'yes',
-            savedAt: 1,
-          },
-        },
-      }),
-    )
+    const key = storedKey()
+    seedEntry(store, key, {
+      filter: 'closed',
+      sortKey: 'title',
+      direction: 'asc',
+      layout: 'flat',
+      showAuthor: 'yes',
+      showCreatedAt: false,
+      showUpdatedAt: true,
+      showAssignees: true,
+    })
 
     await expect(readViewPreference(store, key)).resolves.toEqual({
       filter: 'closed',
@@ -244,22 +216,25 @@ describe('行内信息开关', () => {
       assignedToMe: false,
       createdByMe: false,
       layout: 'flat',
+      showAuthor: true,
+      showCreatedAt: false,
       showUpdatedAt: true,
-      showAssignee: false,
+      showAssignees: true,
     })
   })
 
-  it('行内信息开关按仓库各自保存，不互相污染', async () => {
+  it('行内显示开关按仓库各自保存，不互相污染', async () => {
     const store = memoryStore()
     const other = { ...github, repository: 'o/other' }
-    await writeViewPreference(store, viewPreferenceKey(github, MAIN), {
-      ...DEFAULT_VIEW,
-      showUpdatedAt: true,
-    })
+    await writeViewPreference(
+      store,
+      viewPreferenceKey(github, MAIN),
+      preference({ showUpdatedAt: true, showAssignees: true }),
+    )
 
-    await expect(
-      readViewPreference(store, viewPreferenceKey(other, MAIN)),
-    ).resolves.toEqual(DEFAULT_VIEW)
+    await expect(readViewPreference(store, viewPreferenceKey(other, MAIN))).resolves.toEqual(
+      DEFAULT_VIEW,
+    )
   })
 })
 
@@ -271,16 +246,7 @@ describe('人员开关的读写与回退', () => {
 
   it('两个开关按 true 写入后原样读回', async () => {
     const store = memoryStore()
-    const people = {
-      filter: 'open',
-      sortKey: 'status',
-      direction: 'asc',
-      assignedToMe: true,
-      createdByMe: true,
-      layout: 'flat',
-      showUpdatedAt: false,
-      showAssignee: false,
-    } as const
+    const people = preference({ assignedToMe: true, createdByMe: true })
 
     await writeViewPreference(store, viewPreferenceKey(github, MAIN), people)
 
@@ -289,61 +255,33 @@ describe('人员开关的读写与回退', () => {
 
   it('旧记录没有两个字段时按 false 读，筛选与排序保留', async () => {
     const store = memoryStore()
-    const key = viewPreferenceKey(github, MAIN)
-    if (key === undefined) throw new Error('需要偏好键')
-    store.data.set(
-      'view-preferences',
-      JSON.stringify({
-        version: 1,
-        entries: {
-          [key]: { filter: 'closed', sortKey: 'title', direction: 'desc', savedAt: 1 },
-        },
-      }),
-    )
+    const key = storedKey()
+    seedEntry(store, key, { filter: 'closed', sortKey: 'title', direction: 'desc' })
 
-    await expect(readViewPreference(store, key)).resolves.toEqual({
+    await expect(readViewPreference(store, key)).resolves.toEqual(preference({
       filter: 'closed',
       sortKey: 'title',
       direction: 'desc',
-      assignedToMe: false,
-      createdByMe: false,
-      layout: 'flat',
-      showUpdatedAt: false,
-      showAssignee: false,
-    })
+    }))
   })
 
   it('某个开关非法时只回退该字段，其他字段保留', async () => {
     const store = memoryStore()
-    const key = viewPreferenceKey(github, MAIN)
-    if (key === undefined) throw new Error('需要偏好键')
-    store.data.set(
-      'view-preferences',
-      JSON.stringify({
-        version: 1,
-        entries: {
-          [key]: {
-            filter: 'blocked',
-            sortKey: 'updated',
-            direction: 'asc',
-            assignedToMe: 'yes',
-            createdByMe: true,
-            savedAt: 1,
-          },
-        },
-      }),
-    )
-
-    await expect(readViewPreference(store, key)).resolves.toEqual({
+    const key = storedKey()
+    seedEntry(store, key, {
       filter: 'blocked',
       sortKey: 'updated',
       direction: 'asc',
-      assignedToMe: false,
+      assignedToMe: 'yes',
       createdByMe: true,
-      layout: 'flat',
-      showUpdatedAt: false,
-      showAssignee: false,
     })
+
+    await expect(readViewPreference(store, key)).resolves.toEqual(preference({
+      filter: 'blocked',
+      sortKey: 'updated',
+      direction: 'asc',
+      createdByMe: true,
+    }))
   })
 
   it('存储抛错时返回默认视图，不把异常带到界面', async () => {

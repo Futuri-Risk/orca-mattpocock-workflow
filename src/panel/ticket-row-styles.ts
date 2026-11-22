@@ -1,6 +1,6 @@
 /**
  * 工单行相关的样式：元信息徽标、创建人、相对时间、分配人，
- * 以及工具栏「行内信息」弹出菜单。从 task-panel-styles 拆出来，避免面板样式文件过长；
+ * 以及工具栏「行内显示」浮层。从 task-panel-styles 拆出来，避免面板样式文件过长；
  * 颜色都走宿主主题变量。
  */
 import type { CSSProperties } from 'react'
@@ -74,7 +74,7 @@ export const AUTHOR_NAME_STYLE: CSSProperties = {
   lineHeight: '18px',
 }
 
-/** 行内的相对创建时间。 */
+/** 行内的相对时间：创建与更新两段共用一套说法与层级。 */
 export const ROW_AGE_STYLE: CSSProperties = {
   color: COLORS.tertiary,
   fontSize: 11,
@@ -82,66 +82,77 @@ export const ROW_AGE_STYLE: CSSProperties = {
   whiteSpace: 'nowrap',
 }
 
-/** 行内的相对更新时间：与创建时间同一套说法与层级。 */
-export const ROW_UPDATED_STYLE: CSSProperties = {
-  ...ROW_AGE_STYLE,
-}
-
-/** 分配人：第一个登录名加可选的 `+N`，整体是一段次要信息。 */
-export const ROW_ASSIGNEE_STYLE: CSSProperties = {
+/** 分配人区：小人图标与登录名排成一组，随元信息行换行。 */
+export const ASSIGNEE_GROUP_STYLE: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
-  gap: 3,
+  gap: 4,
   minWidth: 0,
-  color: COLORS.secondary,
-  fontSize: 11,
+}
+
+/** 分配人区的前导图标：字段标识，不带文字语义。 */
+export const ASSIGNEE_ICON_STYLE: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  flex: 'none',
+  color: COLORS.tertiary,
   lineHeight: '18px',
 }
 
-/** 登录名过长时省略，保证 `+N` 始终完整可见。 */
-export const ROW_ASSIGNEE_LOGIN_STYLE: CSSProperties = {
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-  maxWidth: '18ch',
-}
-
-/** 多出来的分配人数量，沿用标签 `+N` 的轻量写法。 */
-export const ROW_ASSIGNEE_MORE_STYLE: CSSProperties = {
-  flex: 'none',
-  color: COLORS.tertiary,
-}
-
-/** 工具栏里的「行内信息」入口：和排序控件同一高度，打开时保持轻量。 */
-export const ROW_DETAILS_TRIGGER_STYLE: CSSProperties = {
-  border: 'none',
-  borderRadius: 8,
-  padding: '2px 8px',
-  background: COLORS.track,
+/** 分配人登录名：裸远端用户名，窄侧栏下不截断。 */
+export const ASSIGNEE_NAME_STYLE: CSSProperties = {
   color: COLORS.secondary,
+  fontSize: 11,
+  lineHeight: '18px',
+  whiteSpace: 'nowrap',
+}
+
+/** 分配人超过显示上限时的 `+N`，完整名单在悬停说明里。 */
+export const ASSIGNEE_MORE_STYLE: CSSProperties = {
+  color: COLORS.tertiary,
+  fontSize: 11,
+  lineHeight: '18px',
+  whiteSpace: 'nowrap',
+  cursor: 'default',
+}
+
+/** 工具栏里的「行内显示」入口：和排序下拉同高，图标不占工具栏宽度。 */
+export const ROW_DISPLAY_TRIGGER_STYLE: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: 6,
+  padding: '1px 6px',
+  color: COLORS.secondary,
+  background: COLORS.surfaceRaised,
   cursor: 'pointer',
   font: 'inherit',
-  fontSize: 12,
   lineHeight: '20px',
-  whiteSpace: 'nowrap',
 }
 
-/** 弹出菜单相对入口定位；沿用详情头部「更多」菜单的定位。 */
-export const ROW_DETAILS_WRAPPER_STYLE: CSSProperties = MENU_WRAPPER_STYLE
+/** 图标按钮与浮层共用定位上下文。 */
+export const ROW_DISPLAY_WRAPPER_STYLE: CSSProperties = {
+  ...MENU_WRAPPER_STYLE,
+  display: 'inline-flex',
+}
 
-/** 菜单面板：沿用详情头部「更多」菜单的表面与阴影，只补上纵向排列。 */
-export const ROW_DETAILS_MENU_STYLE: CSSProperties = {
+/** 浮层：贴着入口向右下展开，盖住列表。 */
+export const ROW_DISPLAY_MENU_STYLE: CSSProperties = {
   ...MENU_STYLE,
   display: 'flex',
   flexDirection: 'column',
   gap: 2,
+  minWidth: 132,
 }
 
-/** 一个复选项：勾选标记占固定宽度，文字不因状态切换而左右跳动。 */
-export const ROW_DETAILS_ITEM_STYLE: CSSProperties = {
+/** 浮层里的一项：整行按钮，开启只体现在末尾的对勾上，不给整行加底色。 */
+export const ROW_DISPLAY_ITEM_STYLE: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  gap: 6,
+  justifyContent: 'space-between',
+  gap: 12,
+  width: '100%',
   border: 'none',
   borderRadius: 6,
   padding: '4px 8px',
@@ -155,12 +166,17 @@ export const ROW_DETAILS_ITEM_STYLE: CSSProperties = {
   whiteSpace: 'nowrap',
 }
 
-/** 勾选标记的固定槽位；未选中时留空，不靠颜色表达状态。 */
-export const ROW_DETAILS_CHECK_STYLE: CSSProperties = {
-  display: 'inline-block',
-  width: '1em',
+/** 勾选标记：开启时显示在行尾。 */
+export const ROW_DISPLAY_CHECK_STYLE: CSSProperties = {
+  display: 'inline-flex',
   color: COLORS.accent,
   flex: 'none',
+}
+
+/** 未开启时保留勾的位置，切换开关时文字不左右跳动。 */
+export const ROW_DISPLAY_CHECK_OFF_STYLE: CSSProperties = {
+  ...ROW_DISPLAY_CHECK_STYLE,
+  visibility: 'hidden',
 }
 
 /**

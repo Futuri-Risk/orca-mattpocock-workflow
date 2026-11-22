@@ -23,7 +23,11 @@ The interaction is designed around the capabilities Orca plugins actually expose
   Clicking a ticket number copies that ticket's page URL on the code-hosting service (local Markdown
   has no remote link, so its number stays plain text); clicking the title still opens the detail. A
   remote ticket that can be started also gets a "Create worktree" action that creates an
-  Orca-managed worktree in one click.
+  Orca-managed worktree in one click. The toolbar's "Row details" icon opens four row-display
+  toggles — author, created time, updated time, assignees — with author and created time on by
+  default. Assignees are plain remote logins (at most two, then `+N`). The time area no longer
+  depends on the author, so local Markdown rows now show "Created X" by default; turn off "Created
+  time" per repository to restore the old rows.
 - **Overview**: pressure at a glance (size / blocking / staleness), key numbers, status and category
   composition, and the tickets to look at first.
 - **Detail**: timeline, fields and native blocking relations for one ticket. The header can refresh
@@ -48,7 +52,7 @@ Orca defines what a plugin may do. These are the choices this plugin makes insid
 | Register runtime skills `/mattwf-feature`, `/mattwf-bug` | Skill files ship with the plugin and the environment check installs them | Orca plugins cannot contribute skills (`contributes.skills` is reserved) |
 | Plugin-private HTTP routes | In-process panel ↔ worker bridge (`orca.plugin.request`) | The panel and worker belong to the same plugin; use the bridge directly |
 | Cache directory under the host data root | `~/.orca-mattpocock-workflow/cache/` | Orca has no matching data root |
-| Browser `localStorage` for view preferences | `orca.storage` | Plugin-private storage; filters, sorting and people toggles are kept per repository |
+| Browser `localStorage` for view preferences | `orca.storage` | Plugin-private storage; filters, sorting, people toggles and row-display toggles are kept per repository |
 | Host `subprocess` service | `node:child_process` inside the worker | The worker is a separate Node process |
 
 "Create worktree" only goes through Orca's own CLI (`orca worktree create`), never a bare

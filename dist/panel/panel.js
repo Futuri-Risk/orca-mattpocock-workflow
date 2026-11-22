@@ -1364,7 +1364,7 @@
           return dispatcher;
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var React35 = require_react(), Internals = {
+        var React36 = require_react(), Internals = {
           d: {
             f: noop,
             r: function() {
@@ -1382,7 +1382,7 @@
           },
           p: 0,
           findDOMNode: null
-        }, REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), REACT_OPTIMISTIC_KEY = /* @__PURE__ */ Symbol.for("react.optimistic_key"), ReactSharedInternals = React35.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+        }, REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), REACT_OPTIMISTIC_KEY = /* @__PURE__ */ Symbol.for("react.optimistic_key"), ReactSharedInternals = React36.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
         "function" === typeof Map && null != Map.prototype && "function" === typeof Map.prototype.forEach && "function" === typeof Set && null != Set.prototype && "function" === typeof Set.prototype.clear && "function" === typeof Set.prototype.forEach || console.error(
           "React depends on Map and Set built-in types. Make sure that you load a polyfill in older browsers. https://reactjs.org/link/react-polyfills"
         );
@@ -3068,7 +3068,7 @@
           node.defaultValue !== "" + value && (node.defaultValue = "" + value);
         }
         function validateOptionProps(element, props) {
-          null == props.value && ("object" === typeof props.children && null !== props.children ? React35.Children.forEach(props.children, function(child) {
+          null == props.value && ("object" === typeof props.children && null !== props.children ? React36.Children.forEach(props.children, function(child) {
             null == child || "string" === typeof child || "number" === typeof child || "bigint" === typeof child || didWarnInvalidChild || (didWarnInvalidChild = true, console.error(
               "Cannot infer the option value of complex children. Pass a `value` prop or use a plain string as children to <option>."
             ));
@@ -20216,11 +20216,11 @@
           ));
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var Scheduler = require_scheduler(), React35 = require_react(), ReactDOM = require_react_dom(), searchTarget = null, searchBoundary = null, assign = Object.assign, REACT_LEGACY_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.element"), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy");
+        var Scheduler = require_scheduler(), React36 = require_react(), ReactDOM = require_react_dom(), searchTarget = null, searchBoundary = null, assign = Object.assign, REACT_LEGACY_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.element"), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy");
         /* @__PURE__ */ Symbol.for("react.scope");
         var REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity"), REACT_LEGACY_HIDDEN_TYPE = /* @__PURE__ */ Symbol.for("react.legacy_hidden");
         /* @__PURE__ */ Symbol.for("react.tracing_marker");
-        var REACT_MEMO_CACHE_SENTINEL = /* @__PURE__ */ Symbol.for("react.memo_cache_sentinel"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), MAYBE_ITERATOR_SYMBOL = Symbol.iterator, REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), isArrayImpl = Array.isArray, ReactSharedInternals = React35.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, NotPending = Object.freeze({
+        var REACT_MEMO_CACHE_SENTINEL = /* @__PURE__ */ Symbol.for("react.memo_cache_sentinel"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), MAYBE_ITERATOR_SYMBOL = Symbol.iterator, REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), isArrayImpl = Array.isArray, ReactSharedInternals = React36.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, NotPending = Object.freeze({
           pending: false,
           data: null,
           method: null,
@@ -23412,7 +23412,7 @@
           }
         };
         (function() {
-          var isomorphicReactPackageVersion = React35.version;
+          var isomorphicReactPackageVersion = React36.version;
           if ("19.3.1" !== isomorphicReactPackageVersion)
             throw Error(
               'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' + (isomorphicReactPackageVersion + "\n  - react-dom:  19.3.1\nLearn more: https://react.dev/warnings/version-mismatch")
@@ -23768,18 +23768,18 @@
         function isValidElement(object) {
           return "object" === typeof object && null !== object && object.$$typeof === REACT_ELEMENT_TYPE;
         }
-        var React35 = require_react(), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), ReactSharedInternals = React35.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
+        var React36 = require_react(), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), ReactSharedInternals = React36.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
           return null;
         };
-        React35 = {
+        React36 = {
           react_stack_bottom_frame: function(callStackForError) {
             return callStackForError();
           }
         };
         var specialPropKeyWarningShown;
         var didWarnAboutElementRef = {};
-        var unknownOwnerDebugStack = React35.react_stack_bottom_frame.bind(
-          React35,
+        var unknownOwnerDebugStack = React36.react_stack_bottom_frame.bind(
+          React36,
           UnknownOwner
         )();
         var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
@@ -23836,7 +23836,7 @@
   });
 
   // src/panel/main.tsx
-  var React34 = __toESM(require_react(), 1);
+  var React35 = __toESM(require_react(), 1);
   var import_client = __toESM(require_client(), 1);
 
   // src/panel/avatar-source.ts
@@ -24071,12 +24071,17 @@
     "tickets.sort.number": "\u7F16\u53F7",
     "tickets.sort.title": "\u6807\u9898",
     "tickets.ageTitle": "\u521B\u5EFA\uFF1A{created}\uFF1B\u66F4\u65B0\uFF1A{updated}",
-    "tickets.rowDetails": "\u884C\u5185\u4FE1\u606F",
-    "tickets.rowDetails.updatedAt": "\u66F4\u65B0\u65F6\u95F4",
-    "tickets.rowDetails.assignee": "\u5206\u914D\u4EBA",
-    "tickets.updatedAtLabel": "\u66F4\u65B0\u65F6\u95F4\uFF1A{time}",
-    "tickets.assigneeLabel": "\u5206\u914D\u4EBA\uFF1A{login}",
-    "tickets.assigneeLabelMore": "\u5206\u914D\u4EBA\uFF1A{login}\uFF0C\u53E6\u6709 {count} \u4EBA",
+    "tickets.row.trigger": "\u884C\u5185\u663E\u793A",
+    "tickets.row.author": "\u521B\u5EFA\u4EBA",
+    "tickets.row.createdAt": "\u521B\u5EFA\u65F6\u95F4",
+    "tickets.row.updatedAt": "\u66F4\u65B0\u65F6\u95F4",
+    "tickets.row.assignees": "\u5206\u914D\u4EBA",
+    "tickets.row.created": "\u521B\u5EFA {age}",
+    "tickets.row.updated": "\u66F4\u65B0 {age}",
+    "tickets.row.timeSeparator": " \xB7 ",
+    "tickets.row.assigneesLabel": "\u5206\u914D\u4EBA\uFF1A{names}",
+    "tickets.row.assigneesSeparator": ", ",
+    "tickets.row.assigneesMoreTitle": "\u8FD8\u6709 {count} \u4E2A\u5206\u914D\u4EBA\uFF1A{names}",
     "tickets.refCopyLabel": "\u590D\u5236\u5DE5\u5355\u94FE\u63A5 {ref}",
     "tickets.refCopyHint": "\u590D\u5236\u5DE5\u5355\u94FE\u63A5\uFF1A{url}",
     "tickets.refCopiedNotice": "\u5DF2\u590D\u5236\u5DE5\u5355\u94FE\u63A5 {ref}\u3002",
@@ -24609,12 +24614,17 @@
     "tickets.sort.number": "Number",
     "tickets.sort.title": "Title",
     "tickets.ageTitle": "Created: {created}; updated: {updated}",
-    "tickets.rowDetails": "Row details",
-    "tickets.rowDetails.updatedAt": "Updated",
-    "tickets.rowDetails.assignee": "Assignee",
-    "tickets.updatedAtLabel": "Updated: {time}",
-    "tickets.assigneeLabel": "Assignee: {login}",
-    "tickets.assigneeLabelMore": "Assignee: {login}, {count} more",
+    "tickets.row.trigger": "Row details",
+    "tickets.row.author": "Author",
+    "tickets.row.createdAt": "Created time",
+    "tickets.row.updatedAt": "Updated time",
+    "tickets.row.assignees": "Assignees",
+    "tickets.row.created": "Created {age}",
+    "tickets.row.updated": "Updated {age}",
+    "tickets.row.timeSeparator": " \xB7 ",
+    "tickets.row.assigneesLabel": "Assignees: {names}",
+    "tickets.row.assigneesSeparator": ", ",
+    "tickets.row.assigneesMoreTitle": "{count} more assignees: {names}",
     "tickets.refCopyLabel": "Copy link to {ref}",
     "tickets.refCopyHint": "Copy link: {url}",
     "tickets.refCopiedNotice": "Copied ticket link {ref}.",
@@ -25701,7 +25711,7 @@
   }
 
   // src/panel/task-panel.tsx
-  var React32 = __toESM(require_react(), 1);
+  var React33 = __toESM(require_react(), 1);
 
   // src/panel/detail-navigation.ts
   var React3 = __toESM(require_react(), 1);
@@ -28576,6 +28586,21 @@ ${MARKDOWN_SHEET}
       }
     ) });
   }
+  function DisplaySettingsIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+        "path",
+        {
+          d: "M2.5 5h2M7.5 5h6M2.5 11h6M11.5 11h2",
+          stroke: "currentColor",
+          strokeWidth: "1.2",
+          strokeLinecap: "round"
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "6", cy: "5", r: "1.6", stroke: "currentColor", strokeWidth: "1.2" }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "10", cy: "11", r: "1.6", stroke: "currentColor", strokeWidth: "1.2" })
+    ] });
+  }
   function FlatListIcon() {
     return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
       "path",
@@ -31129,51 +31154,62 @@ ${MARKDOWN_SHEET}
     lineHeight: "18px",
     whiteSpace: "nowrap"
   };
-  var ROW_UPDATED_STYLE = {
-    ...ROW_AGE_STYLE
-  };
-  var ROW_ASSIGNEE_STYLE = {
+  var ASSIGNEE_GROUP_STYLE = {
     display: "inline-flex",
     alignItems: "center",
-    gap: 3,
-    minWidth: 0,
-    color: COLORS.secondary,
-    fontSize: 11,
+    gap: 4,
+    minWidth: 0
+  };
+  var ASSIGNEE_ICON_STYLE = {
+    display: "inline-flex",
+    alignItems: "center",
+    flex: "none",
+    color: COLORS.tertiary,
     lineHeight: "18px"
   };
-  var ROW_ASSIGNEE_LOGIN_STYLE = {
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    maxWidth: "18ch"
-  };
-  var ROW_ASSIGNEE_MORE_STYLE = {
-    flex: "none",
-    color: COLORS.tertiary
-  };
-  var ROW_DETAILS_TRIGGER_STYLE = {
-    border: "none",
-    borderRadius: 8,
-    padding: "2px 8px",
-    background: COLORS.track,
+  var ASSIGNEE_NAME_STYLE = {
     color: COLORS.secondary,
-    cursor: "pointer",
-    font: "inherit",
-    fontSize: 12,
-    lineHeight: "20px",
+    fontSize: 11,
+    lineHeight: "18px",
     whiteSpace: "nowrap"
   };
-  var ROW_DETAILS_WRAPPER_STYLE = MENU_WRAPPER_STYLE;
-  var ROW_DETAILS_MENU_STYLE = {
+  var ASSIGNEE_MORE_STYLE = {
+    color: COLORS.tertiary,
+    fontSize: 11,
+    lineHeight: "18px",
+    whiteSpace: "nowrap",
+    cursor: "default"
+  };
+  var ROW_DISPLAY_TRIGGER_STYLE = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: 6,
+    padding: "1px 6px",
+    color: COLORS.secondary,
+    background: COLORS.surfaceRaised,
+    cursor: "pointer",
+    font: "inherit",
+    lineHeight: "20px"
+  };
+  var ROW_DISPLAY_WRAPPER_STYLE = {
+    ...MENU_WRAPPER_STYLE,
+    display: "inline-flex"
+  };
+  var ROW_DISPLAY_MENU_STYLE = {
     ...MENU_STYLE,
     display: "flex",
     flexDirection: "column",
-    gap: 2
+    gap: 2,
+    minWidth: 132
   };
-  var ROW_DETAILS_ITEM_STYLE = {
+  var ROW_DISPLAY_ITEM_STYLE = {
     display: "flex",
     alignItems: "center",
-    gap: 6,
+    justifyContent: "space-between",
+    gap: 12,
+    width: "100%",
     border: "none",
     borderRadius: 6,
     padding: "4px 8px",
@@ -31186,11 +31222,14 @@ ${MARKDOWN_SHEET}
     textAlign: "left",
     whiteSpace: "nowrap"
   };
-  var ROW_DETAILS_CHECK_STYLE = {
-    display: "inline-block",
-    width: "1em",
+  var ROW_DISPLAY_CHECK_STYLE = {
+    display: "inline-flex",
     color: COLORS.accent,
     flex: "none"
+  };
+  var ROW_DISPLAY_CHECK_OFF_STYLE = {
+    ...ROW_DISPLAY_CHECK_STYLE,
+    visibility: "hidden"
   };
   var COLLAPSE_BUTTON_STYLE = {
     display: "inline-flex",
@@ -33080,7 +33119,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/tickets-view.tsx
-  var React31 = __toESM(require_react(), 1);
+  var React32 = __toESM(require_react(), 1);
 
   // src/panel/hierarchy-text.ts
   function hierarchyAvailability(backend, hierarchy, t) {
@@ -33218,6 +33257,7 @@ ${String(target.number)}`;
   var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
   var REF_DISPLAY_LIMIT = 40;
   var MAX_EXTRA_LABELS = 3;
+  var MAX_ROW_ASSIGNEES = 2;
   function TicketList(props) {
     if (props.rows.length === 0) {
       return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { "data-testid": "empty", style: EMPTY_STYLE, children: props.emptyText });
@@ -33232,7 +33272,7 @@ ${String(target.number)}`;
         copied: row.ticket.ref === props.copied && row.ticket.skillAction !== "none",
         focused: row.ticket.ref === props.focused,
         now: props.now,
-        rowDetails: props.rowDetails,
+        rowFields: props.rowFields,
         backend: props.backend,
         workspaceRoot: props.workspaceRoot,
         client: props.client,
@@ -33289,7 +33329,7 @@ ${String(target.number)}`;
                       display,
                       focused: props.focused,
                       now: props.now,
-                      rowDetails: props.rowDetails,
+                      rowFields: props.rowFields,
                       row: props.row,
                       hierarchy,
                       copy: link.copy,
@@ -33306,7 +33346,7 @@ ${String(target.number)}`;
                     display,
                     focused: props.focused,
                     now: props.now,
-                    rowDetails: props.rowDetails,
+                    rowFields: props.rowFields,
                     row: props.row,
                     hierarchy,
                     copy: link.copy,
@@ -33396,7 +33436,7 @@ ${String(target.number)}`;
         {
           ticket: props.ticket,
           now: props.now,
-          rowDetails: props.rowDetails,
+          rowFields: props.rowFields,
           row: props.row,
           hierarchy: props.hierarchy
         }
@@ -33497,78 +33537,86 @@ ${String(target.number)}`;
         "+",
         String(hidden)
       ] }) : null,
-      ticket.author === null ? null : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
-        AuthorMeta,
+      props.rowFields.showAssignees && ticket.assignees.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(AssigneeMeta, { assignees: ticket.assignees }) : null,
+      props.rowFields.showAuthor && ticket.author !== null ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(AuthorMeta, { author: ticket.author }) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+        TimeMeta,
         {
-          author: ticket.author,
           createdAt: ticket.createdAt,
           updatedAt: ticket.updatedAt,
-          now: props.now
+          now: props.now,
+          fields: props.rowFields,
+          authorShown: props.rowFields.showAuthor && ticket.author !== null
         }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(RowDetails, { ticket, now: props.now, rowDetails: props.rowDetails })
+      )
     ] });
+  }
+  function AssigneeMeta(props) {
+    const t = useMessages();
+    const separator = t("tickets.row.assigneesSeparator");
+    const all = props.assignees.join(separator);
+    const shown = props.assignees.slice(0, MAX_ROW_ASSIGNEES);
+    const hidden = props.assignees.length - shown.length;
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+      "span",
+      {
+        role: "group",
+        "data-testid": "ticket-assignees",
+        "aria-label": t("tickets.row.assigneesLabel", { names: all }),
+        title: t("tickets.row.assigneesLabel", { names: all }),
+        style: ASSIGNEE_GROUP_STYLE,
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "aria-hidden": "true", style: ASSIGNEE_ICON_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(PersonIcon, {}) }),
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "ticket-assignee", style: ASSIGNEE_NAME_STYLE, children: shown.join(separator) }),
+          hidden > 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+            "span",
+            {
+              "data-testid": "ticket-assignee-more",
+              title: t("tickets.row.assigneesMoreTitle", { count: hidden, names: all }),
+              style: ASSIGNEE_MORE_STYLE,
+              children: [
+                "+",
+                String(hidden)
+              ]
+            }
+          ) : null
+        ]
+      }
+    );
   }
   function AuthorMeta(props) {
     const t = useMessages();
     const { author } = props;
     const name = authorName(author);
     const full = authorTitle(author, t);
-    const age = formatRelativeTime(props.createdAt, props.now, t);
     return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(UserAvatar, { user: author, role: "creator", size: 16, testId: "ticket-avatar" }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "ticket-author", title: full, style: AUTHOR_NAME_STYLE, children: name }),
-      age.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
-        "span",
-        {
-          "data-testid": "ticket-age",
-          title: t("tickets.ageTitle", {
-            created: props.createdAt,
-            updated: props.updatedAt
-          }),
-          style: ROW_AGE_STYLE,
-          children: age
-        }
-      )
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "ticket-author", title: full, style: AUTHOR_NAME_STYLE, children: name })
     ] });
   }
-  function RowDetails(props) {
+  function TimeMeta(props) {
     const t = useMessages();
-    const updated = props.rowDetails.showUpdatedAt ? formatRelativeTime(props.ticket.updatedAt, props.now, t) : "";
-    const assignees = props.ticket.assignees;
-    const first = assignees[0];
-    const more = assignees.length - 1;
-    if (updated.length === 0 && (first === void 0 || !props.rowDetails.showAssignee)) {
-      return null;
+    const createdAge = props.fields.showCreatedAt ? formatRelativeTime(props.createdAt, props.now, t) : "";
+    const updatedAge = props.fields.showUpdatedAt ? formatRelativeTime(props.updatedAt, props.now, t) : "";
+    const segments = [];
+    if (createdAge.length > 0) {
+      const bare = !props.fields.showUpdatedAt && props.authorShown;
+      segments.push(bare ? createdAge : t("tickets.row.created", { age: createdAge }));
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
-      updated.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
-        "span",
-        {
-          "data-testid": "ticket-updated-at",
-          title: t("tickets.ageTitle", {
-            created: props.ticket.createdAt,
-            updated: props.ticket.updatedAt
-          }),
-          style: ROW_UPDATED_STYLE,
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: VISUALLY_HIDDEN_STYLE, children: t("tickets.updatedAtLabel", { time: updated }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "aria-hidden": "true", children: updated })
-          ]
-        }
-      ),
-      props.rowDetails.showAssignee && first !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { "data-testid": "ticket-assignee", style: ROW_ASSIGNEE_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: VISUALLY_HIDDEN_STYLE, children: more > 0 ? t("tickets.assigneeLabelMore", { login: `@${first}`, count: more }) : t("tickets.assigneeLabel", { login: `@${first}` }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { "aria-hidden": "true", style: ROW_ASSIGNEE_LOGIN_STYLE, children: [
-          "@",
-          first
-        ] }),
-        more > 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { "aria-hidden": "true", style: ROW_ASSIGNEE_MORE_STYLE, children: [
-          "+",
-          String(more)
-        ] }) : null
-      ] }) : null
-    ] });
+    if (updatedAge.length > 0) segments.push(t("tickets.row.updated", { age: updatedAge }));
+    if (segments.length === 0) return null;
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      "span",
+      {
+        "data-testid": "ticket-age",
+        title: t("tickets.ageTitle", {
+          created: props.createdAt,
+          updated: props.updatedAt
+        }),
+        style: ROW_AGE_STYLE,
+        children: segments.join(t("tickets.row.timeSeparator"))
+      }
+    );
   }
   var STATUS_LABEL_KEYS = {
     ready: "status.ready",
@@ -33821,8 +33869,111 @@ ${String(target.number)}`;
     return Number.isNaN(parsed) ? 0 : parsed;
   }
 
-  // src/panel/view-preference.ts
+  // src/panel/row-display-control.tsx
   var React30 = __toESM(require_react(), 1);
+  var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
+  var DISPLAY_ITEMS = [
+    { field: "showAuthor", testId: "display-author", messageId: "tickets.row.author" },
+    { field: "showCreatedAt", testId: "display-created", messageId: "tickets.row.createdAt" },
+    { field: "showUpdatedAt", testId: "display-updated", messageId: "tickets.row.updatedAt" },
+    { field: "showAssignees", testId: "display-assignees", messageId: "tickets.row.assignees" }
+  ];
+  function RowDisplayControl(props) {
+    const t = useMessages();
+    const [open, setOpen] = React30.useState(false);
+    const wrapper = React30.useRef(null);
+    const trigger = React30.useRef(null);
+    React30.useEffect(() => {
+      if (!open) return void 0;
+      const onPointerDown = (event) => {
+        if (wrapper.current?.contains(event.target) === true) return;
+        setOpen(false);
+      };
+      const onKeyDown = (event) => {
+        if (event.key !== "Escape") return;
+        setOpen(false);
+        trigger.current?.focus();
+      };
+      document.addEventListener("pointerdown", onPointerDown);
+      document.addEventListener("keydown", onKeyDown);
+      return () => {
+        document.removeEventListener("pointerdown", onPointerDown);
+        document.removeEventListener("keydown", onKeyDown);
+      };
+    }, [open]);
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { ref: wrapper, style: ROW_DISPLAY_WRAPPER_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+        "button",
+        {
+          ref: trigger,
+          type: "button",
+          "data-testid": "display-settings",
+          "data-hover": "soft",
+          "aria-expanded": open,
+          "aria-label": t("tickets.row.trigger"),
+          title: t("tickets.row.trigger"),
+          onClick: () => {
+            setOpen((value) => !value);
+          },
+          style: {
+            ...ROW_DISPLAY_TRIGGER_STYLE,
+            ...open ? { background: COLORS.surfaceActive, color: COLORS.text } : void 0
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(DisplaySettingsIcon, {})
+        }
+      ),
+      open ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+        "div",
+        {
+          role: "group",
+          "data-testid": "display-menu",
+          "aria-label": t("tickets.row.trigger"),
+          style: ROW_DISPLAY_MENU_STYLE,
+          children: DISPLAY_ITEMS.filter(
+            (item) => item.field !== "showAssignees" || props.assigneesAvailable
+          ).map((item) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+            DisplayToggle,
+            {
+              testId: item.testId,
+              label: t(item.messageId),
+              pressed: props.fields[item.field],
+              onToggle: () => {
+                props.onToggleField(item.field);
+              }
+            },
+            item.field
+          ))
+        }
+      ) : null
+    ] });
+  }
+  function DisplayToggle(props) {
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+      "button",
+      {
+        type: "button",
+        "data-testid": props.testId,
+        "data-hover": "soft",
+        "aria-pressed": props.pressed,
+        onClick: props.onToggle,
+        style: ROW_DISPLAY_ITEM_STYLE,
+        children: [
+          props.label,
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+            "span",
+            {
+              "aria-hidden": "true",
+              style: props.pressed ? ROW_DISPLAY_CHECK_STYLE : ROW_DISPLAY_CHECK_OFF_STYLE,
+              children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(CheckIcon, {})
+            }
+          )
+        ]
+      }
+    );
+  }
+
+  // src/panel/view-preference.ts
+  var React31 = __toESM(require_react(), 1);
   var DEFAULT_VIEW = {
     filter: "open",
     sortKey: "status",
@@ -33830,8 +33981,10 @@ ${String(target.number)}`;
     assignedToMe: false,
     createdByMe: false,
     layout: "flat",
+    showAuthor: true,
+    showCreatedAt: true,
     showUpdatedAt: false,
-    showAssignee: false
+    showAssignees: false
   };
   var STORAGE_KEY = "view-preferences";
   var STORAGE_VERSION = 1;
@@ -33865,16 +34018,16 @@ ${String(target.number)}`;
     const stored = entries[key] ?? (legacyKey === void 0 ? void 0 : entries[legacyKey]);
     if (stored === void 0) return DEFAULT_VIEW;
     return {
-      filter: isFilter(stored.filter) ? stored.filter : DEFAULT_VIEW.filter,
-      sortKey: isSortKey(stored.sortKey) ? stored.sortKey : DEFAULT_VIEW.sortKey,
-      direction: isDirection(stored.direction) ? stored.direction : DEFAULT_VIEW.direction,
-      // 旧记录没有这两个字段时按 false 读；非法值在 toEntry 里已逐字段回落。
+      filter: stored.filter,
+      sortKey: stored.sortKey,
+      direction: stored.direction,
       assignedToMe: stored.assignedToMe,
       createdByMe: stored.createdByMe,
-      // 旧存档没有布局字段：默认平铺，界面不因升级突然换成树。
-      layout: isLayout(stored.layout) ? stored.layout : DEFAULT_VIEW.layout,
+      layout: stored.layout,
+      showAuthor: stored.showAuthor,
+      showCreatedAt: stored.showCreatedAt,
       showUpdatedAt: stored.showUpdatedAt,
-      showAssignee: stored.showAssignee
+      showAssignees: stored.showAssignees
     };
   }
   function writeViewPreference(store, key, preference, now = Date.now) {
@@ -33889,8 +34042,10 @@ ${String(target.number)}`;
         assignedToMe: preference.assignedToMe,
         createdByMe: preference.createdByMe,
         layout: preference.layout,
+        showAuthor: preference.showAuthor,
+        showCreatedAt: preference.showCreatedAt,
         showUpdatedAt: preference.showUpdatedAt,
-        showAssignee: preference.showAssignee,
+        showAssignees: preference.showAssignees,
         savedAt: now()
       };
       const map = { version: STORAGE_VERSION, entries: evictOldest(next) };
@@ -33928,21 +34083,23 @@ ${String(target.number)}`;
   }
   function toEntry(value) {
     if (typeof value !== "object" || value === null) return null;
-    if (!("filter" in value) || !isFilter(value.filter)) return null;
-    if (!("sortKey" in value) || !isSortKey(value.sortKey)) return null;
-    if (!("direction" in value) || !isDirection(value.direction)) return null;
-    const savedAt = "savedAt" in value && typeof value.savedAt === "number" ? value.savedAt : 0;
-    const layout = "layout" in value && isLayout(value.layout) ? value.layout : DEFAULT_VIEW.layout;
+    const record = value;
+    if (!isFilter(record.filter)) return null;
+    if (!isSortKey(record.sortKey)) return null;
+    if (!isDirection(record.direction)) return null;
     return {
-      filter: value.filter,
-      sortKey: value.sortKey,
-      direction: value.direction,
-      assignedToMe: "assignedToMe" in value && value.assignedToMe === true,
-      createdByMe: "createdByMe" in value && value.createdByMe === true,
-      layout,
-      showUpdatedAt: "showUpdatedAt" in value && value.showUpdatedAt === true,
-      showAssignee: "showAssignee" in value && value.showAssignee === true,
-      savedAt
+      filter: record.filter,
+      sortKey: record.sortKey,
+      direction: record.direction,
+      assignedToMe: isBoolean(record.assignedToMe) ? record.assignedToMe : DEFAULT_VIEW.assignedToMe,
+      createdByMe: isBoolean(record.createdByMe) ? record.createdByMe : DEFAULT_VIEW.createdByMe,
+      layout: isLayout(record.layout) ? record.layout : DEFAULT_VIEW.layout,
+      // 四个行内显示开关按各自默认值回退：创建人与创建时间默认开，另两个默认关。
+      showAuthor: isBoolean(record.showAuthor) ? record.showAuthor : DEFAULT_VIEW.showAuthor,
+      showCreatedAt: isBoolean(record.showCreatedAt) ? record.showCreatedAt : DEFAULT_VIEW.showCreatedAt,
+      showUpdatedAt: isBoolean(record.showUpdatedAt) ? record.showUpdatedAt : DEFAULT_VIEW.showUpdatedAt,
+      showAssignees: isBoolean(record.showAssignees) ? record.showAssignees : DEFAULT_VIEW.showAssignees,
+      savedAt: typeof record.savedAt === "number" ? record.savedAt : 0
     };
   }
   function evictOldest(entries) {
@@ -33972,12 +34129,15 @@ ${String(target.number)}`;
   function isLayout(value) {
     return typeof value === "string" && Object.hasOwn(LAYOUTS, value);
   }
+  function isBoolean(value) {
+    return typeof value === "boolean";
+  }
   function useViewPreference(workspaceRoot, snapshot) {
-    const store = React30.useMemo(resolvePreferenceStore, []);
+    const store = React31.useMemo(resolvePreferenceStore, []);
     const key = viewPreferenceKey(snapshot, workspaceRoot);
-    const [preference, setPreference] = React30.useState(DEFAULT_VIEW);
-    const generation = React30.useRef(0);
-    React30.useEffect(() => {
+    const [preference, setPreference] = React31.useState(DEFAULT_VIEW);
+    const generation = React31.useRef(0);
+    React31.useEffect(() => {
       const current = generation.current + 1;
       generation.current = current;
       if (key === void 0 || workspaceRoot === void 0) {
@@ -33993,7 +34153,7 @@ ${String(target.number)}`;
         active = false;
       };
     }, [store, key, workspaceRoot]);
-    const apply = React30.useCallback(
+    const apply = React31.useCallback(
       (next) => {
         generation.current += 1;
         setPreference(next);
@@ -34001,8 +34161,8 @@ ${String(target.number)}`;
       },
       [store, key]
     );
-    const toggleField = (key2) => {
-      apply({ ...preference, [key2]: !preference[key2] });
+    const toggleField = (field) => {
+      apply({ ...preference, [field]: !preference[field] });
     };
     return {
       preference,
@@ -34026,7 +34186,7 @@ ${String(target.number)}`;
       setLayout: (layout) => {
         apply({ ...preference, layout });
       },
-      toggleRowDetail: toggleField
+      toggleRowField: toggleField
     };
   }
   function resolvePreferenceStore() {
@@ -34040,7 +34200,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/tickets-view.tsx
-  var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
   var SECONDARY_BUTTON_STYLE = {
     ...BUTTON_STYLE,
     padding: "2px 6px",
@@ -34065,7 +34225,7 @@ ${String(target.number)}`;
     const t = useMessages();
     const clock = props.now ?? Date.now;
     const { snapshot, error, refreshError, phase, refresh, refreshFull, appending, loadMore } = props.request;
-    const { preference, setFilter, toggleSort, togglePerson, clearPeople, setLayout, toggleRowDetail } = useViewPreference(props.workspaceRoot, snapshot);
+    const { preference, setFilter, toggleSort, togglePerson, clearPeople, setLayout, toggleRowField } = useViewPreference(props.workspaceRoot, snapshot);
     const nowValue = useNow(clock);
     const actions = useTicketActions(props.workspaceRoot, props.copy, props.client);
     const tickets = snapshot?.tickets ?? [];
@@ -34087,12 +34247,12 @@ ${String(target.number)}`;
     const focused = focusedTicket.ref;
     const hierarchy = snapshot === null ? { available: false, hint: t("tickets.layout.unavailable") } : hierarchyAvailability(snapshot.backend, snapshot.hierarchy, t);
     const layout = preference.layout === "hierarchy" && hierarchy.available ? "hierarchy" : "flat";
-    const [collapsed, setCollapsed] = React31.useState(/* @__PURE__ */ new Set());
-    const expandedFocusToken = React31.useRef(0);
-    React31.useEffect(() => {
+    const [collapsed, setCollapsed] = React32.useState(/* @__PURE__ */ new Set());
+    const expandedFocusToken = React32.useRef(0);
+    React32.useEffect(() => {
       setCollapsed(/* @__PURE__ */ new Set());
     }, [props.workspaceRoot]);
-    React31.useEffect(() => {
+    React32.useEffect(() => {
       if (focusedTicket.ref === null || expandedFocusToken.current === focusedTicket.token) return;
       if (!tickets.some((ticket) => ticket.ref === focusedTicket.ref)) return;
       expandedFocusToken.current = focusedTicket.token;
@@ -34107,13 +34267,13 @@ ${String(target.number)}`;
         return next;
       });
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
       "div",
       {
         "data-testid": "tickets-view",
         style: { display: "flex", flexDirection: "column", flex: 1, minHeight: 0 },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
             Header,
             {
               snapshot,
@@ -34125,7 +34285,7 @@ ${String(target.number)}`;
               onRefreshFull: refreshFull
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
             ActionBar,
             {
               counts: snapshot === null ? null : counts,
@@ -34137,21 +34297,22 @@ ${String(target.number)}`;
               }
             }
           ),
-          error !== null ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(ErrorBanner, { error, onOpenEnvCheck: props.onOpenEnvCheck }) : null,
-          snapshot !== null ? /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+          error !== null ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ErrorBanner, { error, onOpenEnvCheck: props.onOpenEnvCheck }) : null,
+          snapshot !== null ? /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
               Toolbar,
               {
                 filter: preference.filter,
                 sortKey: preference.sortKey,
                 direction: preference.direction,
-                rowDetails: preference,
+                rowFields: preference,
+                assigneesAvailable: snapshot.backend !== "markdown",
                 onFilter: setFilter,
                 onSort: toggleSort,
-                onToggleRowDetail: toggleRowDetail
+                onToggleRowField: toggleRowField
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
               PeopleFilterRow,
               {
                 viewer: snapshot.viewer,
@@ -34161,8 +34322,8 @@ ${String(target.number)}`;
                 onClear: clearPeople
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(HierarchyNotice, { snapshot, preference, layout }),
-            /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(HierarchyNotice, { snapshot, preference, layout }),
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
               TicketRows,
               {
                 snapshot,
@@ -34174,7 +34335,7 @@ ${String(target.number)}`;
                 copied: actions.copied,
                 focused,
                 now: nowValue,
-                rowDetails: preference,
+                rowFields: preference,
                 client: props.client,
                 workspaceRoot: props.workspaceRoot,
                 onOpenEnvCheck: props.onOpenEnvCheck,
@@ -34185,23 +34346,23 @@ ${String(target.number)}`;
                 onLayout: setLayout
               }
             )
-          ] }) : phase === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { "data-testid": "loading", style: EMPTY_STYLE, children: t("common.loadingTickets") }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(PromptCopyArea, { state: actions.copyState, onDismiss: actions.dismiss })
+          ] }) : phase === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { "data-testid": "loading", style: EMPTY_STYLE, children: t("common.loadingTickets") }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(PromptCopyArea, { state: actions.copyState, onDismiss: actions.dismiss })
         ]
       }
     );
   }
   function useFocusedTicket(focusRef, onFocusHandled, workspaceRoot) {
-    const [focused, setFocused] = React31.useState({ ref: null, token: 0 });
-    const token = React31.useRef(0);
-    React31.useEffect(() => {
+    const [focused, setFocused] = React32.useState({ ref: null, token: 0 });
+    const token = React32.useRef(0);
+    React32.useEffect(() => {
       if (focusRef === null || focusRef === void 0) return;
       token.current += 1;
       setFocused({ ref: focusRef, token: token.current });
       onFocusHandled?.();
     }, [focusRef, onFocusHandled]);
-    const previousRoot = React31.useRef(workspaceRoot);
-    React31.useEffect(() => {
+    const previousRoot = React32.useRef(workspaceRoot);
+    React32.useEffect(() => {
       if (previousRoot.current === workspaceRoot) return;
       previousRoot.current = workspaceRoot;
       setFocused((current) => current.ref === null ? current : { ref: null, token: token.current });
@@ -34211,13 +34372,13 @@ ${String(target.number)}`;
   function TicketRows(props) {
     const t = useMessages();
     const remaining = Math.max(0, props.snapshot.total - props.snapshot.loaded);
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: LOADED_ROW_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "loaded-total", style: LOADED_STYLE, children: t("tickets.loadedTotal", {
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: LOADED_ROW_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { "data-testid": "loaded-total", style: LOADED_STYLE, children: t("tickets.loadedTotal", {
           loaded: props.snapshot.loaded,
           total: props.snapshot.total
         }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
           LayoutToggle,
           {
             layout: props.layout,
@@ -34226,7 +34387,7 @@ ${String(target.number)}`;
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         TicketList,
         {
           rows: props.rows,
@@ -34235,7 +34396,7 @@ ${String(target.number)}`;
           copied: props.copied,
           focused: props.focused,
           now: props.now,
-          rowDetails: props.rowDetails,
+          rowFields: props.rowFields,
           backend: props.snapshot.backend,
           workspaceRoot: props.workspaceRoot,
           client: props.client,
@@ -34245,7 +34406,7 @@ ${String(target.number)}`;
           onToggleCollapse: props.onToggleCollapse
         }
       ),
-      props.snapshot.hasMore ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: LOAD_MORE_ROW_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      props.snapshot.hasMore ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: LOAD_MORE_ROW_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         "button",
         {
           type: "button",
@@ -34262,7 +34423,7 @@ ${String(target.number)}`;
   }
   function SourceBadge2(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
       "span",
       {
         "data-testid": "snapshot-source",
@@ -34276,11 +34437,11 @@ ${String(target.number)}`;
   }
   function Header(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("header", { style: HEADER_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, minWidth: 0 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: REPO_CHIP_STYLE, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(FolderIcon, {}),
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("header", { style: HEADER_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, minWidth: 0 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: REPO_CHIP_STYLE, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(FolderIcon, {}),
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
             "span",
             {
               "data-testid": "repo-name",
@@ -34290,9 +34451,9 @@ ${String(target.number)}`;
             }
           )
         ] }),
-        props.snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "backend-badge", style: BACKEND_BADGE_STYLE, children: backendLabel(props.snapshot.backend, t) }),
-        props.snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(SourceBadge2, { source: props.snapshot.source }),
-        props.snapshot?.backend === "gitea" && props.snapshot.repositoryHost !== null ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+        props.snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { "data-testid": "backend-badge", style: BACKEND_BADGE_STYLE, children: backendLabel(props.snapshot.backend, t) }),
+        props.snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SourceBadge2, { source: props.snapshot.source }),
+        props.snapshot?.backend === "gitea" && props.snapshot.repositoryHost !== null ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
           "span",
           {
             "data-testid": "repo-host",
@@ -34302,10 +34463,10 @@ ${String(target.number)}`;
           }
         ) : null
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4, flex: "none" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "snapshot-age", style: AGE_STYLE, children: props.snapshot === null ? t("common.noSnapshot") : formatRelativeTime(props.snapshot.fetchedAt, props.now, t) }),
-        props.notice === null ? null : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "refresh-error", title: props.notice, style: REFRESH_ERROR_STYLE2, children: props.notice }),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4, flex: "none" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { "data-testid": "snapshot-age", style: AGE_STYLE, children: props.snapshot === null ? t("common.noSnapshot") : formatRelativeTime(props.snapshot.fetchedAt, props.now, t) }),
+        props.notice === null ? null : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { "data-testid": "refresh-error", title: props.notice, style: REFRESH_ERROR_STYLE2, children: props.notice }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
           "button",
           {
             type: "button",
@@ -34322,7 +34483,7 @@ ${String(target.number)}`;
             },
             style: { ...REFRESH_BUTTON_STYLE, opacity: props.busy ? 0.6 : 1 },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(RefreshIcon, {}),
+              /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(RefreshIcon, {}),
               props.busy ? t("common.refreshBusy") : t("common.refresh")
             ]
           }
@@ -34332,10 +34493,10 @@ ${String(target.number)}`;
   }
   function ActionBar(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: ACTION_BAR_STYLE, children: [
-      props.counts === null ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", {}) : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(StatsRow, { counts: props.counts }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { display: "flex", gap: 6, marginLeft: "auto" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: ACTION_BAR_STYLE, children: [
+      props.counts === null ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", {}) : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(StatsRow, { counts: props.counts }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", gap: 6, marginLeft: "auto" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
           IntakeAction,
           {
             testId: "new-feature",
@@ -34347,7 +34508,7 @@ ${String(target.number)}`;
             onCopy: props.onNewFeature
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
           IntakeAction,
           {
             testId: "new-bug",
@@ -34363,7 +34524,7 @@ ${String(target.number)}`;
     ] });
   }
   function IntakeAction(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
       "button",
       {
         type: "button",
@@ -34374,7 +34535,7 @@ ${String(target.number)}`;
         onClick: props.onCopy,
         style: { ...props.style, flex: "none" },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(PlusIcon, {}),
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(PlusIcon, {}),
           props.label
         ]
       }
@@ -34382,8 +34543,8 @@ ${String(target.number)}`;
   }
   function StatsRow(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: STATS_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: STATS_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         Stat,
         {
           testId: "stat-ready",
@@ -34392,7 +34553,7 @@ ${String(target.number)}`;
           color: COLORS.success
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         Stat,
         {
           testId: "stat-blocked",
@@ -34401,7 +34562,7 @@ ${String(target.number)}`;
           color: COLORS.warn
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         Stat,
         {
           testId: "stat-open",
@@ -34410,7 +34571,7 @@ ${String(target.number)}`;
           color: COLORS.secondary
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         Stat,
         {
           testId: "stat-closed",
@@ -34422,30 +34583,30 @@ ${String(target.number)}`;
     ] });
   }
   function Stat(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { "data-testid": props.testId, style: STAT_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { "data-testid": props.testId, style: STAT_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         "span",
         {
           "aria-hidden": "true",
           style: { width: 7, height: 7, borderRadius: "50%", background: props.color, flex: "none" }
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("strong", { style: STAT_VALUE_STYLE, children: props.value }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { children: props.label })
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("strong", { style: STAT_VALUE_STYLE, children: props.value }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { children: props.label })
     ] });
   }
   function Toolbar(props) {
     const t = useMessages();
     const ascending = props.direction === "asc";
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: TOOLBAR_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: TOOLBAR_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         "div",
         {
           role: "group",
           "aria-label": t("tickets.filterGroup"),
           "data-scroll-x": "",
           style: FILTER_SEGMENTED_STYLE,
-          children: FILTERS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+          children: FILTERS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
             Chip,
             {
               testId: `filter-${item}`,
@@ -34459,8 +34620,8 @@ ${String(target.number)}`;
           ))
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { role: "group", "aria-label": t("tickets.sortGroup"), style: SORT_GROUP_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { role: "group", "aria-label": t("tickets.sortGroup"), style: SORT_GROUP_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
           "select",
           {
             "data-testid": "sort-key",
@@ -34470,10 +34631,10 @@ ${String(target.number)}`;
               props.onSort(event.target.value);
             },
             style: SORT_SELECT_STYLE,
-            children: SORT_OPTIONS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("option", { value: item, children: t(SORT_LABELS[item]) }, item))
+            children: SORT_OPTIONS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("option", { value: item, children: t(SORT_LABELS[item]) }, item))
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
           "button",
           {
             type: "button",
@@ -34489,121 +34650,15 @@ ${String(target.number)}`;
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
-        RowDetailsMenu,
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+        RowDisplayControl,
         {
-          rowDetails: props.rowDetails,
-          onToggle: props.onToggleRowDetail
+          fields: props.rowFields,
+          assigneesAvailable: props.assigneesAvailable,
+          onToggleField: props.onToggleRowField
         }
       )
     ] });
-  }
-  function RowDetailsMenu(props) {
-    const t = useMessages();
-    const [open, setOpen] = React31.useState(false);
-    const wrapper = React31.useRef(null);
-    const trigger = React31.useRef(null);
-    const menuId = React31.useId();
-    React31.useEffect(() => {
-      if (!open) return;
-      const onPointer = (event) => {
-        if (wrapper.current?.contains(event.target) !== true) setOpen(false);
-      };
-      document.addEventListener("mousedown", onPointer);
-      return () => {
-        document.removeEventListener("mousedown", onPointer);
-      };
-    }, [open]);
-    const close = () => {
-      setOpen(false);
-      trigger.current?.focus();
-    };
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
-      "div",
-      {
-        ref: wrapper,
-        style: ROW_DETAILS_WRAPPER_STYLE,
-        onKeyDown: (event) => {
-          if (event.key === "Escape" && open) {
-            event.stopPropagation();
-            close();
-          }
-        },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
-            "button",
-            {
-              ref: trigger,
-              type: "button",
-              "data-testid": "row-details",
-              "data-hover": "soft",
-              title: t("tickets.rowDetails"),
-              "aria-expanded": open,
-              "aria-controls": open ? menuId : void 0,
-              onClick: () => {
-                setOpen((value) => !value);
-              },
-              style: ROW_DETAILS_TRIGGER_STYLE,
-              children: t("tickets.rowDetails")
-            }
-          ),
-          open ? /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
-            "div",
-            {
-              id: menuId,
-              role: "group",
-              "data-testid": "row-details-menu",
-              "aria-label": t("tickets.rowDetails"),
-              style: ROW_DETAILS_MENU_STYLE,
-              children: [
-                /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
-                  RowDetailToggle,
-                  {
-                    testId: "row-details-updated",
-                    label: t("tickets.rowDetails.updatedAt"),
-                    checked: props.rowDetails.showUpdatedAt,
-                    autoFocus: true,
-                    onToggle: () => {
-                      props.onToggle("showUpdatedAt");
-                    }
-                  }
-                ),
-                /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
-                  RowDetailToggle,
-                  {
-                    testId: "row-details-assignee",
-                    label: t("tickets.rowDetails.assignee"),
-                    checked: props.rowDetails.showAssignee,
-                    onToggle: () => {
-                      props.onToggle("showAssignee");
-                    }
-                  }
-                )
-              ]
-            }
-          ) : null
-        ]
-      }
-    );
-  }
-  function RowDetailToggle(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
-      "button",
-      {
-        type: "button",
-        role: "checkbox",
-        "data-testid": props.testId,
-        "data-hover": "soft",
-        "aria-checked": props.checked,
-        autoFocus: props.autoFocus ?? false,
-        onClick: props.onToggle,
-        style: ROW_DETAILS_ITEM_STYLE,
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "aria-hidden": "true", style: ROW_DETAILS_CHECK_STYLE, children: props.checked ? "\u2713" : "" }),
-          props.label
-        ]
-      }
-    );
   }
   var FILTER_LABELS = {
     all: "tickets.filter.all",
@@ -34620,7 +34675,7 @@ ${String(target.number)}`;
     title: "tickets.sort.title"
   };
   function Chip(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
       "button",
       {
         type: "button",
@@ -34642,7 +34697,7 @@ ${String(target.number)}`;
     const t = useMessages();
     const anyActive = props.people.assignedToMe || props.people.createdByMe;
     const viewerHint = t("tickets.people.viewerHint", { login: viewer });
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
       "div",
       {
         role: "group",
@@ -34650,8 +34705,8 @@ ${String(target.number)}`;
         "data-testid": "people-filter",
         style: PEOPLE_ROW_STYLE,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "aria-hidden": "true", style: { color: COLORS.tertiary, display: "inline-flex" }, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(PeopleIcon, {}) }),
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { "aria-hidden": "true", style: { color: COLORS.tertiary, display: "inline-flex" }, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(PeopleIcon, {}) }),
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
             PersonChip,
             {
               testId: "people-assigned",
@@ -34664,7 +34719,7 @@ ${String(target.number)}`;
               }
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
             PersonChip,
             {
               testId: "people-created",
@@ -34677,7 +34732,7 @@ ${String(target.number)}`;
               }
             }
           ),
-          anyActive ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+          anyActive ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
             "button",
             {
               type: "button",
@@ -34688,13 +34743,13 @@ ${String(target.number)}`;
               children: t("tickets.people.clear")
             }
           ) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "people-viewer", title: viewerHint, style: PEOPLE_VIEWER_STYLE, children: t("tickets.people.viewer", { login: viewer }) })
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { "data-testid": "people-viewer", title: viewerHint, style: PEOPLE_VIEWER_STYLE, children: t("tickets.people.viewer", { login: viewer }) })
         ]
       }
     );
   }
   function PersonChip(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
       "button",
       {
         type: "button",
@@ -34706,7 +34761,7 @@ ${String(target.number)}`;
         style: { ...PEOPLE_CHIP_STYLE, ...props.active ? PEOPLE_CHIP_ACTIVE_STYLE : void 0 },
         children: [
           props.label,
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
             "span",
             {
               style: {
@@ -34722,14 +34777,14 @@ ${String(target.number)}`;
   }
 
   // src/panel/task-panel.tsx
-  var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
   var NO_CAPABILITIES = () => [];
   function TaskPanel(props) {
-    const [view, setView] = React32.useState("tickets");
-    const [focusBackend, setFocusBackend] = React32.useState(null);
+    const [view, setView] = React33.useState("tickets");
+    const [focusBackend, setFocusBackend] = React33.useState(null);
     const navigation2 = useDetailNavigation(props.workspaceRoot);
-    const [focusTicket, setFocusTicket] = React32.useState(null);
-    const previousView = React32.useRef("tickets");
+    const [focusTicket, setFocusTicket] = React33.useState(null);
+    const previousView = React33.useRef("tickets");
     const clientCapabilities = props.clientCapabilities ?? NO_CAPABILITIES;
     const request = useSnapshotRequest(props.client, props.workspaceRoot, props.refreshToken ?? 0);
     const open = navigation2.open;
@@ -34737,9 +34792,9 @@ ${String(target.number)}`;
       if (view !== "help") previousView.current = view;
       setView("help");
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { "data-testid": "task-panel", "data-mattwf-panel": "", style: PANEL_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("style", { children: PANEL_SHEET }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { "data-testid": "task-panel", "data-mattwf-panel": "", style: PANEL_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("style", { children: PANEL_SHEET }),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         ViewTabs,
         {
           view,
@@ -34758,7 +34813,7 @@ ${String(target.number)}`;
           onOpenHelp: openHelp
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         PanelContent,
         {
           panel: props,
@@ -34798,7 +34853,7 @@ ${String(target.number)}`;
   function PanelContent(props) {
     const panel = props.panel;
     if (props.view === "tickets") {
-      return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         TicketsPane,
         {
           client: panel.client,
@@ -34818,7 +34873,7 @@ ${String(target.number)}`;
       );
     }
     if (props.view === "overview") {
-      return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         OverviewPane,
         {
           request: props.request,
@@ -34830,7 +34885,7 @@ ${String(target.number)}`;
       );
     }
     if (props.view === "env") {
-      return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         EnvCheckView,
         {
           client: panel.client,
@@ -34841,10 +34896,10 @@ ${String(target.number)}`;
         }
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(HelpView, { onBack: props.onBack });
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(HelpView, { onBack: props.onBack });
   }
   function OverviewPane(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
       OverviewView,
       {
         request: props.request,
@@ -34860,7 +34915,7 @@ ${String(target.number)}`;
       const open = props.open;
       const snapshot = props.request.snapshot;
       const current = findSnapshotTicket(snapshot?.tickets, open.target.ref) ?? open.target.ticket;
-      return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         TicketDetailView,
         {
           client: props.client,
@@ -34878,7 +34933,7 @@ ${String(target.number)}`;
         open.target.ref
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
       TicketsView,
       {
         client: props.client,
@@ -34895,9 +34950,9 @@ ${String(target.number)}`;
   }
   function ViewTabs(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: VIEW_BAR_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { role: "group", "aria-label": t("common.viewGroup"), style: VIEW_TABS_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: VIEW_BAR_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { role: "group", "aria-label": t("common.viewGroup"), style: VIEW_TABS_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
           ViewChip,
           {
             testId: "view-tickets",
@@ -34906,7 +34961,7 @@ ${String(target.number)}`;
             onClick: props.onOpenTickets
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
           ViewChip,
           {
             testId: "view-overview",
@@ -34915,7 +34970,7 @@ ${String(target.number)}`;
             onClick: props.onOpenOverview
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
           ViewChip,
           {
             testId: "view-env",
@@ -34925,9 +34980,9 @@ ${String(target.number)}`;
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: VIEW_ACTIONS_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(LanguageSelect, {}),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(TipsButton, { label: t("view.help"), onClick: props.onOpenHelp })
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: VIEW_ACTIONS_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(LanguageSelect, {}),
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(TipsButton, { label: t("view.help"), onClick: props.onOpenHelp })
       ] })
     ] });
   }
@@ -34941,7 +34996,7 @@ ${String(target.number)}`;
     const t = useMessages();
     const { setting, setSetting, locale } = useLocale();
     const languageName = locale === "zh-CN" ? t("language.zhCN") : t("language.en");
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
       "select",
       {
         "data-testid": "language-select",
@@ -34953,9 +35008,9 @@ ${String(target.number)}`;
         },
         style: LANGUAGE_SELECT_STYLE,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("option", { value: "auto", children: t("language.autoEffective", { language: languageName }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("option", { value: "zh-CN", children: t("language.zhCN") }),
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("option", { value: "en", children: t("language.en") })
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("option", { value: "auto", children: t("language.autoEffective", { language: languageName }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("option", { value: "zh-CN", children: t("language.zhCN") }),
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("option", { value: "en", children: t("language.en") })
         ]
       }
     );
@@ -34976,7 +35031,7 @@ ${String(target.number)}`;
     fontSize: 12
   };
   function ViewChip(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
       "button",
       {
         type: "button",
@@ -34990,7 +35045,7 @@ ${String(target.number)}`;
     );
   }
   function TipsButton(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
       "button",
       {
         type: "button",
@@ -34999,12 +35054,12 @@ ${String(target.number)}`;
         title: props.label,
         onClick: props.onClick,
         style: ICON_BUTTON_STYLE,
-        children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(TipsIcon, {})
+        children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(TipsIcon, {})
       }
     );
   }
   function TipsIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
       "svg",
       {
         width: 14,
@@ -35017,17 +35072,17 @@ ${String(target.number)}`;
         strokeLinecap: "round",
         strokeLinejoin: "round",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("path", { d: "M8 1.8a4.1 4.1 0 0 0-2.5 7.4c.3.2.5.5.5.9v.4h4v-.4c0-.4.2-.7.5-.9A4.1 4.1 0 0 0 8 1.8Z" }),
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("path", { d: "M6.4 12.6h3.2" }),
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("path", { d: "M7.2 14.4h1.6" })
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("path", { d: "M8 1.8a4.1 4.1 0 0 0-2.5 7.4c.3.2.5.5.5.9v.4h4v-.4c0-.4.2-.7.5-.9A4.1 4.1 0 0 0 8 1.8Z" }),
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("path", { d: "M6.4 12.6h3.2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("path", { d: "M7.2 14.4h1.6" })
         ]
       }
     );
   }
 
   // src/panel/workspace-picker.tsx
-  var React33 = __toESM(require_react(), 1);
-  var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
+  var React34 = __toESM(require_react(), 1);
+  var import_jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
   var PICKER_STYLE = {
     display: "flex",
     flexDirection: "column",
@@ -35083,9 +35138,9 @@ ${String(target.number)}`;
   };
   function WorkspacePicker(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { "data-testid": "workspace-picker", style: PICKER_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: PICKER_TITLE_STYLE, children: t("workspace.pickerTitle") }),
-      props.candidates.map((candidate) => /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { "data-testid": "workspace-picker", style: PICKER_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: PICKER_TITLE_STYLE, children: t("workspace.pickerTitle") }),
+      props.candidates.map((candidate) => /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(
         "button",
         {
           type: "button",
@@ -35097,11 +35152,11 @@ ${String(target.number)}`;
           },
           style: PICKER_BUTTON_STYLE,
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: PICKER_ROW_STYLE, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: PICKER_LABEL_STYLE, children: candidateLabel(candidate) }),
-              /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { "data-testid": "workspace-candidate-use", style: PICKER_USE_STYLE, children: t("workspace.use") })
+            /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("span", { style: PICKER_ROW_STYLE, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: PICKER_LABEL_STYLE, children: candidateLabel(candidate) }),
+              /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { "data-testid": "workspace-candidate-use", style: PICKER_USE_STYLE, children: t("workspace.use") })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: PICKER_PATH_STYLE, children: candidate.path })
+            /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: PICKER_PATH_STYLE, children: candidate.path })
           ]
         },
         candidate.id
@@ -35113,7 +35168,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/main.tsx
-  var import_jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
   var hostState = {
     candidates: null,
     workspaceRoot: "",
@@ -35180,10 +35235,10 @@ ${String(target.number)}`;
     });
   }
   function App(props) {
-    const host = React34.useSyncExternalStore(subscribeHost, getHostState);
-    const [probe, setProbe] = React34.useState(null);
-    const [workerReachable, setWorkerReachable] = React34.useState(false);
-    React34.useEffect(() => {
+    const host = React35.useSyncExternalStore(subscribeHost, getHostState);
+    const [probe, setProbe] = React35.useState(null);
+    const [workerReachable, setWorkerReachable] = React35.useState(false);
+    React35.useEffect(() => {
       let active = true;
       void probePanelCapabilities().then((next) => {
         if (active) setProbe(next);
@@ -35192,7 +35247,7 @@ ${String(target.number)}`;
         active = false;
       };
     }, []);
-    React34.useEffect(() => {
+    React35.useEffect(() => {
       let active = true;
       void props.client.cache("").then(
         () => {
@@ -35206,22 +35261,22 @@ ${String(target.number)}`;
         active = false;
       };
     }, [props.client]);
-    const capabilities = React34.useMemo(
+    const capabilities = React35.useMemo(
       () => probe === null ? [] : panelCapabilityDiagnostics(probe, workerReachable),
       [probe, workerReachable]
     );
-    const loadAvatar = React34.useMemo(
+    const loadAvatar = React35.useMemo(
       () => createAvatarSourceLoader(props.client),
       [props.client]
     );
     const candidates = host.candidates;
-    return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(
       "div",
       {
         "data-mattwf-panel": "",
         style: { display: "flex", flexDirection: "column", height: "100%", minHeight: 0 },
         children: [
-          candidates === null || candidates.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
+          candidates === null || candidates.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(
             WorkspacePicker,
             {
               candidates,
@@ -35230,7 +35285,7 @@ ${String(target.number)}`;
               }
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(AvatarSourceProvider, { loader: loadAvatar, children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(AvatarSourceProvider, { loader: loadAvatar, children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(
             TaskPanel,
             {
               client: props.client,
@@ -35264,7 +35319,7 @@ ${String(target.number)}`;
   injectTheme();
   void syncWorkspaceClaim(client);
   (0, import_client.createRoot)(container).render(
-    /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(LocaleProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(App, { client }) })
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(LocaleProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(App, { client }) })
   );
 })();
 /*! Bundled license information:
