@@ -21,6 +21,7 @@ import {
   applyRefreshResult,
   applySnapshotDelta,
   useSnapshotRequest,
+  type AutoRefreshOptions,
   type SnapshotRequestState,
 } from './snapshot-request.ts'
 import {
@@ -76,8 +77,9 @@ function Probe(props: {
   readonly client: PanelClient
   readonly workspaceRoot: string
   readonly onState: (state: SnapshotRequestState) => void
+  readonly options?: AutoRefreshOptions
 }): React.ReactElement {
-  const state = useSnapshotRequest(props.client, props.workspaceRoot)
+  const state = useSnapshotRequest(props.client, props.workspaceRoot, 0, props.options)
   props.onState(state)
   return (
     <div>
@@ -284,6 +286,137 @@ describe('useSnapshotRequest', () => {
     await settle()
 
     expect(find('titles')?.textContent).toBe('B 票')
+  })
+})
+
+describe('useSnapshotRequest 自动核对', () => {
+  const INTERVAL = 1_000
+  const FOCUS_MIN = 5_000
+  const options: AutoRefreshOptions = { intervalMs: INTERVAL, focusMinMs: FOCUS_MIN }
+  const notModified = (fetchedAt: number): RpcResult<SnapshotRefreshResult> =>
+    ok({ kind: 'not-modified', revision: 'r1', storeRevision: 1, fetchedAt })
+  const live = makeSnapshot({ fetchedAt: 1_000, revision: 'r1', storeRevision: 1 })
+
+  let visibility: DocumentVisibilityState = 'visible'
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+    visibility = 'visible'
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => visibility,
+    })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    Reflect.deleteProperty(document, 'visibilityState')
+  })
+
+  async function advance(ms: number): Promise<void> {
+    await React.act(async () => {
+      vi.advanceTimersByTime(ms)
+      await Promise.resolve()
+    })
+    await settle()
+  }
+
+  async function mount(client: PanelClient, seen: SnapshotRequestState[] = []): Promise<void> {
+    await render(
+      <Probe
+        client={client}
+        workspaceRoot={WORKSPACE}
+        options={options}
+        onState={(next) => {
+          seen.push(next)
+        }}
+      />,
+    )
+    await settle()
+  }
+
+  it('面板可见时按节拍增量刷新，而不是只在打开时刷一次', async () => {
+    const get = vi.fn<PanelClient['get']>(async () => ok(live))
+    const refresh = vi.fn<PanelClient['refresh']>(async () => notModified(Date.now()))
+    await mount(clientWith({ get, refresh }))
+    expect(refresh).not.toHaveBeenCalled()
+
+    await advance(INTERVAL)
+    await advance(INTERVAL)
+
+    expect(refresh).toHaveBeenCalledTimes(2)
+    expect(refresh).toHaveBeenLastCalledWith(WORKSPACE, { storeRevision: 1 })
+  })
+
+  it('面板藏在后台时不刷，回到前台补一次', async () => {
+    const get = vi.fn<PanelClient['get']>(async () => ok(live))
+    const refresh = vi.fn<PanelClient['refresh']>(async () => notModified(Date.now()))
+    await mount(clientWith({ get, refresh }))
+
+    visibility = 'hidden'
+    await advance(FOCUS_MIN)
+    expect(refresh).not.toHaveBeenCalled()
+
+    visibility = 'visible'
+    await React.act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+    })
+    await settle()
+    expect(refresh).toHaveBeenCalledTimes(1)
+  })
+
+  it('回到前台距上次请求不足最短间隔时不补刷', async () => {
+    const get = vi.fn<PanelClient['get']>(async () => ok(live))
+    const refresh = vi.fn<PanelClient['refresh']>(async () => notModified(Date.now()))
+    await mount(clientWith({ get, refresh }), [])
+
+    await React.act(async () => {
+      window.dispatchEvent(new Event('focus'))
+      await Promise.resolve()
+    })
+    await settle()
+
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('刷新失败后下一拍照常再试，成功一次就清掉失败提示', async () => {
+    const cached = makeSnapshot({ ...live, source: 'cache', stale: true })
+    const get = vi.fn<PanelClient['get']>(async () => ok(cached))
+    let calls = 0
+    const refresh = vi.fn<PanelClient['refresh']>(async () => {
+      calls += 1
+      if (calls === 1) return { ok: false, error: { code: 'fetch-failed', message: '网络断了' } }
+      return notModified(Date.now())
+    })
+    const seen: SnapshotRequestState[] = []
+    await mount(clientWith({ get, refresh }), seen)
+    expect(seen.at(-1)?.refreshError?.message).toBe('网络断了')
+
+    await advance(INTERVAL)
+
+    expect(refresh).toHaveBeenCalledTimes(2)
+    expect(seen.at(-1)?.refreshError).toBeNull()
+    expect(seen.at(-1)?.snapshot).toMatchObject({ source: 'live', stale: false })
+  })
+
+  it('首屏连一份数据都没拿到时，下一拍重读而不是停在错误页', async () => {
+    let calls = 0
+    const get = vi.fn<PanelClient['get']>(async () => {
+      calls += 1
+      if (calls === 1) return { ok: false, error: { code: 'fetch-failed', message: '网络断了' } }
+      return ok(live)
+    })
+    const refresh = vi.fn<PanelClient['refresh']>(async () => notModified(Date.now()))
+    const seen: SnapshotRequestState[] = []
+    await mount(clientWith({ get, refresh }), seen)
+    expect(seen.at(-1)?.phase).toBe('error')
+
+    await advance(INTERVAL)
+
+    expect(get).toHaveBeenCalledTimes(2)
+    expect(refresh).not.toHaveBeenCalled()
+    expect(seen.at(-1)?.phase).toBe('ready')
   })
 })
 

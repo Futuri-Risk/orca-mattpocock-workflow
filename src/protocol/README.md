@@ -87,7 +87,9 @@ authors and an empty assignee array.
   the client merges it into the current list;
 - `{ kind: 'not-modified', revision, storeRevision, fetchedAt }`: the fetched data has no visible
   change and the client is exactly at the store commit; no row changes, `fetchedAt` is the
-  verification time, and the client clears the stale warning and local-cache badge.
+  verification time, and the client clears the stale warning and local-cache badge. The host marks
+  its memory cache as verified too, so later `snapshot.get` and `snapshot.resolveBlockers` calls do
+  not hand back the stale local copy.
 
 Fields of a full snapshot:
 

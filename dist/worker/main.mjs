@@ -7463,14 +7463,36 @@ async function mergeIncremental(deps, cache, target, resolved2, base, request, s
 }
 async function respondUnchanged(deps, cache, target, resolved2, base, raw, storeRevision, startedAt, guard) {
   if (storeRevision !== void 0 && storeRevision === base.storeRevision) {
+    const revision = raw.revision?.id ?? base.revision?.id ?? null;
+    const checkedAt = deps.now();
+    const cached = cachedWorkspace(cache, target);
+    if (cached !== void 0 && cached.repositoryKey === base.repositoryKey) {
+      cached.snapshot = {
+        ...cached.snapshot,
+        source: "live",
+        stale: false,
+        refreshError: null,
+        fetchedAt: checkedAt,
+        revision
+      };
+    } else {
+      const published2 = await publish(deps, cache, target, resolved2, raw, startedAt, "full", void 0, {
+        skipWrite: true,
+        versionFallback: base.storeRevision
+      });
+      if (!published2.ok) {
+        guard.noteFailure(target.workspaceRoot, deps.now());
+        return asFull(published2);
+      }
+    }
     guard.noteSuccess(target.workspaceRoot);
     return {
       ok: true,
       result: {
         kind: "not-modified",
-        revision: raw.revision?.id ?? base.revision?.id ?? null,
+        revision,
         storeRevision: base.storeRevision,
-        fetchedAt: deps.now()
+        fetchedAt: checkedAt
       }
     };
   }
@@ -7751,18 +7773,22 @@ async function finalize(deps, cache, target, entry, resolver) {
       deps.labels
     );
     const metrics = metricsOf(deps, entry.kind, entry.raw, tickets, true);
-    settled = buildSnapshot(
-      entry.kind,
-      entry.repositoryHost,
-      entry.raw,
-      tickets,
-      true,
-      metrics,
-      entry.snapshot.source,
-      entry.snapshot.stale,
-      entry.snapshot.refreshError,
-      entry.snapshot.storeRevision
-    );
+    settled = {
+      ...buildSnapshot(
+        entry.kind,
+        entry.repositoryHost,
+        entry.raw,
+        tickets,
+        true,
+        metrics,
+        entry.snapshot.source,
+        entry.snapshot.stale,
+        entry.snapshot.refreshError,
+        entry.snapshot.storeRevision
+      ),
+      fetchedAt: entry.snapshot.fetchedAt,
+      revision: entry.snapshot.revision
+    };
   } catch (error) {
     failure6 = mapError(error);
     settled = { ...entry.snapshot, blockersFinalized: true };

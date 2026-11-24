@@ -61,7 +61,10 @@ The MattWorkflow panel in Orca's right sidebar (`ui: "html"`, a React app runnin
 - The panel-level `snapshot-request.ts` instance: list, overview and detail share one snapshot;
   detail refresh, write or delete results are written back with `applyRefresh`, which accepts a full
   snapshot, a delta or a not-modified reply; unfinalized snapshots keep resolving blockers, so
-  blocker titles and list data update together.
+  blocker titles and list data update together. While the panel is open it keeps verifying: every
+  60 seconds while visible it runs an incremental refresh, and when it returns to the foreground at
+  least 60 seconds after the last request it refreshes once; a failed refresh does not stop the
+  cadence, the host's backoff gate handles cooldowns, and one success clears the failure notice.
 - `ticket-tree.ts`: pure functions for list layout. Turns the filtered, sorted visible tickets into
   render rows: in the tree layout it gives depth, whether the row has children, expand state, whether
   the parent is outside the list and the descendant count; cycles and self-references fall back to

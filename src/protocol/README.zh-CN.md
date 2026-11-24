@@ -65,7 +65,8 @@ worktree 另有两个错误码：`orca-missing`（找不到 Orca 命令行，属
 - `{ kind: 'delta', changed, removed, ... }`：只含变化行与墓碑，其余元数据（指标、计数、版本、
   数据时间）与整份同源；客户端把它合并进当前列表；
 - `{ kind: 'not-modified', revision, storeRevision, fetchedAt }`：拉到的数据没有可见变化，且客户端正停在
-  库里的提交上；列表一行不动，`fetchedAt` 是这次核对时刻，客户端据此清掉陈旧提示与本地缓存徽标。
+  库里的提交上；列表一行不动，`fetchedAt` 是这次核对时刻，客户端据此清掉陈旧提示与本地缓存徽标。宿主的内存缓存同步标成已核验的最新，
+  之后的 `snapshot.get` 与 `snapshot.resolveBlockers` 不会再回陈旧的本地缓存。
 
 整份快照的字段：
 

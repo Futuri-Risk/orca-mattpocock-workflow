@@ -714,14 +714,38 @@ async function respondUnchanged(
   guard: RefreshGuard,
 ): Promise<RpcResult<SnapshotRefreshResult>> {
   if (storeRevision !== undefined && storeRevision === base.storeRevision) {
+    const revision = raw.revision?.id ?? base.revision?.id ?? null
+    const checkedAt = deps.now()
+    // 这次核对过数据没变：内存缓存也要变成「已核验的最新」，
+    // 否则下一次读取、补阻塞或别的 worktree 面板又拿回陈旧的本地缓存。
+    const cached = cachedWorkspace(cache, target)
+    if (cached !== undefined && cached.repositoryKey === base.repositoryKey) {
+      cached.snapshot = {
+        ...cached.snapshot,
+        source: 'live',
+        stale: false,
+        refreshError: null,
+        fetchedAt: checkedAt,
+        revision,
+      }
+    } else {
+      const published = await publish(deps, cache, target, resolved, raw, startedAt, 'full', undefined, {
+        skipWrite: true,
+        versionFallback: base.storeRevision,
+      })
+      if (!published.ok) {
+        guard.noteFailure(target.workspaceRoot, deps.now())
+        return asFull(published)
+      }
+    }
     guard.noteSuccess(target.workspaceRoot)
     return {
       ok: true,
       result: {
         kind: 'not-modified',
-        revision: raw.revision?.id ?? base.revision?.id ?? null,
+        revision,
         storeRevision: base.storeRevision,
-        fetchedAt: deps.now(),
+        fetchedAt: checkedAt,
       },
     }
   }
@@ -1230,18 +1254,23 @@ async function finalize(
       deps.labels,
     )
     const metrics = metricsOf(deps, entry.kind, entry.raw, tickets, true)
-    settled = buildSnapshot(
-      entry.kind,
-      entry.repositoryHost,
-      entry.raw,
-      tickets,
-      true,
-      metrics,
-      entry.snapshot.source,
-      entry.snapshot.stale,
-      entry.snapshot.refreshError,
-      entry.snapshot.storeRevision,
-    )
+    // 数据时间与版本取当前快照而不是原始列表：补齐期间可能有一次 not-modified 核对推进了它们。
+    settled = {
+      ...buildSnapshot(
+        entry.kind,
+        entry.repositoryHost,
+        entry.raw,
+        tickets,
+        true,
+        metrics,
+        entry.snapshot.source,
+        entry.snapshot.stale,
+        entry.snapshot.refreshError,
+        entry.snapshot.storeRevision,
+      ),
+      fetchedAt: entry.snapshot.fetchedAt,
+      revision: entry.snapshot.revision,
+    }
   } catch (error) {
     // 补齐失败只影响定稿标记：保留阶段一结果，下一次刷新重新尝试。
     failure = mapError(error)

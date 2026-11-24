@@ -29665,6 +29665,8 @@ ${MARKDOWN_SHEET}
 
   // src/panel/snapshot-request.ts
   var React13 = __toESM(require_react(), 1);
+  var AUTO_REFRESH_INTERVAL_MS = 6e4;
+  var FOCUS_REFRESH_MIN_MS = 6e4;
   function snapshotRefreshNotice(snapshot, refreshError, t) {
     if (refreshError !== null) return refreshError.message;
     const hostMessage = snapshot?.refreshError?.message;
@@ -29725,7 +29727,7 @@ ${MARKDOWN_SHEET}
     if (snapshot === null || snapshot.storeRevision <= 0) return null;
     return { storeRevision: snapshot.storeRevision };
   }
-  function useSnapshotRequest(client2, workspaceRoot, reloadToken = 0) {
+  function useSnapshotRequest(client2, workspaceRoot, reloadToken = 0, options = {}) {
     const {
       snapshot,
       error,
@@ -29736,26 +29738,56 @@ ${MARKDOWN_SHEET}
       applyRefresh,
       append
     } = useSnapshotLoader(client2, workspaceRoot);
-    const autoRefreshed = React13.useRef(false);
+    const intervalMs = options.intervalMs ?? AUTO_REFRESH_INTERVAL_MS;
+    const focusMinMs = options.focusMinMs ?? FOCUS_REFRESH_MIN_MS;
+    const lastRequestAt = React13.useRef(0);
+    const busy = React13.useRef(true);
+    busy.current = phase === "loading" || phase === "refreshing" || appending;
+    const hasSnapshot = React13.useRef(false);
+    hasSnapshot.current = snapshot !== null;
     const run = React13.useCallback(
       async (mode) => {
+        lastRequestAt.current = Date.now();
         const applied = await load(mode);
-        if (applied === null || applied.snapshot === null) return;
-        if (applied.settled) {
-          autoRefreshed.current = false;
+        if (mode !== "get" || applied === null || applied.snapshot === null || applied.settled) {
           return;
         }
-        if (autoRefreshed.current) return;
-        autoRefreshed.current = true;
-        const refreshed = await load("refresh");
-        if (refreshed !== null && refreshed.settled) autoRefreshed.current = false;
+        lastRequestAt.current = Date.now();
+        await load("refresh");
       },
       [load]
     );
     React13.useEffect(() => {
-      autoRefreshed.current = false;
       void run("get");
     }, [run, reloadToken]);
+    const autoRun = React13.useCallback(() => {
+      if (busy.current) return;
+      void run(hasSnapshot.current ? "refresh" : "get");
+    }, [run]);
+    React13.useEffect(() => {
+      if (workspaceRoot === void 0 || intervalMs <= 0) return void 0;
+      const timer = setInterval(() => {
+        if (document.visibilityState === "hidden") return;
+        autoRun();
+      }, intervalMs);
+      return () => {
+        clearInterval(timer);
+      };
+    }, [autoRun, intervalMs, workspaceRoot]);
+    React13.useEffect(() => {
+      if (workspaceRoot === void 0) return void 0;
+      const onReturn = () => {
+        if (document.visibilityState === "hidden") return;
+        if (Date.now() - lastRequestAt.current < focusMinMs) return;
+        autoRun();
+      };
+      document.addEventListener("visibilitychange", onReturn);
+      window.addEventListener("focus", onReturn);
+      return () => {
+        document.removeEventListener("visibilitychange", onReturn);
+        window.removeEventListener("focus", onReturn);
+      };
+    }, [autoRun, focusMinMs, workspaceRoot]);
     const refresh = React13.useCallback(() => {
       if (phase === "loading" || phase === "refreshing") return;
       void run("refresh");

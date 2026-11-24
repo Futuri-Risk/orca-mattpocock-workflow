@@ -5,6 +5,10 @@
  * 数据来自本地快照库时先把缓存显示出来，再自动发起一次增量刷新；
  * 刷新回包有三种：not-modified 保留行数据但清掉陈旧标记，delta 只合并变化行与墓碑，
  * 整份回包替换当前列表。刷新失败保留已有数据，只把失败原因记在状态里。
+ *
+ * 面板开着时按节拍持续核对：可见时定时增量刷新，从后台回到前台时（按最短间隔限流）补一次。
+ * 失败不会让自动刷新停下：下一拍照常再试，宿主的退避闸门在冷却期内直接回本地缓存、不打后端，
+ * 成功一次就清掉失败提示。
  */
 import * as React from 'react'
 
@@ -38,6 +42,20 @@ export interface SnapshotRequestState {
   readonly appending: boolean
   /** 取下一页并追加到当前列表；没有更多时宿主原样返回。 */
   readonly loadMore: () => void
+}
+
+/** 面板可见时自动增量刷新的间隔。 */
+export const AUTO_REFRESH_INTERVAL_MS = 60_000
+
+/** 回到前台时自动刷新的最短间隔：距上一次请求不足这么久就不补刷。 */
+export const FOCUS_REFRESH_MIN_MS = 60_000
+
+/** 自动刷新节拍；测试与宿主可以覆盖。 */
+export interface AutoRefreshOptions {
+  /** 可见时的刷新间隔；0 关闭定时刷新。 */
+  readonly intervalMs?: number
+  /** 回到前台时的最短刷新间隔。 */
+  readonly focusMinMs?: number
 }
 
 /** 请求方式：读缓存、增量刷新、全量刷新。 */
@@ -176,12 +194,14 @@ interface Loader {
  * @param client - 面板客户端。
  * @param workspaceRoot - 当前工作区；没有工作区时直接进入错误态。
  * @param reloadToken - 外部推送的刷新信号；变了就重新读一次。
+ * @param options - 自动刷新节拍。
  * @returns 快照、错误、阶段、两个刷新入口与「加载更多」。
  */
 export function useSnapshotRequest(
   client: PanelClient,
   workspaceRoot: string | undefined,
   reloadToken = 0,
+  options: AutoRefreshOptions = {},
 ): SnapshotRequestState {
   const {
     snapshot,
@@ -193,30 +213,67 @@ export function useSnapshotRequest(
     applyRefresh,
     append,
   } = useSnapshotLoader(client, workspaceRoot)
-  // 一轮缓存只自动刷新一次：刷新失败时不再反复打宿主。
-  const autoRefreshed = React.useRef(false)
+  const intervalMs = options.intervalMs ?? AUTO_REFRESH_INTERVAL_MS
+  const focusMinMs = options.focusMinMs ?? FOCUS_REFRESH_MIN_MS
+  // 最近一次发起请求的时刻：回到前台时据此限流，不让窗口来回切换反复打宿主。
+  const lastRequestAt = React.useRef(0)
+  // 节拍与焦点回调读最新状态，不随每次渲染重建定时器。
+  const busy = React.useRef(true)
+  busy.current = phase === 'loading' || phase === 'refreshing' || appending
+  const hasSnapshot = React.useRef(false)
+  hasSnapshot.current = snapshot !== null
 
   const run = React.useCallback(
     async (mode: RequestMode): Promise<void> => {
+      lastRequestAt.current = Date.now()
       const applied = await load(mode)
-      if (applied === null || applied.snapshot === null) return
-      if (applied.settled) {
-        autoRefreshed.current = false
+      // 只有首屏读到的是本地快照库时才接一次增量刷新，让它收敛到最新；
+      // 刷新本身失败不在这里重试，交给下一拍。
+      if (mode !== 'get' || applied === null || applied.snapshot === null || applied.settled) {
         return
       }
-      // 来自本地快照库：数据已经显示出来，再自动刷新一次让它收敛到最新。
-      if (autoRefreshed.current) return
-      autoRefreshed.current = true
-      const refreshed = await load('refresh')
-      if (refreshed !== null && refreshed.settled) autoRefreshed.current = false
+      lastRequestAt.current = Date.now()
+      await load('refresh')
     },
     [load],
   )
 
   React.useEffect(() => {
-    autoRefreshed.current = false
     void run('get')
   }, [run, reloadToken])
+
+  // 自动核对：有数据就增量刷新，连一份数据都没有（首屏失败）就重读。
+  const autoRun = React.useCallback((): void => {
+    if (busy.current) return
+    void run(hasSnapshot.current ? 'refresh' : 'get')
+  }, [run])
+
+  React.useEffect(() => {
+    if (workspaceRoot === undefined || intervalMs <= 0) return undefined
+    const timer = setInterval(() => {
+      // 面板藏在后台时不刷：回到前台那一刻会补一次。
+      if (document.visibilityState === 'hidden') return
+      autoRun()
+    }, intervalMs)
+    return () => {
+      clearInterval(timer)
+    }
+  }, [autoRun, intervalMs, workspaceRoot])
+
+  React.useEffect(() => {
+    if (workspaceRoot === undefined) return undefined
+    const onReturn = (): void => {
+      if (document.visibilityState === 'hidden') return
+      if (Date.now() - lastRequestAt.current < focusMinMs) return
+      autoRun()
+    }
+    document.addEventListener('visibilitychange', onReturn)
+    window.addEventListener('focus', onReturn)
+    return () => {
+      document.removeEventListener('visibilitychange', onReturn)
+      window.removeEventListener('focus', onReturn)
+    }
+  }, [autoRun, focusMinMs, workspaceRoot])
 
   const refresh = React.useCallback(() => {
     if (phase === 'loading' || phase === 'refreshing') return

@@ -961,6 +961,86 @@ describe('刷新版本协议', () => {
     expect(calls).toEqual([undefined, undefined])
     await expect(store.revision(ROOT)).resolves.toBe(first.storeRevision)
   })
+
+  describe('not-modified 之后内存缓存跟着变新', () => {
+    const CHECKED_AT = NOW + 50 * 60_000
+
+    /** 先用一个服务把数据写进库，再起一个新服务（模拟 worker 重启）只认库里那份。 */
+    async function restartedFromStore(tracker: Tracker) {
+      const store = memoryStore()
+      resultOf(await service(tracker, store).handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }))
+      return service(tracker, store, () => CHECKED_AT)
+    }
+
+    function expectVerified(snapshot: WorkspaceSnapshot): void {
+      expect(snapshot).toMatchObject({
+        source: 'live',
+        stale: false,
+        refreshError: null,
+        fetchedAt: CHECKED_AT,
+      })
+    }
+
+    it('库里那份核对过没变：再读一次拿到的是已核验的最新，而不是陈旧缓存', async () => {
+      const { tracker } = stableTracker()
+      const snapshots = await restartedFromStore(tracker)
+      const cached = resultOf(
+        await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+      )
+      expect(cached).toMatchObject({ source: 'cache', stale: true })
+
+      const refreshed = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
+        workspaceRoot: ROOT,
+        storeRevision: cached.storeRevision,
+      })
+      expect(refreshed.ok && 'kind' in refreshed.result && refreshed.result.kind).toBe(
+        'not-modified',
+      )
+
+      expectVerified(
+        resultOf(await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT })),
+      )
+    })
+
+    it('核对之后再补阻塞：补齐结果不把陈旧标记与旧数据时间带回来', async () => {
+      const { tracker: base } = stableTracker()
+      const tracker: Tracker = {
+        ...base,
+        resolveBlockers: () => Promise.resolve({ open: new Map(), blockedBy: new Map() }),
+      }
+      const snapshots = await restartedFromStore(tracker)
+      const cached = resultOf(
+        await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+      )
+      await snapshots.handle(RPC_METHODS.snapshotRefresh, {
+        workspaceRoot: ROOT,
+        storeRevision: cached.storeRevision,
+      })
+
+      expectVerified(
+        resultOf(
+          await snapshots.handle(RPC_METHODS.snapshotResolveBlockers, { workspaceRoot: ROOT }),
+        ),
+      )
+    })
+
+    it('内存里还没有缓存就直接刷新：核对没变之后再读也是最新', async () => {
+      const { tracker } = stableTracker()
+      const snapshots = await restartedFromStore(tracker)
+
+      const refreshed = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
+        workspaceRoot: ROOT,
+        storeRevision: 1,
+      })
+      expect(refreshed.ok && 'kind' in refreshed.result && refreshed.result.kind).toBe(
+        'not-modified',
+      )
+
+      expectVerified(
+        resultOf(await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT })),
+      )
+    })
+  })
 })
 
 describe('刷新退避与缓存自洽', () => {
