@@ -71,7 +71,9 @@ export const DETAIL_REF_LINK_STYLE: CSSProperties = {
   textUnderlineOffset: 2,
 }
 
+/** 详情滚动区；自身是定位上下文，理由同列表（读屏提示区不能撑出滚动区）。 */
 export const DETAIL_SCROLL_STYLE: CSSProperties = {
+  position: 'relative',
   display: 'flex',
   flexDirection: 'column',
   gap: 14,

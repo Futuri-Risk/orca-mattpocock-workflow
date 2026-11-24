@@ -179,3 +179,38 @@ describe('列表编号复制工单链接', () => {
     expect(onPick).not.toHaveBeenCalled()
   })
 })
+
+describe('读屏提示区不撑出滚动区', () => {
+  const POSITIONED = new Set(['relative', 'absolute', 'fixed', 'sticky'])
+
+  /** 绝对定位元素的包含块：最近一个非 static 定位的祖先；没有就落到页面上。 */
+  function containingBlockOf(element: Element): Element | null {
+    let ancestor = element.parentElement
+    while (ancestor !== null) {
+      if (POSITIONED.has(getComputedStyle(ancestor).position)) return ancestor
+      ancestor = ancestor.parentElement
+    }
+    return null
+  }
+
+  it('复制结果的读屏区以列表滚动区为包含块，被它的溢出裁剪截住', async () => {
+    // 包含块落到 body 时，最后一张卡片的读屏区会把整页撑高，面板多出第二条滚动条。
+    await render(
+      list(
+        [listTicket(), makeTicket({ ref: '#16', number: 16, url: `${ISSUE_URL}6` })],
+        () => undefined,
+      ),
+    )
+    await settle()
+
+    const scroller = mustFind('ticket-list')
+    const notices = document.querySelectorAll('[data-testid="ticket-ref-copied"]')
+    expect(notices.length).toBe(2)
+    notices.forEach((notice) => {
+      expect(getComputedStyle(notice).position).toBe('absolute')
+      const block = containingBlockOf(notice)
+      expect(block).not.toBeNull()
+      expect(block === scroller || scroller.contains(block)).toBe(true)
+    })
+  })
+})

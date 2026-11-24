@@ -432,8 +432,13 @@ export const EMPTY_STYLE: CSSProperties = {
   color: COLORS.secondary,
 }
 
-/** 卡片列表：卡片间距收紧到 6px，窄侧栏里一屏能多放几张。 */
+/**
+ * 卡片列表：卡片间距收紧到 6px，窄侧栏里一屏能多放几张。
+ * 自身是定位上下文：卡片里绝对定位的读屏提示区以它为包含块，才会被它的溢出裁剪截住；
+ * 否则包含块落到 body，最后一张卡片的提示区会把整页撑高，面板多出第二条滚动条。
+ */
 export const LIST_STYLE: CSSProperties = {
+  position: 'relative',
   display: 'flex',
   flexDirection: 'column',
   gap: 6,

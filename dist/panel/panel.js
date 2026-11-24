@@ -26112,6 +26112,7 @@
     color: COLORS.secondary
   };
   var LIST_STYLE = {
+    position: "relative",
     display: "flex",
     flexDirection: "column",
     gap: 6,
@@ -30364,6 +30365,7 @@ ${MARKDOWN_SHEET}
     textUnderlineOffset: 2
   };
   var DETAIL_SCROLL_STYLE = {
+    position: "relative",
     display: "flex",
     flexDirection: "column",
     gap: 14,
