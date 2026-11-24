@@ -25322,7 +25322,6 @@
         const params = {
           workspaceRoot,
           ...options?.full === true ? { full: true } : {},
-          ...options?.ifRevision === void 0 ? {} : { ifRevision: options.ifRevision },
           ...options?.storeRevision === void 0 ? {} : { storeRevision: options.storeRevision }
         };
         return call(request, RPC_METHODS.snapshotRefresh, params, isSnapshotRefreshResult);
@@ -29723,14 +29722,8 @@ ${MARKDOWN_SHEET}
     return current === null ? null : applySnapshotDelta(current, result);
   }
   function snapshotBaselineOf(snapshot) {
-    if (snapshot === null) return null;
-    const hasRevision = snapshot.revision !== null;
-    const hasStore = snapshot.storeRevision > 0;
-    if (!hasRevision && !hasStore) return null;
-    return {
-      ...snapshot.revision === null ? {} : { ifRevision: snapshot.revision },
-      ...hasStore ? { storeRevision: snapshot.storeRevision } : {}
-    };
+    if (snapshot === null || snapshot.storeRevision <= 0) return null;
+    return { storeRevision: snapshot.storeRevision };
   }
   function useSnapshotRequest(client2, workspaceRoot, reloadToken = 0) {
     const {
@@ -31836,7 +31829,6 @@ ${MARKDOWN_SHEET}
   function refreshOptionsOf(baseline) {
     if (baseline === null) return void 0;
     const options = {};
-    if (baseline.ifRevision !== void 0) options.ifRevision = baseline.ifRevision;
     if (baseline.storeRevision !== void 0) options.storeRevision = baseline.storeRevision;
     return Object.keys(options).length === 0 ? void 0 : options;
   }

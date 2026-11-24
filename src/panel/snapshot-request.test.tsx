@@ -173,7 +173,6 @@ describe('useSnapshotRequest', () => {
     await settle()
 
     expect(refresh).toHaveBeenCalledWith(WORKSPACE, {
-      ifRevision: 'r1',
       storeRevision: 1,
     })
     expect(mustFind('titles').textContent).toBe('新标题')

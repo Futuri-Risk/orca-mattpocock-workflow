@@ -52,16 +52,16 @@ and removes orphan ticket files that are no longer referenced.
 ### Two separate versions
 
 - **Source revision**: the comparable identifier and authoritative total a backend gives for the
-  current repository state. It answers "did the remote change?". A refresh sends it back as
-  `ifRevision`; when it matches, the backend returns `notModified` and the host replies with a tiny
-  not-modified response.
+  current repository state. It stays in meta for diagnostics and its `total` is used for
+  reconciliation; a refresh always scans the change window itself and compares ticket content
+  instead of short-circuiting on the identifier.
 - **Store revision**: the monotonically increasing commit sequence in meta. It answers "what is in
-  the local store?". A client sends back the store revision it last saw and the host uses the change
-  log to return only changed rows and tombstones.
+  the local store?" and is the only client baseline. A client sends back the store revision it last
+  saw and the host uses the change log to return only changed rows and tombstones.
 
-The two must never be mixed. When the source revision is unavailable, the authoritative total
-drifts, the incremental result is truncated, or the hierarchy capability differs from the store,
-the host falls back to a full fetch instead of publishing an untrustworthy delta.
+The two must never be mixed. When the authoritative total is unavailable, totals drift, the
+incremental result is truncated, or the hierarchy capability differs from the store, the host falls
+back to a full fetch instead of publishing an untrustworthy delta.
 
 ### Tombstones
 
@@ -93,8 +93,9 @@ time. There is no file locking yet; add it when a second writer appears.
 
 ## Consequences
 
-- Refresh replies shrink from "the whole list" to "changed rows + tombstones"; when the remote has
-  not changed, they become a tiny not-modified response.
+- Refresh replies shrink from "the whole list" to "changed rows + tombstones"; when the fetched
+  data has no visible change, the store is not rewritten and the reply is a tiny not-modified
+  response.
 - Changing one ticket writes one ticket file; other ticket files stay untouched.
 - The directory may briefly contain orphan ticket files; the next write removes them, and `prune`
   removes unreadable directories.

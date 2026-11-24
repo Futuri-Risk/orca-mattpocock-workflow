@@ -8,7 +8,6 @@
 import type {
   CommandRunner,
   SnapshotPage,
-  SourceRevision,
   Tracker,
   TrackerChanges,
   TrackerSnapshot,
@@ -18,7 +17,6 @@ import { deleteGithubTicket, readGithubDeletePermission } from './delete.ts'
 import { applyGithubChanges, readGithubDetail } from './detail.ts'
 import {
   GITHUB_USER_FIELDS,
-  parseGithubRevision,
   parseIssueChangesGraphql,
   parseIssueGraphql,
   type ParsedChanges,
@@ -68,20 +66,6 @@ const ISSUE_QUERY = `query ($owner: String!, $name: String!, $limit: Int!, $afte
       totalCount
       pageInfo { hasNextPage endCursor }
       ${ISSUE_NODES}
-    }
-  }
-}`
-
-/**
- * 只看远端版本的极小查询：一次返回未过滤的总数与最新更新时间。
- * 刷新带 `ifRevision` 时先跑它，命中就不扫描变更窗口。
- */
-const REVISION_QUERY = `query ($owner: String!, $name: String!) {
-  repository(owner: $owner, name: $name) {
-    nameWithOwner
-    latest: issues(first: 1, orderBy: { field: UPDATED_AT, direction: DESC }) {
-      totalCount
-      nodes { updatedAt }
     }
   }
 }`
@@ -142,21 +126,8 @@ export function createGithubTracker(deps: GithubTrackerDeps): Tracker {
     async fetchChanges(
       workspaceRoot: string,
       since: number,
-      ifRevision?: string,
     ): Promise<TrackerChanges> {
       const repository = await readRepository(deps.run, workspaceRoot)
-      if (ifRevision !== undefined) {
-        const revision = await readRevision(deps, workspaceRoot, repository)
-        if (revision?.id === ifRevision) {
-          return {
-            tickets: [],
-            truncated: false,
-            revision,
-            notModified: true,
-            hierarchy: 'native',
-          }
-        }
-      }
       const changes = await readChanges(deps, workspaceRoot, repository, limit, since)
 
       return {
@@ -180,31 +151,6 @@ export function createGithubTracker(deps: GithubTrackerDeps): Tracker {
 
     deleteTicket: (workspaceRoot, reference) => deleteGithubTicket(deps, workspaceRoot, reference),
   }
-}
-
-/**
- * 读取远端版本：一次只取总数与最新更新时间的查询。
- * @param deps - 命令执行器。
- * @param workspaceRoot - 工作区根目录。
- * @param repository - 仓库 owner/name。
- * @returns 远端版本；响应里缺少可比较字段时为 null。
- */
-async function readRevision(
-  deps: GithubTrackerDeps,
-  workspaceRoot: string,
-  repository: GithubRepository,
-): Promise<SourceRevision | null> {
-  const output = await callGh(deps.run, workspaceRoot, [
-    'api',
-    'graphql',
-    '-f',
-    `query=${REVISION_QUERY}`,
-    '-f',
-    `owner=${repository.owner}`,
-    '-f',
-    `name=${repository.name}`,
-  ])
-  return parseGithubRevision(output)
 }
 
 async function readTickets(

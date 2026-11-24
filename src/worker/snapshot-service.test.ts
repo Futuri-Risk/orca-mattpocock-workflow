@@ -722,11 +722,10 @@ function markdownService(
 describe('刷新版本协议', () => {
   /** 远端不变、增量窗口也只回正文回退的假后端。 */
   function stableTracker(
-    changes: (ifRevision: string | undefined) => TrackerChanges = () => ({
+    changes: () => TrackerChanges = () => ({
       tickets: [],
       truncated: false,
       revision: { id: 'page:2', total: 2 },
-      notModified: true,
       hierarchy: 'native',
     }),
     full: () => TrackerSnapshot = () => page([ticket(5), ticket(4)], { total: 2 }),
@@ -739,13 +738,12 @@ describe('刷新版本协议', () => {
           calls.push(request?.cursor)
           return Promise.resolve(full())
         },
-        fetchChanges: (_root, _since, ifRevision) =>
-          Promise.resolve(changes(ifRevision)),
+        fetchChanges: (_root, _since) => Promise.resolve(changes()),
       },
     }
   }
 
-  it('远端版本命中且客户端库版本一致时回 not-modified，不写库', async () => {
+  it('数据没变且客户端库版本一致时回 not-modified，不写库', async () => {
     const store = memoryStore()
     const { tracker } = stableTracker()
     const snapshots = service(tracker, store)
@@ -755,7 +753,6 @@ describe('刷新版本协议', () => {
 
     const result = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
       workspaceRoot: ROOT,
-      ifRevision: first.revision ?? undefined,
       storeRevision: first.storeRevision,
     })
 
@@ -767,6 +764,26 @@ describe('刷新版本协议', () => {
       storeRevision: first.storeRevision,
       fetchedAt: first.fetchedAt,
     })
+    await expect(store.revision(ROOT)).resolves.toBe(first.storeRevision)
+  })
+
+  it('数据没变但客户端没带库版本：回整份且不写库', async () => {
+    const store = memoryStore()
+    const { tracker } = stableTracker()
+    const snapshots = service(tracker, store)
+    const first = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+
+    const result = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
+      workspaceRoot: ROOT,
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok || !('kind' in result.result)) return
+    expect(result.result.kind).toBe('snapshot')
+    if (result.result.kind !== 'snapshot') return
+    expect(result.result.snapshot.storeRevision).toBe(first.storeRevision)
     await expect(store.revision(ROOT)).resolves.toBe(first.storeRevision)
   })
 
@@ -782,7 +799,6 @@ describe('刷新版本协议', () => {
 
     const result = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
       workspaceRoot: ROOT,
-      ifRevision: first.revision ?? undefined,
       storeRevision: first.storeRevision,
     })
 
@@ -795,6 +811,8 @@ describe('刷新版本协议', () => {
     ])
     expect(result.result.removed).toEqual([])
     expect(result.result.storeRevision).toBeGreaterThan(first.storeRevision)
+    // 本地写入只推进了一版；刷新数据没变，不再写库。
+    await expect(store.revision(ROOT)).resolves.toBe(result.result.storeRevision)
     // 远端没变：没有重新拉列表。
     expect(calls).toEqual([undefined])
   })
@@ -832,20 +850,22 @@ describe('刷新版本协议', () => {
 
     const result = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
       workspaceRoot: ROOT,
-      ifRevision: first.revision ?? undefined,
       storeRevision: first.storeRevision,
     })
 
     expect(result.ok).toBe(true)
     if (!result.ok || !('kind' in result.result)) return
-    expect(result.result.kind).toBe('snapshot')
-    if (result.result.kind !== 'snapshot') return
-    expect(result.result.snapshot.loaded).toBe(3)
+    // 全量重拉后仍按客户端基线收成变化行：只回新增的 #3，不带整棵树。
+    expect(result.result.kind).toBe('delta')
+    if (result.result.kind !== 'delta') return
+    expect(result.result.changed.map((item) => item.ref)).toEqual(['#3'])
+    expect(result.result.loaded).toBe(3)
+    expect(result.result.total).toBe(3)
     // 第一次是首屏，第二次是为总数漂移重拉的一页。
     expect(calls).toEqual([undefined, undefined])
   })
 
-  it('增量被截断时退回全量重拉', async () => {
+  it('增量被截断时退回全量重拉，全量一致则回 not-modified', async () => {
     const store = memoryStore()
     const { tracker, calls } = stableTracker(() => ({
       tickets: [ticket(5)],
@@ -860,14 +880,15 @@ describe('刷新版本协议', () => {
 
     const result = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
       workspaceRoot: ROOT,
-      ifRevision: first.revision ?? undefined,
       storeRevision: first.storeRevision,
     })
 
     expect(result.ok).toBe(true)
     if (!result.ok || !('kind' in result.result)) return
-    expect(result.result.kind).toBe('snapshot')
+    // 截断的增量不可信，但全量重拉确认数据没变：不写库、不升版本。
+    expect(result.result.kind).toBe('not-modified')
     expect(calls).toEqual([undefined, undefined])
+    await expect(store.revision(ROOT)).resolves.toBe(first.storeRevision)
   })
 
   it('远端删掉的票在全量重拉后从列表消失，并写进墓碑', async () => {
@@ -899,21 +920,24 @@ describe('刷新版本协议', () => {
       await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
     )
 
-    const result = resultOf(
-      await snapshots.handle(RPC_METHODS.snapshotRefresh, {
-        workspaceRoot: ROOT,
-        ifRevision: first.revision ?? undefined,
-        storeRevision: first.storeRevision,
-      }),
-    )
+    const result = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
+      workspaceRoot: ROOT,
+      storeRevision: first.storeRevision,
+    })
 
-    expect(refs(result)).toEqual(['#5'])
+    expect(result.ok).toBe(true)
+    if (!result.ok || !('kind' in result.result)) return
+    // 全量重拉把删除写进墓碑；返回给客户端的增量只带墓碑。
+    expect(result.result.kind).toBe('delta')
+    if (result.result.kind !== 'delta') return
+    expect(result.result.changed).toEqual([])
+    expect(result.result.removed).toEqual(['#4'])
     expect(store.entries.get(ROOT)?.tickets.map((item) => item.ref)).toEqual(['#5'])
     const changes = await store.changesSince(ROOT, first.storeRevision)
     expect(changes?.removed).toEqual(['#4'])
   })
 
-  it('后端给不出版本号时退回全量，不把增量当成完整结果', async () => {
+  it('后端给不出版本号时退回全量，全量一致则回 not-modified', async () => {
     const store = memoryStore()
     const { tracker, calls } = stableTracker(() => ({
       tickets: [ticket(5)],
@@ -928,14 +952,153 @@ describe('刷新版本协议', () => {
 
     const result = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
       workspaceRoot: ROOT,
-      ifRevision: first.revision ?? undefined,
       storeRevision: first.storeRevision,
     })
 
     expect(result.ok).toBe(true)
     if (!result.ok || !('kind' in result.result)) return
-    expect(result.result.kind).toBe('snapshot')
+    expect(result.result.kind).toBe('not-modified')
     expect(calls).toEqual([undefined, undefined])
+    await expect(store.revision(ROOT)).resolves.toBe(first.storeRevision)
+  })
+})
+
+describe('刷新退避与缓存自洽', () => {
+  it('连续失败后进入冷却：冷却期内不打后端，回包说明在退避', async () => {
+    let clock = NOW
+    const store = memoryStore()
+    store.entries.set(ROOT, storeEntry({ total: 2, tickets: [ticket(5), ticket(4)] }))
+    let calls = 0
+    const tracker: Tracker = {
+      fetchSnapshot: () => {
+        calls += 1
+        return Promise.reject(new TrackerError('fetch-failed', '远端挂了'))
+      },
+    }
+    const snapshots = service(tracker, store, () => clock)
+
+    const first = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotRefresh, { workspaceRoot: ROOT }),
+    )
+    expect(first.stale).toBe(true)
+    expect(calls).toBe(1)
+
+    clock = NOW + 1_000
+    const cooling = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotRefresh, { workspaceRoot: ROOT }),
+    )
+    expect(calls).toBe(1)
+    expect(cooling.refreshError?.message).toContain('退避')
+
+    // 手动全量刷新是人的动作：冷却中也直接打后端。
+    clock = NOW + 2_000
+    await snapshots.handle(RPC_METHODS.snapshotRefresh, { workspaceRoot: ROOT, full: true })
+    expect(calls).toBe(2)
+  })
+
+  it('增量合并出的票数超过权威总数时退回全量，清掉幽灵票', async () => {
+    const store = memoryStore()
+    store.entries.set(
+      ROOT,
+      storeEntry({
+        total: 2,
+        tickets: [ticket(5), ticket(4)],
+        revision: { id: 'two', total: 2 },
+      }),
+    )
+    // 远端删掉 #4、新增 #6：总数不变，增量只看得见 #6。
+    const { tracker } = pagedTracker(
+      new Map([['', page([ticket(5), ticket(6)], { total: 2 })]]),
+      () => ({
+        tickets: [ticket(6)],
+        truncated: false,
+        total: 2,
+        hierarchy: 'native',
+        revision: { id: 'two', total: 2 },
+      }),
+    )
+    const snapshots = service(tracker, store)
+
+    const result = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
+      workspaceRoot: ROOT,
+      storeRevision: 1,
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok || !('kind' in result.result)) return
+    expect(result.result.kind).toBe('delta')
+    if (result.result.kind !== 'delta') return
+    expect(result.result.changed.map((item) => item.ref)).toEqual(['#6'])
+    expect(result.result.removed).toEqual(['#4'])
+    expect(store.entries.get(ROOT)?.tickets.map((item) => item.ref)).toEqual(['#5', '#6'])
+  })
+
+  it('库里的票数大于总数时作废并按全量重拉', async () => {
+    const store = memoryStore()
+    store.entries.set(
+      ROOT,
+      storeEntry({
+        loaded: 3,
+        total: 2,
+        tickets: [ticket(5), ticket(4), ticket(3)],
+      }),
+    )
+    const { tracker, calls } = pagedTracker(
+      new Map([['', page([ticket(5), ticket(4)], { total: 2 })]]),
+    )
+    const snapshots = service(tracker, store)
+
+    const snapshot = resultOf(
+      await snapshots.handle(RPC_METHODS.snapshotGet, { workspaceRoot: ROOT }),
+    )
+
+    expect(calls).toEqual([undefined])
+    expect(snapshot.tickets.map((item) => item.ref)).toEqual(['#5', '#4'])
+    expect(store.entries.get(ROOT)?.tickets).toHaveLength(2)
+  })
+
+  it('同一基线的并发刷新只打一次后端', async () => {
+    const store = memoryStore()
+    store.entries.set(
+      ROOT,
+      storeEntry({
+        total: 2,
+        tickets: [ticket(5), ticket(4)],
+        revision: { id: 'two', total: 2 },
+      }),
+    )
+    let resolveGate: (changes: TrackerChanges) => void = () => {}
+    const gate = new Promise<TrackerChanges>((resolve) => {
+      resolveGate = resolve
+    })
+    let calls = 0
+    const tracker: Tracker = {
+      fetchSnapshot: () => Promise.resolve(page([ticket(5), ticket(4)], { total: 2 })),
+      fetchChanges: () => {
+        calls += 1
+        return gate
+      },
+    }
+    const snapshots = service(tracker, store)
+
+    const first = snapshots.handle(RPC_METHODS.snapshotRefresh, {
+      workspaceRoot: ROOT,
+      storeRevision: 1,
+    })
+    const second = snapshots.handle(RPC_METHODS.snapshotRefresh, {
+      workspaceRoot: ROOT,
+      storeRevision: 1,
+    })
+    resolveGate({
+      tickets: [],
+      truncated: false,
+      revision: { id: 'two', total: 2 },
+      hierarchy: 'native',
+    })
+
+    const [left, right] = await Promise.all([first, second])
+    expect(left).toEqual(right)
+    expect(calls).toBe(1)
   })
 })
 
@@ -969,7 +1132,6 @@ describe('增量阻塞补齐范围', () => {
 
     const refreshed = await snapshots.handle(RPC_METHODS.snapshotRefresh, {
       workspaceRoot: ROOT,
-      ifRevision: first.revision ?? undefined,
       storeRevision: first.storeRevision,
     })
     expect(refreshed.ok).toBe(true)
@@ -1009,7 +1171,6 @@ describe('增量阻塞补齐范围', () => {
     const restarted = service(tracker, store)
     const refreshed = await restarted.handle(RPC_METHODS.snapshotRefresh, {
       workspaceRoot: ROOT,
-      ifRevision: first.revision ?? undefined,
       storeRevision: first.storeRevision,
     })
     expect(refreshed.ok).toBe(true)
@@ -1071,7 +1232,7 @@ describe('仓库作用域', () => {
     expect(store.entries.has(ATTACHED_ROOT)).toBe(true)
   })
 
-  it('两个 worktree 共用一条增量链，刷新写回共享条目', async () => {
+  it('两个 worktree 共用一条增量链，数据没变时不重写共享条目', async () => {
     const store = memoryStore()
     store.entries.set(
       MAIN_ROOT,
@@ -1096,7 +1257,9 @@ describe('仓库作用域', () => {
     // 窗口起点取共享条目的 fetchedAt，再向前重叠一分钟。
     expect(changeCalls).toEqual([NOW - 120_000])
     expect(calls).toEqual([])
-    expect(store.entries.get(MAIN_ROOT)?.workspaceRoot).toBe(ATTACHED_ROOT)
+    // 数据没变：条目保持原样，不因附属 worktree 刷新而升版本或改归属。
+    expect(store.entries.get(MAIN_ROOT)?.workspaceRoot).toBe(MAIN_ROOT)
+    expect(store.entries.get(MAIN_ROOT)?.storeRevision).toBe(1)
   })
 
   it('两个仓库各存各的，互不命中', async () => {

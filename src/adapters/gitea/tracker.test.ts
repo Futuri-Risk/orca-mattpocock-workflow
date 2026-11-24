@@ -437,19 +437,13 @@ describe('Gitea 工单增量', () => {
     })
   })
 
-  it('版本命中时回 not-modified，不扫描变更窗口', async () => {
+  it('刷新不按远端版本短路：每次都扫描变更窗口', async () => {
     const { tracker, calls } = trackerWith()
 
-    const changes = await tracker.fetchChanges?.(
-      '/workspace',
-      SINCE,
-      '3:2026-11-21T14:11:38Z',
-    )
+    const changes = await tracker.fetchChanges?.('/workspace', SINCE)
 
-    expect(changes?.notModified).toBe(true)
-    expect(changes?.tickets).toEqual([])
-    expect(changes?.revision?.total).toBe(3)
-    expect(calls.filter((call) => call.some((part) => part.includes('since=')))).toEqual([])
+    expect(changes?.tickets.map((ticket) => ticket.ref)).toEqual(['#16'])
+    expect(calls.some((call) => call.some((part) => part.includes('since=')))).toBe(true)
   })
 
   it('增量也刷新当前用户', async () => {

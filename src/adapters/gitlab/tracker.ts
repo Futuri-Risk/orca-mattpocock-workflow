@@ -142,7 +142,6 @@ export function createGitlabTracker(deps: GitlabTrackerDeps): Tracker {
     async fetchChanges(
       workspaceRoot: string,
       since: number,
-      ifRevision?: string,
     ): Promise<TrackerChanges> {
       if (!Number.isFinite(since)) {
         throw new TrackerError('fetch-failed', '增量窗口的起点不是有效时间戳。')
@@ -150,15 +149,6 @@ export function createGitlabTracker(deps: GitlabTrackerDeps): Tracker {
 
       const project = await readProjectAddress(deps.run, workspaceRoot)
       const revision = await readGitlabRevision(deps, workspaceRoot, project.path)
-      if (ifRevision !== undefined && revision?.id === ifRevision) {
-        return {
-          tickets: [],
-          truncated: false,
-          revision,
-          notModified: true,
-          hierarchy: 'native',
-        }
-      }
       const viewer = readCurrentViewer(deps, workspaceRoot)
       const listing = { pageSize, pageLimit: incrementalPageLimit }
       const { issues, truncated } = await readChangedIssues(

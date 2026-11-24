@@ -298,19 +298,14 @@ describe('GitHub 工单增量', () => {
     })
   })
 
-  it('版本命中时只发一次极小查询，不扫描变更窗口', async () => {
+  it('刷新不按远端版本短路：每次都扫描变更窗口', async () => {
     const { runner, calls } = changesRunner()
     const tracker = createGithubTracker({ run: runner, now: () => NOW })
 
-    const changes = await tracker.fetchChanges?.(
-      '/workspace',
-      SINCE,
-      '30:2027-01-01T00:00:00Z',
-    )
+    const changes = await tracker.fetchChanges?.('/workspace', SINCE)
 
-    expect(changes?.notModified).toBe(true)
-    expect(changes?.tickets).toEqual([])
-    expect(calls.filter((call) => call.some((part) => part.startsWith('since=')))).toEqual([])
+    expect(changes?.tickets.map((ticket) => ticket.ref)).toEqual(['#16', '#12'])
+    expect(calls.some((call) => call.some((part) => part.startsWith('since=')))).toBe(true)
   })
 
   it('后端还有下一页时标记为截断，宿主据此退回全量重拉', async () => {

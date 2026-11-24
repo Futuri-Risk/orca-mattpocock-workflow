@@ -134,13 +134,11 @@ export interface DetailRefreshTarget {
 
 /** 刷新参数里与基线有关的字段。 */
 type RefreshBaselineOptions = {
-  readonly ifRevision?: string
   readonly storeRevision?: number
 }
 
 /**
- * 详情刷新带回列表基线：远端版本没变时宿主可以回 not-modified，
- * 库里有详情页没见过的写入时只回变化行。
+ * 详情刷新带回列表基线：库里有详情页没见过的写入时只回变化行。
  * @param baseline - 当前面板快照的版本；没有快照时为 null。
  * @returns 刷新参数里的版本字段；没有基线时 undefined。
  */
@@ -148,8 +146,7 @@ function refreshOptionsOf(
   baseline: SnapshotBaseline | null,
 ): RefreshBaselineOptions | undefined {
   if (baseline === null) return undefined
-  const options: { ifRevision?: string; storeRevision?: number } = {}
-  if (baseline.ifRevision !== undefined) options.ifRevision = baseline.ifRevision
+  const options: { storeRevision?: number } = {}
   if (baseline.storeRevision !== undefined) options.storeRevision = baseline.storeRevision
   return Object.keys(options).length === 0 ? undefined : options
 }

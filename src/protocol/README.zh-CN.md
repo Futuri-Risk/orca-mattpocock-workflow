@@ -15,7 +15,7 @@ worker 与面板之间的消息类型和常量。
 RPC 方法（面板用 `orca.plugin.request(方法名, 参数)` 调用，worker 用同名处理器应答）：
 
 - `snapshot.get` / `snapshot.resolveBlockers`：列表快照与阻塞补齐；
-- `snapshot.refresh`：带 `ifRevision` / `storeRevision` 的增量刷新，回整份、delta 或 not-modified；
+- `snapshot.refresh`：带本地 `storeRevision` 的增量刷新，回整份、delta 或 not-modified；
 - `snapshot.loadMore`：按快照的游标取下一段工单并追加到已加载的列表，参数是 `{ workspaceRoot }`；
   一次取全的后端原样返回当前快照；
 - `snapshot.cache`：读取或清空本地快照库（缓存按仓库计，同一仓库的多个 worktree 共用一份）；
@@ -64,7 +64,7 @@ worktree 另有两个错误码：`orca-missing`（找不到 Orca 命令行，属
 - `{ kind: 'snapshot', snapshot }`：整份快照（首次拉取、全量刷新或变化集不可用）；
 - `{ kind: 'delta', changed, removed, ... }`：只含变化行与墓碑，其余元数据（指标、计数、版本、
   数据时间）与整份同源；客户端把它合并进当前列表；
-- `{ kind: 'not-modified', revision, storeRevision, fetchedAt }`：远端版本没变且客户端正停在
+- `{ kind: 'not-modified', revision, storeRevision, fetchedAt }`：拉到的数据没有可见变化，且客户端正停在
   库里的提交上；列表一行不动，`fetchedAt` 是这次核对时刻，客户端据此清掉陈旧提示与本地缓存徽标。
 
 整份快照的字段：
@@ -77,8 +77,9 @@ worktree 另有两个错误码：`orca-missing`（找不到 Orca 命令行，属
   （`viewer`，识别不出时为 null；人员筛选靠它判断「我」是谁），以及父子能力来源
   （`hierarchy`：`native` / `convention` / `none`）。`none` 时面板禁用父子布局并说明，
   平铺照常；父子关系不参与判定、统计或指标；
-- 版本级：`revision` 是远端版本号（本地 Markdown 或后端给不出时为 null），`storeRevision` 是本地
-  快照库的提交序号。刷新时把两者分别作为 `ifRevision` / `storeRevision` 带回；两者不能混用；
+- 版本级：`revision` 是远端版本号（本地 Markdown 或后端给不出时为 null），只作诊断记录；
+  `storeRevision` 是本地快照库的提交序号。刷新只把 `storeRevision` 带回，并自己扫描变更窗口：
+  版本标识的粒度过粗，证明不了「没有编辑发生」，宿主按票内容判断是否真的变了，不靠 `revision` 短路；
 - 分页：`hasMore` 为 true 时后端还有未加载的工单，界面据此给出「加载更多」入口。游标只在宿主内部
   流转（快照库条目里的 `nextCursor`），不暴露给面板；一次取全的后端 `hasMore` 恒为 false；
 - 指标级：`metrics`，含三个压力维度（`PressureDimension` / `PressureTier`）、关键数字、样本覆盖度

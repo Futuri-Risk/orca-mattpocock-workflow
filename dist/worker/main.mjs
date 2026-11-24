@@ -2845,8 +2845,8 @@ function createGiteaTracker(deps) {
         revision: await revision
       };
     },
-    async fetchChanges(workspaceRoot, since, ifRevision) {
-      return readGiteaChanges(deps, workspaceRoot, pageSize, since, ifRevision);
+    async fetchChanges(workspaceRoot, since) {
+      return readGiteaChanges(deps, workspaceRoot, pageSize, since);
     },
     async resolveBlockers(workspaceRoot, targets) {
       const open = targets.filter(
@@ -2888,21 +2888,12 @@ function createGiteaTracker(deps) {
     deleteTicket: (workspaceRoot, reference) => deleteGiteaTicket(deps, workspaceRoot, reference)
   };
 }
-async function readGiteaChanges(deps, workspaceRoot, pageSize, since, ifRevision) {
+async function readGiteaChanges(deps, workspaceRoot, pageSize, since) {
   if (!Number.isFinite(since)) {
     throw new TrackerError("fetch-failed", "\u589E\u91CF\u7A97\u53E3\u7684\u8D77\u70B9\u4E0D\u662F\u6709\u6548\u65F6\u95F4\u6233\u3002");
   }
   const repository = await readRepository(deps.run, workspaceRoot);
   const revision = await readGiteaRevision(deps, workspaceRoot, repository);
-  if (ifRevision !== void 0 && revision?.id === ifRevision) {
-    return {
-      tickets: [],
-      truncated: false,
-      revision,
-      notModified: true,
-      hierarchy: "convention"
-    };
-  }
   const viewer = readCurrentViewer(deps, workspaceRoot);
   const issues = await readIssues(deps, workspaceRoot, repository, pageSize, since);
   const states = /* @__PURE__ */ new Map();
@@ -3201,11 +3192,6 @@ function parseIssueChangesGraphql(output) {
     revision: readLatestRevision(repository),
     ...total === void 0 ? {} : { total }
   };
-}
-function parseGithubRevision(output) {
-  const payload = parseJson6(output, "gh \u8FD4\u56DE\u7684\u4E0D\u662F\u6709\u6548 JSON");
-  const repository = readRepository3(payload);
-  return readLatestRevision(repository);
 }
 function readLatestRevision(repository) {
   const latest = repository.latest;
@@ -3705,15 +3691,6 @@ var ISSUE_QUERY = `query ($owner: String!, $name: String!, $limit: Int!, $after:
     }
   }
 }`;
-var REVISION_QUERY = `query ($owner: String!, $name: String!) {
-  repository(owner: $owner, name: $name) {
-    nameWithOwner
-    latest: issues(first: 1, orderBy: { field: UPDATED_AT, direction: DESC }) {
-      totalCount
-      nodes { updatedAt }
-    }
-  }
-}`;
 var CHANGES_QUERY = `query ($owner: String!, $name: String!, $limit: Int!, $since: DateTime!) {
   viewer { login }
   repository(owner: $owner, name: $name) {
@@ -3750,20 +3727,8 @@ function createGithubTracker(deps) {
         ...nextCursor === void 0 ? {} : { nextCursor }
       };
     },
-    async fetchChanges(workspaceRoot, since, ifRevision) {
+    async fetchChanges(workspaceRoot, since) {
       const repository = await readRepository2(deps.run, workspaceRoot);
-      if (ifRevision !== void 0) {
-        const revision = await readRevision(deps, workspaceRoot, repository);
-        if (revision?.id === ifRevision) {
-          return {
-            tickets: [],
-            truncated: false,
-            revision,
-            notModified: true,
-            hierarchy: "native"
-          };
-        }
-      }
       const changes = await readChanges(deps, workspaceRoot, repository, limit, since);
       return {
         tickets: changes.tickets,
@@ -3780,19 +3745,6 @@ function createGithubTracker(deps) {
     canDeleteTickets: (workspaceRoot) => readGithubDeletePermission(deps, workspaceRoot),
     deleteTicket: (workspaceRoot, reference) => deleteGithubTicket(deps, workspaceRoot, reference)
   };
-}
-async function readRevision(deps, workspaceRoot, repository) {
-  const output = await callGh(deps.run, workspaceRoot, [
-    "api",
-    "graphql",
-    "-f",
-    `query=${REVISION_QUERY}`,
-    "-f",
-    `owner=${repository.owner}`,
-    "-f",
-    `name=${repository.name}`
-  ]);
-  return parseGithubRevision(output);
 }
 async function readTickets(deps, workspaceRoot, repository, limit, cursor) {
   const args = [
@@ -4389,21 +4341,12 @@ function createGitlabTracker(deps) {
         revision: await revision
       };
     },
-    async fetchChanges(workspaceRoot, since, ifRevision) {
+    async fetchChanges(workspaceRoot, since) {
       if (!Number.isFinite(since)) {
         throw new TrackerError("fetch-failed", "\u589E\u91CF\u7A97\u53E3\u7684\u8D77\u70B9\u4E0D\u662F\u6709\u6548\u65F6\u95F4\u6233\u3002");
       }
       const project = await readProjectAddress(deps.run, workspaceRoot);
       const revision = await readGitlabRevision(deps, workspaceRoot, project.path);
-      if (ifRevision !== void 0 && revision?.id === ifRevision) {
-        return {
-          tickets: [],
-          truncated: false,
-          revision,
-          notModified: true,
-          hierarchy: "native"
-        };
-      }
       const viewer = readCurrentViewer2(deps, workspaceRoot);
       const listing = { pageSize, pageLimit: incrementalPageLimit };
       const { issues, truncated } = await readChangedIssues(
@@ -6656,6 +6599,47 @@ function blocked(reason) {
   return { skillAction: "none", skillActionReason: reason };
 }
 
+// src/worker/refresh-guard.ts
+function createRefreshGuard(options = {}) {
+  const baseMs = options.baseMs ?? 5e3;
+  const maxMs = options.maxMs ?? 3e5;
+  const states = /* @__PURE__ */ new Map();
+  function stateOf(key) {
+    let state = states.get(key);
+    if (state === void 0) {
+      state = { failuresSinceSuccess: 0, coolingUntil: 0 };
+      states.set(key, state);
+    }
+    return state;
+  }
+  return {
+    blockedUntil(key, at) {
+      const state = states.get(key);
+      if (state === void 0 || state.coolingUntil <= at) return null;
+      return state.coolingUntil;
+    },
+    noteSuccess(key) {
+      const state = stateOf(key);
+      state.failuresSinceSuccess = 0;
+      state.coolingUntil = 0;
+    },
+    noteFailure(key, at) {
+      const state = stateOf(key);
+      state.failuresSinceSuccess += 1;
+      const backoffMs = Math.min(
+        baseMs * 2 ** Math.min(state.failuresSinceSuccess - 1, 16),
+        maxMs
+      );
+      state.coolingUntil = at + backoffMs;
+      return state.coolingUntil;
+    },
+    view(key) {
+      const state = states.get(key);
+      return state === void 0 ? { failuresSinceSuccess: 0, coolingUntil: 0 } : { ...state };
+    }
+  };
+}
+
 // src/core/metrics.ts
 var PRESSURE_THRESHOLDS = {
   /** 开放积压低于 10 张算轻松。 */
@@ -7165,6 +7149,8 @@ function createSnapshotService(deps) {
   const cache = /* @__PURE__ */ new Map();
   const loading = /* @__PURE__ */ new Map();
   const paging = /* @__PURE__ */ new Map();
+  const refreshing = /* @__PURE__ */ new Map();
+  const guard = createRefreshGuard();
   return {
     async handle(method, params) {
       if (!isSnapshotMethod(method)) {
@@ -7182,9 +7168,19 @@ function createSnapshotService(deps) {
         return resolveBlockers(deps, cache, loading, target);
       }
       if (method === RPC_METHODS.snapshotLoadMore) {
-        return loadMore(deps, cache, loading, paging, target);
+        return loadMore(deps, cache, loading, paging, target, guard);
       }
-      return refreshSnapshot(deps, cache, target, params);
+      const request = readRefreshRequest(params);
+      const flightKey = refreshKey(target, request);
+      const running = refreshing.get(flightKey);
+      if (running !== void 0) return running;
+      const task = refreshSnapshot(deps, cache, target, request, guard);
+      refreshing.set(flightKey, task);
+      const clear = () => {
+        if (refreshing.get(flightKey) === task) refreshing.delete(flightKey);
+      };
+      void task.then(clear, clear);
+      return task;
     },
     cache(params) {
       if (readWorkspaceRoot2(params) === void 0) {
@@ -7260,6 +7256,10 @@ async function readWorkspace(deps, cache, target) {
 }
 async function serveStored(deps, cache, target, hit) {
   const stored = hit.entry;
+  if (stored.tickets.length > stored.total) {
+    await removeStored(deps, hit.key);
+    return void 0;
+  }
   let resolved2;
   try {
     resolved2 = await deps.resolve(target.workspaceRoot);
@@ -7282,44 +7282,90 @@ async function serveStored(deps, cache, target, hit) {
 }
 function readRefreshRequest(params) {
   const full = isRecord(params) && params.full === true;
-  const ifRevision = isRecord(params) && typeof params.ifRevision === "string" && params.ifRevision.length > 0 ? params.ifRevision : void 0;
   const rawStoreRevision = isRecord(params) ? params.storeRevision : void 0;
   const storeRevision = typeof rawStoreRevision === "number" && Number.isInteger(rawStoreRevision) && rawStoreRevision >= 0 ? rawStoreRevision : void 0;
-  return { full, ifRevision, storeRevision };
+  return { full, storeRevision };
 }
-async function refreshSnapshot(deps, cache, target, params) {
-  const request = readRefreshRequest(params);
+function refreshKey(target, request) {
+  return [
+    target.scopeRoot,
+    target.workspaceRoot,
+    request.full ? "full" : "incremental",
+    request.storeRevision ?? "none"
+  ].join("\0");
+}
+async function refreshSnapshot(deps, cache, target, request, guard) {
   const startedAt = deps.now();
+  if (!request.full) {
+    const cooling = coolingReject(deps, cache, target, guard, startedAt);
+    if (cooling !== null) return cooling;
+  }
+  const failWith = async (mapped) => {
+    guard.noteFailure(target.workspaceRoot, startedAt);
+    return asFull(await keepOldSnapshot(deps, cache, target, mapped, startedAt));
+  };
   let resolved2;
   try {
     resolved2 = await deps.resolve(target.workspaceRoot);
   } catch (error) {
-    return asFull(await keepOldSnapshot(deps, cache, target, mapError(error), startedAt));
+    return await failWith(mapError(error));
   }
   const hit = await readStoredFor(deps, target.scopeRoot, target.workspaceRoot);
   const base = hit?.entry.repositoryKey === repositoryKey(resolved2.kind, resolved2.address) ? hit.entry : void 0;
   const tracker = resolved2.tracker;
   const extendable = base === void 0 || base.nextCursor !== void 0 || base.total <= base.tickets.length;
-  if (base !== void 0 && !request.full && extendable && base.revision !== null && tracker.fetchChanges !== void 0 && !needsUrlBackfill(resolved2, base)) {
-    const merged = await mergeIncremental(deps, cache, target, resolved2, base, request, startedAt);
+  if (base !== void 0 && !request.full && extendable && tracker.fetchChanges !== void 0 && !needsUrlBackfill(resolved2, base)) {
+    const merged = await mergeIncremental(
+      deps,
+      cache,
+      target,
+      resolved2,
+      base,
+      request,
+      startedAt,
+      guard
+    );
     if (merged !== void 0) return merged;
   }
   try {
-    const raw = await tracker.fetchSnapshot(target.workspaceRoot);
-    return asFull(
-      await publish(
+    const raw = withViewerFallback(await tracker.fetchSnapshot(target.workspaceRoot), base?.viewer);
+    if (base !== void 0 && !ticketsDiffer(base, raw)) {
+      return await respondUnchanged(
         deps,
         cache,
         target,
         resolved2,
-        withViewerFallback(raw, base?.viewer),
+        base,
+        raw,
+        request.storeRevision,
         startedAt,
-        "full"
-      )
-    );
+        guard
+      );
+    }
+    const published = await publish(deps, cache, target, resolved2, raw, startedAt, "full");
+    if (!published.ok) {
+      guard.noteFailure(target.workspaceRoot, deps.now());
+      return asFull(published);
+    }
+    guard.noteSuccess(target.workspaceRoot);
+    return await shapeRefresh(deps, target, resolved2, published.result, request.storeRevision);
   } catch (error) {
-    return asFull(await keepOldSnapshot(deps, cache, target, mapError(error), startedAt));
+    return await failWith(mapError(error));
   }
+}
+function coolingReject(deps, cache, target, guard, startedAt) {
+  const coolingUntil = guard.blockedUntil(target.workspaceRoot, startedAt);
+  if (coolingUntil === null) return null;
+  return keepOldSnapshot(
+    deps,
+    cache,
+    target,
+    {
+      code: ERROR_CODES.fetchFailed,
+      message: "\u5237\u65B0\u5DF2\u6682\u505C\uFF1A\u8FDE\u7EED\u5931\u8D25\u540E\u6B63\u5728\u9000\u907F\uFF0C\u7A0D\u540E\u4F1A\u81EA\u52A8\u6062\u590D\uFF0C\u663E\u793A\u7684\u662F\u672C\u5730\u7F13\u5B58\u3002"
+    },
+    startedAt
+  ).then(asFull);
 }
 function asFull(result) {
   if (!result.ok) return result;
@@ -7329,46 +7375,45 @@ function needsUrlBackfill(resolved2, base) {
   if (resolved2.kind === "markdown") return false;
   return base.tickets.some((ticket) => ticket.url === void 0);
 }
-async function mergeIncremental(deps, cache, target, resolved2, base, request, startedAt) {
+async function mergeIncremental(deps, cache, target, resolved2, base, request, startedAt, guard) {
   const tracker = resolved2.tracker;
   if (tracker.fetchChanges === void 0) return void 0;
   let changes;
   try {
     changes = await tracker.fetchChanges(
       target.workspaceRoot,
-      base.fetchedAt - INCREMENTAL_OVERLAP_MS,
-      request.ifRevision ?? base.revision?.id
+      base.fetchedAt - INCREMENTAL_OVERLAP_MS
     );
   } catch (error) {
+    guard.noteFailure(target.workspaceRoot, startedAt);
     return asFull(await keepOldSnapshot(deps, cache, target, mapError(error), startedAt));
   }
-  if (changes.notModified === true && changes.revision !== null && request.storeRevision !== void 0 && request.storeRevision === base.storeRevision) {
-    return {
-      ok: true,
-      result: {
-        kind: "not-modified",
-        revision: changes.revision.id,
-        storeRevision: base.storeRevision,
-        fetchedAt: deps.now()
-      }
-    };
-  }
-  if (changes.revision === null) return void 0;
-  if (changes.truncated) {
-    deps.log("warn", LOG_EVENTS.snapshot, {
-      result: "error",
-      backend: resolved2.kind,
-      stage: SNAPSHOT_STAGES.list,
-      code: ERROR_CODES.fetchFailed,
-      durationMs: Math.max(0, deps.now() - startedAt)
-    });
+  if (changes.revision === null) {
+    logIncrementalFallback(deps, resolved2.kind, "invalid-revision", startedAt);
     return void 0;
   }
-  if (changes.hierarchy !== base.hierarchy) return void 0;
+  if (changes.truncated) {
+    logIncrementalFallback(deps, resolved2.kind, "truncated", startedAt);
+    return void 0;
+  }
+  if (changes.hierarchy !== base.hierarchy) {
+    logIncrementalFallback(deps, resolved2.kind, "hierarchy", startedAt);
+    return void 0;
+  }
   const total = changes.revision.total;
-  if (changes.total !== void 0 && changes.total !== total) return void 0;
-  if (total !== base.total) return void 0;
+  if (changes.total !== void 0 && changes.total !== total) {
+    logIncrementalFallback(deps, resolved2.kind, "invalid-total", startedAt);
+    return void 0;
+  }
+  if (total !== base.total) {
+    logIncrementalFallback(deps, resolved2.kind, "total", startedAt);
+    return void 0;
+  }
   const merged = mergeTickets(base.tickets, changes.tickets);
+  if (merged.length > total) {
+    logIncrementalFallback(deps, resolved2.kind, "drift", startedAt);
+    return void 0;
+  }
   const nextCursor = base.nextCursor;
   const raw = {
     repository: base.repository,
@@ -7383,6 +7428,19 @@ async function mergeIncremental(deps, cache, target, resolved2, base, request, s
     // 游标仍指向已加载窗口之后的第一张；窗口大小由已加载数表达。
     ...nextCursor === void 0 ? {} : { nextCursor }
   };
+  if (!ticketsDiffer(base, raw)) {
+    return await respondUnchanged(
+      deps,
+      cache,
+      target,
+      resolved2,
+      base,
+      raw,
+      request.storeRevision,
+      startedAt,
+      guard
+    );
+  }
   const cachedBefore = cachedWorkspace(cache, target);
   const previouslyUnfinalized = cachedBefore === void 0 || !cachedBefore.snapshot.blockersFinalized;
   const changedOpenRefs = changes.tickets.filter((ticket) => ticket.state === "open").map((ticket) => ticket.ref);
@@ -7396,9 +7454,58 @@ async function mergeIncremental(deps, cache, target, resolved2, base, request, s
     "incremental",
     previouslyUnfinalized || changes.tickets.length === 0 ? void 0 : changedOpenRefs
   );
-  if (!published.ok) return published;
-  const delta = await deltaSince(deps, target, resolved2, published.result, request.storeRevision);
-  return delta === void 0 ? { ok: true, result: { kind: "snapshot", snapshot: published.result } } : { ok: true, result: delta };
+  if (!published.ok) {
+    guard.noteFailure(target.workspaceRoot, deps.now());
+    return asFull(published);
+  }
+  guard.noteSuccess(target.workspaceRoot);
+  return await shapeRefresh(deps, target, resolved2, published.result, request.storeRevision);
+}
+async function respondUnchanged(deps, cache, target, resolved2, base, raw, storeRevision, startedAt, guard) {
+  if (storeRevision !== void 0 && storeRevision === base.storeRevision) {
+    guard.noteSuccess(target.workspaceRoot);
+    return {
+      ok: true,
+      result: {
+        kind: "not-modified",
+        revision: raw.revision?.id ?? base.revision?.id ?? null,
+        storeRevision: base.storeRevision,
+        fetchedAt: deps.now()
+      }
+    };
+  }
+  const published = await publish(deps, cache, target, resolved2, raw, startedAt, "full", void 0, {
+    skipWrite: true,
+    versionFallback: base.storeRevision
+  });
+  if (!published.ok) {
+    guard.noteFailure(target.workspaceRoot, deps.now());
+    return asFull(published);
+  }
+  guard.noteSuccess(target.workspaceRoot);
+  return await shapeRefresh(deps, target, resolved2, published.result, storeRevision);
+}
+async function shapeRefresh(deps, target, resolved2, snapshot, storeRevision) {
+  const delta = await deltaSince(deps, target, resolved2, snapshot, storeRevision);
+  if (delta === void 0) {
+    return { ok: true, result: { kind: "snapshot", snapshot } };
+  }
+  return { ok: true, result: delta };
+}
+function ticketsDiffer(base, raw) {
+  if (base.total !== raw.total || base.viewer !== raw.viewer || base.hierarchy !== raw.hierarchy || base.nextCursor !== raw.nextCursor) {
+    return true;
+  }
+  return JSON.stringify(base.tickets) !== JSON.stringify(raw.tickets);
+}
+function logIncrementalFallback(deps, backend, reason, startedAt) {
+  deps.log("warn", LOG_EVENTS.snapshot, {
+    result: "fallback",
+    backend,
+    stage: SNAPSHOT_STAGES.list,
+    reason,
+    durationMs: Math.max(0, deps.now() - startedAt)
+  });
 }
 async function deltaSince(deps, target, resolved2, snapshot, baseline) {
   if (baseline === void 0 || deps.store === void 0) return void 0;
@@ -7437,14 +7544,14 @@ async function deltaSince(deps, target, resolved2, snapshot, baseline) {
     removed: changes.removed
   };
 }
-function loadMore(deps, cache, loading, paging, target) {
+function loadMore(deps, cache, loading, paging, target, guard) {
   return singleFlight(
     paging,
     target.workspaceRoot,
-    () => appendPage(deps, cache, loading, target)
+    () => appendPage(deps, cache, loading, target, guard)
   );
 }
-async function appendPage(deps, cache, loading, target) {
+async function appendPage(deps, cache, loading, target, guard) {
   const startedAt = deps.now();
   let entry = cachedWorkspace(cache, target);
   if (entry === void 0) {
@@ -7462,7 +7569,13 @@ async function appendPage(deps, cache, loading, target) {
     return await keepOldSnapshot(deps, cache, target, mapError(error), startedAt);
   }
   if (repositoryKey(resolved2.kind, resolved2.address) !== entry.repositoryKey) {
-    const refreshed = await refreshSnapshot(deps, cache, target, { full: true });
+    const refreshed = await refreshSnapshot(
+      deps,
+      cache,
+      target,
+      { full: true, storeRevision: void 0 },
+      guard
+    );
     if (!refreshed.ok) return refreshed;
     if (refreshed.result.kind !== "snapshot") {
       return failure3(ERROR_CODES.internal, "\u5168\u91CF\u5237\u65B0\u6CA1\u6709\u8FD4\u56DE\u6574\u4EFD\u5FEB\u7167\u3002");
@@ -7525,7 +7638,7 @@ async function fetchAndCache(deps, cache, target) {
     return failure3(mapped.code, mapped.message);
   }
 }
-async function publish(deps, cache, target, resolved2, raw, startedAt, mode, blockerTargets) {
+async function publish(deps, cache, target, resolved2, raw, startedAt, mode, blockerTargets, options) {
   const tickets = withSkillActions(classifyTickets(raw.tickets, deps.labels), deps.labels);
   const resolver = resolved2.tracker.resolveBlockers ?? null;
   const repositoryHost = resolved2.kind === "markdown" ? null : resolved2.address?.host ?? null;
@@ -7533,7 +7646,7 @@ async function publish(deps, cache, target, resolved2, raw, startedAt, mode, blo
   const pendingBlockerRefs = tickets.filter((ticket) => ticket.state === "open" && (scope === null || scope.has(ticket.ref))).map((ticket) => ticket.ref);
   const finalized = resolver === null || pendingBlockerRefs.length === 0;
   const metrics = metricsOf(deps, resolved2.kind, raw, tickets, finalized);
-  const storeRevision = await writeStored(
+  const storeRevision = options?.skipWrite === true ? options.versionFallback ?? 0 : await writeStored(
     deps,
     target.scopeRoot,
     target.workspaceRoot,
@@ -7565,16 +7678,18 @@ async function publish(deps, cache, target, resolved2, raw, startedAt, mode, blo
     blockerTargets: pendingBlockerRefs,
     pending: null
   });
-  deps.log("info", LOG_EVENTS.snapshot, {
-    result: "ok",
-    backend: resolved2.kind,
-    stage: SNAPSHOT_STAGES.list,
-    durationMs: Math.max(0, deps.now() - startedAt),
-    repository: snapshot.repository,
-    loaded: snapshot.loaded,
-    total: snapshot.total,
-    mode
-  });
+  if (options?.skipWrite !== true) {
+    deps.log("info", LOG_EVENTS.snapshot, {
+      result: "ok",
+      backend: resolved2.kind,
+      stage: SNAPSHOT_STAGES.list,
+      durationMs: Math.max(0, deps.now() - startedAt),
+      repository: snapshot.repository,
+      loaded: snapshot.loaded,
+      total: snapshot.total,
+      mode
+    });
+  }
   return { ok: true, result: snapshot };
 }
 async function keepOldSnapshot(deps, cache, target, mapped, startedAt) {

@@ -56,14 +56,13 @@ export interface PanelClient {
   get(workspaceRoot: string): Promise<RpcResult<WorkspaceSnapshot>>
   /**
    * 刷新快照。默认走增量；`full` 为 true 时忽略本地快照库，全量重拉一次。
-   * `ifRevision` / `storeRevision` 是客户端手上的远端版本与本地库版本；
+   * `storeRevision` 是客户端手上的本地库版本；
    * 命中 not-modified 时列表与数据时间都不动，命中 delta 时只需合并变化行。
    */
   refresh(
     workspaceRoot: string,
     options?: {
       readonly full?: boolean
-      readonly ifRevision?: string
       readonly storeRevision?: number
     },
   ): Promise<RpcResult<SnapshotRefreshResult>>
@@ -188,11 +187,10 @@ export function createPanelClient(request: RequestLike = defaultRequest): PanelC
     get: (workspaceRoot) =>
       call(request, RPC_METHODS.snapshotGet, { workspaceRoot }, isSnapshotResult),
     refresh: (workspaceRoot, options) => {
-      // 只有明确给出的标记才进参数：缺省时 worker 自己用库里的版本做 not-modified。
+      // 只有明确给出的标记才进参数：缺省时 worker 按整份回。
       const params: SnapshotRefreshParams = {
         workspaceRoot,
         ...(options?.full === true ? { full: true } : {}),
-        ...(options?.ifRevision === undefined ? {} : { ifRevision: options.ifRevision }),
         ...(options?.storeRevision === undefined ? {} : { storeRevision: options.storeRevision }),
       }
       return call(request, RPC_METHODS.snapshotRefresh, params, isSnapshotRefreshResult)

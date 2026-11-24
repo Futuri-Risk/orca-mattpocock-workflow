@@ -301,8 +301,9 @@ export interface SnapshotMeta {
   /** 最近一次刷新失败的原因；没有失败时为 null。 */
   readonly refreshError: RpcErrorBody | null
   /**
-   * 远端版本号：后端为当前仓库工单状态给出的可比较标识，刷新时作为 `ifRevision` 带回。
-   * 本地 Markdown 或后端给不出时为 null，此时刷新退回全量。
+   * 远端版本号：后端为当前仓库工单状态给出的可比较标识，只作记录与诊断。
+   * 刷新不靠它做短路，避免版本号粒度过粗时漏掉编辑；本地 Markdown 或
+   * 后端给不出时为 null。
    */
   readonly revision: string | null
   /**
@@ -317,14 +318,13 @@ export interface WorkspaceSnapshot extends SnapshotMeta {
   readonly tickets: readonly TicketSnapshot[]
 }
 
-/** 刷新时带回的基线：远端版本与本地库版本。 */
+/** 刷新时带回的基线：本地库版本。 */
 export interface SnapshotBaseline {
-  readonly ifRevision?: string
   readonly storeRevision?: number
 }
 
 /**
- * not-modified 回包：远端版本没变，列表一行不动，只带回核对时刻。
+ * not-modified 回包：数据没有可见变化，列表一行不动，只带回核对时刻。
  * 客户端据此清掉「数据可能不是最新的」与本地缓存徽标。
  */
 export interface SnapshotNotModified {

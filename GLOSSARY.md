@@ -76,11 +76,13 @@ A comparable identifier a backend gives for "the current ticket state of this re
 with each snapshot and incremental result and shaped as `{ id, total }`. `id` is only compared for
 equality; `total` is the authoritative ticket count at that moment.
 
-- A refresh sends it back as `ifRevision`; when `id` matches, the backend returns `notModified` and
-  the host replies with a tiny not-modified response instead of scanning the change window.
-- Local Markdown has no source revision (`null`); when a backend cannot provide one, that refresh
-  falls back to a full fetch.
-- It answers "did the remote change?", not "what is in the local store?".
+- It is returned with snapshots and change results for diagnostics, and its `total` is the
+  authoritative count used for reconciliation; a refresh does not send `id` back and never
+  short-circuits the change window on it.
+- Local Markdown has no source revision (`null`). When a backend cannot provide the authoritative
+  total, that refresh falls back to a full fetch.
+- It answers "what does the remote look like?" for diagnostics; the store revision is the refresh
+  freshness gate.
 
 ## Store revision
 

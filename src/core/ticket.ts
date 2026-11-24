@@ -130,15 +130,10 @@ export interface TrackerChanges {
   /** 变更查询返回的仓库总票数；给出时用它更新总数，没有则沿用上次的。 */
   readonly total?: number
   /**
-   * 本次查到的远端版本。为 null 时宿主无法判断「有没有变」，
+   * 本次查到的远端版本。为 null 时宿主无法核对总数，
    * 该次退回全量重拉，计数永远可信。
    */
   readonly revision: SourceRevision | null
-  /**
-   * 请求带的 `ifRevision` 与当前远端版本一致：远端没有任何变化，
-   * `tickets` 为空，宿主直接回 not-modified 而不合并。
-   */
-  readonly notModified?: boolean
   /**
    * 增量刷新时顺带刷新的当前登录用户；省略表示这次没查，沿用上一次。
    * 与快照上的 null（查过但没有身份）区分开。
@@ -239,17 +234,14 @@ export interface Tracker {
    * 不实现该能力的后端由宿主退回全量刷新。实现的后端必须与列表查询使用
    * 同一套过滤条件（状态、类型等），只在时间窗口上不同；窗口起点是
    * 「上次成功拉取的时刻」向前重叠一小段，重叠部分按工单引用去重。
+   *
+   * 刷新不按远端版本号做短路：版本标识的粒度掩盖不了「编辑了同一时段」的变化，
+   * 宿主拿到变更窗口后按内容判断是否真的变了。
    * @param workspaceRoot - 工作区根目录。
    * @param since - 毫秒时间戳；后端按「更新时间在此刻之后」过滤。
-   * @param ifRevision - 客户端手上的远端版本标识；后端用一次极小查询比对，
-   *   一致时回 `notModified`，不扫描变更窗口。
    * @returns 变更过的工单与是否被上限截断。
    */
-  fetchChanges?: (
-    workspaceRoot: string,
-    since: number,
-    ifRevision?: string,
-  ) => Promise<TrackerChanges>
+  fetchChanges?: (workspaceRoot: string, since: number) => Promise<TrackerChanges>
   /**
    * 可选能力：读取开放票的未关闭原生阻塞数与阻塞引用。
    *

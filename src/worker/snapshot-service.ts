@@ -43,6 +43,7 @@ import {
   type WorkspaceSnapshot,
 } from '../protocol/tracker.ts'
 import type { BackendResolver, ResolvedBackend } from './backend-resolver.ts'
+import { createRefreshGuard, type RefreshGuard } from './refresh-guard.ts'
 import type { RepositoryScopeResolver } from './repository-scope.ts'
 import { readWorkspaceRoot } from './rpc-params.ts'
 import {
@@ -110,6 +111,10 @@ export function createSnapshotService(deps: SnapshotServiceDeps): SnapshotServic
   const loading = new Map<string, Promise<RpcResult<WorkspaceSnapshot>>>()
   // 「加载更多」按工作区去重：连点两次只发一次请求，第二次拿到同一份结果。
   const paging = new Map<string, Promise<RpcResult<WorkspaceSnapshot>>>()
+  // 同参数并发刷新合并成一次：自动刷新与手动刷新撞车时后端只被打一下。
+  const refreshing = new Map<string, Promise<RpcResult<SnapshotRefreshResult>>>()
+  // 连续失败后的冷却；成功一次立刻归零。
+  const guard = createRefreshGuard()
 
   return {
     async handle(method, params) {
@@ -132,10 +137,20 @@ export function createSnapshotService(deps: SnapshotServiceDeps): SnapshotServic
       }
 
       if (method === RPC_METHODS.snapshotLoadMore) {
-        return loadMore(deps, cache, loading, paging, target)
+        return loadMore(deps, cache, loading, paging, target, guard)
       }
 
-      return refreshSnapshot(deps, cache, target, params)
+      const request = readRefreshRequest(params)
+      const flightKey = refreshKey(target, request)
+      const running = refreshing.get(flightKey)
+      if (running !== undefined) return running
+      const task = refreshSnapshot(deps, cache, target, request, guard)
+      refreshing.set(flightKey, task)
+      const clear = (): void => {
+        if (refreshing.get(flightKey) === task) refreshing.delete(flightKey)
+      }
+      void task.then(clear, clear)
+      return task
     },
 
     cache(params) {
@@ -321,6 +336,12 @@ async function serveStored(
   hit: StoredHit,
 ): Promise<RpcResult<WorkspaceSnapshot> | undefined> {
   const stored = hit.entry
+  if (stored.tickets.length > stored.total) {
+    // 旧版本的增量可能把远端已删除的票留在库里，却已经更新了总数。
+    // 这份计数不自洽，留着只会在首屏显示「已加载 3 / 共 2」；作废后按全量重拉。
+    await removeStored(deps, hit.key)
+    return undefined
+  }
   let resolved: ResolvedBackend
   try {
     resolved = await deps.resolve(target.workspaceRoot)
@@ -348,20 +369,15 @@ async function serveStored(
 /** 一次刷新请求的基线。 */
 interface RefreshRequest {
   readonly full: boolean
-  readonly ifRevision: string | undefined
   readonly storeRevision: number | undefined
 }
 
 /**
- * 读出刷新参数。`ifRevision` / `storeRevision` 是客户端手上的两个版本；
- * 没带时宿主仍会用库里的远端版本做 not-modified，但只能回整份或增量。
+ * 读出刷新参数。`storeRevision` 是客户端手上的本地库版本；
+ * 没带时宿主仍会尽量沿用库里的数据，但只能回整份或增量。
  */
 function readRefreshRequest(params: unknown): RefreshRequest {
   const full = isRecord(params) && params.full === true
-  const ifRevision =
-    isRecord(params) && typeof params.ifRevision === 'string' && params.ifRevision.length > 0
-      ? params.ifRevision
-      : undefined
   const rawStoreRevision = isRecord(params) ? params.storeRevision : undefined
   const storeRevision =
     typeof rawStoreRevision === 'number' &&
@@ -369,34 +385,61 @@ function readRefreshRequest(params: unknown): RefreshRequest {
     rawStoreRevision >= 0
       ? rawStoreRevision
       : undefined
-  return { full, ifRevision, storeRevision }
+  return { full, storeRevision }
+}
+
+/** 并发刷新的去重键：同一次请求（同一定位与同一基线）只打一次后端。 */
+function refreshKey(target: Target, request: RefreshRequest): string {
+  return [
+    target.scopeRoot,
+    target.workspaceRoot,
+    request.full ? 'full' : 'incremental',
+    request.storeRevision ?? 'none',
+  ].join('\0')
 }
 
 /**
  * 刷新：能用增量就增量，否则全量重拉。
  *
- * 远端版本没变时回 not-modified；变了且客户端给了库版本时只回变化行。
- * 增量被截断、总数漂移或父子能力不一致时一律退回全量，不交半份数据。
+ * 拉到与库里一致的数据时不写库、不升版本：客户端停在库版本上就回 not-modified，
+ * 落后就按变化日志回 delta，否则回整份。增量被截断、总数漂移或父子能力不一致时
+ * 一律退回全量，不交半份数据。连续失败后的冷却期内不发后端，直接回本地缓存。
  * @param deps - 服务依赖。
  * @param cache - 内存缓存。
  * @param target - 本次请求的定位。
- * @param params - 刷新参数：全量标记与两个版本基线。
+ * @param request - 刷新参数：全量标记与客户端库版本。
+ * @param guard - 失败退避闸门。
  * @returns 整份、增量或 not-modified 回包。
  */
 async function refreshSnapshot(
   deps: SnapshotServiceDeps,
   cache: Map<string, CachedWorkspace>,
   target: Target,
-  params: unknown,
+  request: RefreshRequest,
+  guard: RefreshGuard,
 ): Promise<RpcResult<SnapshotRefreshResult>> {
-  const request = readRefreshRequest(params)
   const startedAt = deps.now()
+
+  // 冷却期内的自动/增量刷新不打后端；手动全量刷新是人的动作，跳过冷却。
+  if (!request.full) {
+    const cooling = coolingReject(deps, cache, target, guard, startedAt)
+    if (cooling !== null) return cooling
+  }
+
+  /** 失败出口：记一次失败进闸门，再保留旧数据回包。 */
+  const failWith = async (mapped: {
+    readonly code: ErrorCode
+    readonly message: string
+  }): Promise<RpcResult<SnapshotRefreshResult>> => {
+    guard.noteFailure(target.workspaceRoot, startedAt)
+    return asFull(await keepOldSnapshot(deps, cache, target, mapped, startedAt))
+  }
 
   let resolved: ResolvedBackend
   try {
     resolved = await deps.resolve(target.workspaceRoot)
   } catch (error) {
-    return asFull(await keepOldSnapshot(deps, cache, target, mapError(error), startedAt))
+    return await failWith(mapError(error))
   }
 
   const hit = await readStoredFor(deps, target.scopeRoot, target.workspaceRoot)
@@ -413,30 +456,77 @@ async function refreshSnapshot(
     base !== undefined &&
     !request.full &&
     extendable &&
-    base.revision !== null &&
     tracker.fetchChanges !== undefined &&
     !needsUrlBackfill(resolved, base)
   ) {
-    const merged = await mergeIncremental(deps, cache, target, resolved, base, request, startedAt)
+    const merged = await mergeIncremental(
+      deps,
+      cache,
+      target,
+      resolved,
+      base,
+      request,
+      startedAt,
+      guard,
+    )
     if (merged !== undefined) return merged
   }
 
   try {
-    const raw = await tracker.fetchSnapshot(target.workspaceRoot)
-    return asFull(
-      await publish(
+    const raw = withViewerFallback(await tracker.fetchSnapshot(target.workspaceRoot), base?.viewer)
+    if (base !== undefined && !ticketsDiffer(base, raw)) {
+      return await respondUnchanged(
         deps,
         cache,
         target,
         resolved,
-        withViewerFallback(raw, base?.viewer),
+        base,
+        raw,
+        request.storeRevision,
         startedAt,
-        'full',
-      ),
-    )
+        guard,
+      )
+    }
+    const published = await publish(deps, cache, target, resolved, raw, startedAt, 'full')
+    if (!published.ok) {
+      guard.noteFailure(target.workspaceRoot, deps.now())
+      return asFull(published)
+    }
+    guard.noteSuccess(target.workspaceRoot)
+    return await shapeRefresh(deps, target, resolved, published.result, request.storeRevision)
   } catch (error) {
-    return asFull(await keepOldSnapshot(deps, cache, target, mapError(error), startedAt))
+    return await failWith(mapError(error))
   }
+}
+
+/**
+ * 冷却检查：这个工作区还在退避冷却中时，返回保留旧数据的回包；否则返回 null。
+ * @param deps - 服务依赖。
+ * @param cache - 内存缓存。
+ * @param target - 本次请求的定位。
+ * @param guard - 失败退避闸门。
+ * @param startedAt - 这次刷新的起始时刻。
+ * @returns 冷却中的回包，或 null。
+ */
+function coolingReject(
+  deps: SnapshotServiceDeps,
+  cache: Map<string, CachedWorkspace>,
+  target: Target,
+  guard: RefreshGuard,
+  startedAt: number,
+): Promise<RpcResult<SnapshotRefreshResult>> | null {
+  const coolingUntil = guard.blockedUntil(target.workspaceRoot, startedAt)
+  if (coolingUntil === null) return null
+  return keepOldSnapshot(
+    deps,
+    cache,
+    target,
+    {
+      code: ERROR_CODES.fetchFailed,
+      message: '刷新已暂停：连续失败后正在退避，稍后会自动恢复，显示的是本地缓存。',
+    },
+    startedAt,
+  ).then(asFull)
 }
 
 /** 把整份快照的读取结果包成刷新回包。 */
@@ -465,7 +555,7 @@ function needsUrlBackfill(resolved: ResolvedBackend, base: StoredHit['entry']): 
 /**
  * 走一次增量拉取并合并。
  *
- * - 远端版本没变：回 not-modified，列表与数据时间都不动；
+ * - 拉到的数据与库里一致：回 not-modified，不写库、不升版本；
  * - 变更被截断、总数漂移或父子能力不一致：返回 undefined，交给调用方全量重拉；
  * - 请求失败：保留旧数据并带上失败原因。
  *
@@ -474,8 +564,9 @@ function needsUrlBackfill(resolved: ResolvedBackend, base: StoredHit['entry']): 
  * @param target - 本次请求的定位。
  * @param resolved - 解析出的后端。
  * @param base - 库里的基准数据。
- * @param request - 刷新基线：远端版本与本地库版本。
+ * @param request - 刷新基线：本地库版本。
  * @param startedAt - 这次刷新的起始时刻。
+ * @param guard - 失败退避闸门。
  * @returns 合并后的回包；退回全量时是 undefined。
  */
 async function mergeIncremental(
@@ -486,6 +577,7 @@ async function mergeIncremental(
   base: StoredHit['entry'],
   request: RefreshRequest,
   startedAt: number,
+  guard: RefreshGuard,
 ): Promise<RpcResult<SnapshotRefreshResult> | undefined> {
   const tracker = resolved.tracker
   if (tracker.fetchChanges === undefined) return undefined
@@ -495,61 +587,51 @@ async function mergeIncremental(
     changes = await tracker.fetchChanges(
       target.workspaceRoot,
       base.fetchedAt - INCREMENTAL_OVERLAP_MS,
-      request.ifRevision ?? base.revision?.id,
     )
   } catch (error) {
+    guard.noteFailure(target.workspaceRoot, startedAt)
     return asFull(await keepOldSnapshot(deps, cache, target, mapError(error), startedAt))
   }
 
-  // 远端没变且客户端正停在库里的提交上：回极小响应，列表不动，
-  // 但把核对时刻交给界面，清掉「数据可能不是最新的」与本地缓存徽标。
-  // 客户端没带库版本（例如详情页刷新）或库里有它没见过的写入时，继续走合并，
-  // 把本地写入的变化行交给它，避免列表停在旧标签上。
-  if (
-    changes.notModified === true &&
-    changes.revision !== null &&
-    request.storeRevision !== undefined &&
-    request.storeRevision === base.storeRevision
-  ) {
-    return {
-      ok: true,
-      result: {
-        kind: 'not-modified',
-        revision: changes.revision.id,
-        storeRevision: base.storeRevision,
-        fetchedAt: deps.now(),
-      },
-    }
+  // 后端给不出版本号：本次无法核对总数，退回全量。
+  if (changes.revision === null) {
+    logIncrementalFallback(deps, resolved.kind, 'invalid-revision', startedAt)
+    return undefined
   }
 
-  // 后端给不出版本号：这次无法证明增量与远端一致，退回全量，计数永远可信。
-  if (changes.revision === null) return undefined
-
   if (changes.truncated) {
-    // 增量被截断：这份结果不完整，退回全量重拉。
-    deps.log('warn', LOG_EVENTS.snapshot, {
-      result: 'error',
-      backend: resolved.kind,
-      stage: SNAPSHOT_STAGES.list,
-      code: ERROR_CODES.fetchFailed,
-      durationMs: Math.max(0, deps.now() - startedAt),
-    })
+    logIncrementalFallback(deps, resolved.kind, 'truncated', startedAt)
     return undefined
   }
 
   // 父子能力与库里不一致时（例如上次原生、这次层级查询失败），
   // 这份增量补不出同一棵树，退回全量重拉；全量也取不到时快照标为无能力。
-  if (changes.hierarchy !== base.hierarchy) return undefined
+  if (changes.hierarchy !== base.hierarchy) {
+    logIncrementalFallback(deps, resolved.kind, 'hierarchy', startedAt)
+    return undefined
+  }
 
   // 权威总数与本地窗口不一致：可能新增了窗口外的票或删掉了已加载的票。
   // 增量本身说不清哪一行消失，退回全量，界面不出现幽灵票或缺票。
   const total = changes.revision.total
-  if (changes.total !== undefined && changes.total !== total) return undefined
-  if (total !== base.total) return undefined
+  if (changes.total !== undefined && changes.total !== total) {
+    logIncrementalFallback(deps, resolved.kind, 'invalid-total', startedAt)
+    return undefined
+  }
+  if (total !== base.total) {
+    logIncrementalFallback(deps, resolved.kind, 'total', startedAt)
+    return undefined
+  }
 
   // 不按窗口上限裁剪：增量里可能有窗口外的票被更新，它们现在属于最前面；
   // 裁掉尾部会留下一个游标已经越过的空洞，而那些票再也取不回来。
   const merged = mergeTickets(base.tickets, changes.tickets)
+  // 远端删除不产生变更记录：合并后票数超过权威总数，说明缓存里有已删除的票。
+  // 增量看不出是哪一张，只能当次退回全量重拉，不发布、不写入不一致的结果。
+  if (merged.length > total) {
+    logIncrementalFallback(deps, resolved.kind, 'drift', startedAt)
+    return undefined
+  }
   const nextCursor = base.nextCursor
   const raw: TrackerSnapshot = {
     repository: base.repository,
@@ -563,6 +645,20 @@ async function mergeIncremental(
     revision: changes.revision,
     // 游标仍指向已加载窗口之后的第一张；窗口大小由已加载数表达。
     ...(nextCursor === undefined ? {} : { nextCursor }),
+  }
+  // 数据没变（远端版本变了但票集合一致）：不写库、不升版本。
+  if (!ticketsDiffer(base, raw)) {
+    return await respondUnchanged(
+      deps,
+      cache,
+      target,
+      resolved,
+      base,
+      raw,
+      request.storeRevision,
+      startedAt,
+      guard,
+    )
   }
   // 增量只补变更过的开放票；没变过的票沿用上一次的原生阻塞结果。
   // 上一代还没定稿、或内存缓存为空（worker 刚重启）时不能只补变更票：
@@ -583,11 +679,136 @@ async function mergeIncremental(
     'incremental',
     previouslyUnfinalized || changes.tickets.length === 0 ? undefined : changedOpenRefs,
   )
-  if (!published.ok) return published
-  const delta = await deltaSince(deps, target, resolved, published.result, request.storeRevision)
-  return delta === undefined
-    ? { ok: true, result: { kind: 'snapshot', snapshot: published.result } }
-    : { ok: true, result: delta }
+  if (!published.ok) {
+    guard.noteFailure(target.workspaceRoot, deps.now())
+    return asFull(published)
+  }
+  guard.noteSuccess(target.workspaceRoot)
+  return await shapeRefresh(deps, target, resolved, published.result, request.storeRevision)
+}
+
+/**
+ * 刷新回来数据与库里一致：不写库、不升版本，按界面持有的版本回包。
+ * 客户端正停在库版本上时回 not-modified；落后时从变化日志回净变化；
+ * 其余情况回整份（内存缓存仍更新，界面能看到最新的核对时刻与身份）。
+ * @param deps - 服务依赖。
+ * @param cache - 内存缓存。
+ * @param target - 本次请求的定位。
+ * @param resolved - 解析出的后端。
+ * @param base - 库里的基准条目。
+ * @param raw - 这次拉到的原始列表（与基准一致）。
+ * @param storeRevision - 客户端手上的库版本。
+ * @param startedAt - 这次刷新的起始时刻。
+ * @param guard - 失败退避闸门。
+ * @returns not-modified、delta 或整份快照。
+ */
+async function respondUnchanged(
+  deps: SnapshotServiceDeps,
+  cache: Map<string, CachedWorkspace>,
+  target: Target,
+  resolved: ResolvedBackend,
+  base: StoredHit['entry'],
+  raw: TrackerSnapshot,
+  storeRevision: number | undefined,
+  startedAt: number,
+  guard: RefreshGuard,
+): Promise<RpcResult<SnapshotRefreshResult>> {
+  if (storeRevision !== undefined && storeRevision === base.storeRevision) {
+    guard.noteSuccess(target.workspaceRoot)
+    return {
+      ok: true,
+      result: {
+        kind: 'not-modified',
+        revision: raw.revision?.id ?? base.revision?.id ?? null,
+        storeRevision: base.storeRevision,
+        fetchedAt: deps.now(),
+      },
+    }
+  }
+
+  // 数据没变：更新内存与界面，但不写库、不升版本。
+  const published = await publish(deps, cache, target, resolved, raw, startedAt, 'full', undefined, {
+    skipWrite: true,
+    versionFallback: base.storeRevision,
+  })
+  if (!published.ok) {
+    guard.noteFailure(target.workspaceRoot, deps.now())
+    return asFull(published)
+  }
+  guard.noteSuccess(target.workspaceRoot)
+  return await shapeRefresh(deps, target, resolved, published.result, storeRevision)
+}
+
+/**
+ * 发布成功后按客户端手上的库版本把整份快照收成增量回包。
+ * 没带版本、版本差超出日志覆盖或变化集不可用时回整份。
+ * @param deps - 服务依赖。
+ * @param target - 本次请求的定位。
+ * @param resolved - 解析出的后端。
+ * @param snapshot - 刚发布的完整快照。
+ * @param storeRevision - 客户端手上的库版本。
+ * @returns 增量或整份回包。
+ */
+async function shapeRefresh(
+  deps: SnapshotServiceDeps,
+  target: Target,
+  resolved: ResolvedBackend,
+  snapshot: WorkspaceSnapshot,
+  storeRevision: number | undefined,
+): Promise<RpcResult<SnapshotRefreshResult>> {
+  const delta = await deltaSince(deps, target, resolved, snapshot, storeRevision)
+  if (delta === undefined) {
+    return { ok: true, result: { kind: 'snapshot', snapshot } }
+  }
+  return { ok: true, result: delta }
+}
+
+/**
+ * 这次拉取与库里的基准是否一致（只看票集合、总数、身份与游标，时间不算）。
+ * 一致时不写库：空提交会把库版本推高，客户端每次都拿到「变化了但没变」的回包。
+ * @param base - 库里的基准条目。
+ * @param raw - 这次拉到的原始列表。
+ * @returns 有可见差异时为 true。
+ */
+function ticketsDiffer(base: StoredHit['entry'], raw: TrackerSnapshot): boolean {
+  if (
+    base.total !== raw.total ||
+    base.viewer !== raw.viewer ||
+    base.hierarchy !== raw.hierarchy ||
+    base.nextCursor !== raw.nextCursor
+  ) {
+    return true
+  }
+  return JSON.stringify(base.tickets) !== JSON.stringify(raw.tickets)
+}
+
+/**
+ * 记录一次增量退让：截断、总数不可用或与合并结果漂移都走全量重拉，
+ * 日志里保留原因，便于分清「后端没给全」与「远端删了票」。
+ * @param deps - 服务依赖。
+ * @param backend - 后端类型。
+ * @param reason - 退回全量的原因。
+ * @param startedAt - 这次刷新的起始时刻。
+ */
+function logIncrementalFallback(
+  deps: SnapshotServiceDeps,
+  backend: BackendKind,
+  reason:
+    | 'truncated'
+    | 'invalid-revision'
+    | 'invalid-total'
+    | 'hierarchy'
+    | 'total'
+    | 'drift',
+  startedAt: number,
+): void {
+  deps.log('warn', LOG_EVENTS.snapshot, {
+    result: 'fallback',
+    backend,
+    stage: SNAPSHOT_STAGES.list,
+    reason,
+    durationMs: Math.max(0, deps.now() - startedAt),
+  })
 }
 
 /**
@@ -659,9 +880,10 @@ function loadMore(
   loading: Map<string, Promise<RpcResult<WorkspaceSnapshot>>>,
   paging: Map<string, Promise<RpcResult<WorkspaceSnapshot>>>,
   target: Target,
+  guard: RefreshGuard,
 ): Promise<RpcResult<WorkspaceSnapshot>> {
   return singleFlight(paging, target.workspaceRoot, () =>
-    appendPage(deps, cache, loading, target),
+    appendPage(deps, cache, loading, target, guard),
   )
 }
 
@@ -684,6 +906,7 @@ async function appendPage(
   cache: Map<string, CachedWorkspace>,
   loading: Map<string, Promise<RpcResult<WorkspaceSnapshot>>>,
   target: Target,
+  guard: RefreshGuard,
 ): Promise<RpcResult<WorkspaceSnapshot>> {
   const startedAt = deps.now()
 
@@ -707,7 +930,13 @@ async function appendPage(
 
   // 仓库换了：旧游标属于另一个仓库，按全量刷新流程重建快照，不把两个仓库的票混在一起。
   if (repositoryKey(resolved.kind, resolved.address) !== entry.repositoryKey) {
-    const refreshed = await refreshSnapshot(deps, cache, target, { full: true })
+    const refreshed = await refreshSnapshot(
+      deps,
+      cache,
+      target,
+      { full: true, storeRevision: undefined },
+      guard,
+    )
     if (!refreshed.ok) return refreshed
     if (refreshed.result.kind !== 'snapshot') {
       return failure(ERROR_CODES.internal, '全量刷新没有返回整份快照。')
@@ -799,6 +1028,14 @@ async function fetchAndCache(
   }
 }
 
+/** 发布选项：数据没变时跳过写库，并沿用库里的版本。 */
+interface PublishOptions {
+  /** 为 true 时只更新内存与回包，不写本地快照库。 */
+  readonly skipWrite?: boolean
+  /** 跳过写库时沿用的库版本；没有库时为 0。 */
+  readonly versionFallback?: number
+}
+
 /**
  * 发布一次成功拉取的结果：写内存缓存、写本地快照库、返回快照。
  * @param deps - 服务依赖。
@@ -809,6 +1046,7 @@ async function fetchAndCache(
  * @param startedAt - 这次拉取的起始时刻。
  * @param mode - 这次是全量、增量还是追加一页。
  * @param blockerTargets - 这次需要补齐的开放票引用；省略表示全部开放票。
+ * @param options - 跳过写库与版本沿用；数据没变的刷新不写库、版本不变。
  * @returns 快照。
  */
 async function publish(
@@ -820,6 +1058,7 @@ async function publish(
   startedAt: number,
   mode: 'full' | 'incremental' | 'more',
   blockerTargets?: readonly string[],
+  options?: PublishOptions,
 ): Promise<RpcResult<WorkspaceSnapshot>> {
   const tickets = withSkillActions(classifyTickets(raw.tickets, deps.labels), deps.labels)
   const resolver = resolved.tracker.resolveBlockers ?? null
@@ -831,15 +1070,18 @@ async function publish(
   const finalized = resolver === null || pendingBlockerRefs.length === 0
   const metrics = metricsOf(deps, resolved.kind, raw, tickets, finalized)
   // 先提交本地库拿到新版本，再组装快照：客户端下一次刷新带回的库版本才与它看到的数据同源。
+  // 数据没变时不写库：空提交会把库版本推高，客户端每次都被当成「有变化」。
   const storeRevision =
-    (await writeStored(
-      deps,
-      target.scopeRoot,
-      target.workspaceRoot,
-      resolved,
-      raw,
-      metrics,
-    )) ?? 0
+    options?.skipWrite === true
+      ? (options.versionFallback ?? 0)
+      : ((await writeStored(
+          deps,
+          target.scopeRoot,
+          target.workspaceRoot,
+          resolved,
+          raw,
+          metrics,
+        )) ?? 0)
   const snapshot = buildSnapshot(
     resolved.kind,
     repositoryHost,
@@ -866,16 +1108,18 @@ async function publish(
     pending: null,
   })
 
-  deps.log('info', LOG_EVENTS.snapshot, {
-    result: 'ok',
-    backend: resolved.kind,
-    stage: SNAPSHOT_STAGES.list,
-    durationMs: Math.max(0, deps.now() - startedAt),
-    repository: snapshot.repository,
-    loaded: snapshot.loaded,
-    total: snapshot.total,
-    mode,
-  })
+  if (options?.skipWrite !== true) {
+    deps.log('info', LOG_EVENTS.snapshot, {
+      result: 'ok',
+      backend: resolved.kind,
+      stage: SNAPSHOT_STAGES.list,
+      durationMs: Math.max(0, deps.now() - startedAt),
+      repository: snapshot.repository,
+      loaded: snapshot.loaded,
+      total: snapshot.total,
+      mode,
+    })
+  }
   return { ok: true, result: snapshot }
 }
 

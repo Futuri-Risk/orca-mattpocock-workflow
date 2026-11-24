@@ -120,21 +120,6 @@ export function parseIssueChangesGraphql(output: string): ParsedChanges {
   }
 }
 
-/**
- * 解析一次「只看远端版本」的极小查询。
- *
- * 查询与列表共用 `issues(first: 1, orderBy: UPDATED_AT DESC)` 的形状：
- * 只取总数与最新更新时间，不取工单正文。
- * @param output - `gh api graphql` 的标准输出。
- * @returns 远端版本；响应里缺少可比较字段时为 null。
- * @throws {TrackerError} 输出不是 JSON 或仓库不可见。
- */
-export function parseGithubRevision(output: string): SourceRevision | null {
-  const payload = parseJson(output, 'gh 返回的不是有效 JSON')
-  const repository = readRepository(payload)
-  return readLatestRevision(repository)
-}
-
 /** 从 `latest` 别名连接读远端版本；没有这个连接时为 null。 */
 function readLatestRevision(repository: Record<string, unknown>): SourceRevision | null {
   const latest = repository.latest
@@ -147,8 +132,8 @@ function readLatestRevision(repository: Record<string, unknown>): SourceRevision
 }
 
 /**
- * 远端版本：总数 + 最新更新时间。总数变了（新增或删除）也一定变，
- * 所以客户端带回的版本相等时可以安全跳过变更窗口。
+ * 远端版本：总数 + 最新更新时间。总数变了（新增或删除）也一定变；
+ * 它只作诊断与计数核对，刷新不靠它跳过变更窗口。
  */
 function revisionOf(total: number, nodes: readonly unknown[]): SourceRevision | null {
   if (total === 0) return { id: '0:', total }

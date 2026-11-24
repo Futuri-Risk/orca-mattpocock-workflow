@@ -602,18 +602,13 @@ describe('GitLab 工单增量', () => {
     })
   })
 
-  it('版本命中时不翻变更窗口', async () => {
+  it('刷新不按远端版本短路：每次都翻变更窗口', async () => {
     const { tracker, calls } = trackerWith()
 
-    const changes = await tracker.fetchChanges?.(
-      '/workspace',
-      SINCE,
-      '3:2027-01-01T00:00:00Z',
-    )
+    const changes = await tracker.fetchChanges?.('/workspace', SINCE)
 
-    expect(changes?.notModified).toBe(true)
-    expect(changes?.tickets).toEqual([])
-    expect(calls.filter((call) => call.some((part) => part.includes('updated_after')))).toEqual([])
+    expect(changes?.tickets.map((ticket) => ticket.ref)).toEqual(['#16'])
+    expect(calls.some((call) => call.some((part) => part.includes('updated_after')))).toBe(true)
   })
 
   it('增量也刷新当前用户', async () => {

@@ -149,20 +149,14 @@ interface LoadOutcome {
 }
 
 /**
- * 从当前快照取刷新基线。没有快照、或两个版本都还是初始值时返回 null，
+ * 从当前快照取刷新基线。没有快照、或库版本还是初始值时返回 null，
  * 宿主据此回整份而不是拿一个空基线去比对。
  * @param snapshot - 当前显示的整份快照。
- * @returns 刷新参数里的版本基线。
+ * @returns 刷新参数里的库版本基线。
  */
 export function snapshotBaselineOf(snapshot: WorkspaceSnapshot | null): SnapshotBaseline | null {
-  if (snapshot === null) return null
-  const hasRevision = snapshot.revision !== null
-  const hasStore = snapshot.storeRevision > 0
-  if (!hasRevision && !hasStore) return null
-  return {
-    ...(snapshot.revision === null ? {} : { ifRevision: snapshot.revision }),
-    ...(hasStore ? { storeRevision: snapshot.storeRevision } : {}),
-  }
+  if (snapshot === null || snapshot.storeRevision <= 0) return null
+  return { storeRevision: snapshot.storeRevision }
 }
 
 /** 一次请求的结果：已应用的数据，或失败时的 null。 */

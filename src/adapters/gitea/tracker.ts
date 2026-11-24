@@ -103,9 +103,8 @@ export function createGiteaTracker(deps: GiteaTrackerDeps): Tracker {
     async fetchChanges(
       workspaceRoot: string,
       since: number,
-      ifRevision?: string,
     ): Promise<TrackerChanges> {
-      return readGiteaChanges(deps, workspaceRoot, pageSize, since, ifRevision)
+      return readGiteaChanges(deps, workspaceRoot, pageSize, since)
     },
 
     async resolveBlockers(
@@ -166,14 +165,13 @@ export function createGiteaTracker(deps: GiteaTrackerDeps): Tracker {
  * 读取某个时刻之后变更过的工单。
  *
  * 与列表查询走同一个接口、同一套过滤条件，只多一个时间窗口。
- * `ifRevision` 给出时先用一次极小查询比对远端版本，没变就不扫描窗口。
+ * 每次刷新都真正扫描窗口，不靠远端版本号短路。
  */
 async function readGiteaChanges(
   deps: GiteaTrackerDeps,
   workspaceRoot: string,
   pageSize: number,
   since: number,
-  ifRevision: string | undefined,
 ): Promise<TrackerChanges> {
   if (!Number.isFinite(since)) {
     throw new TrackerError('fetch-failed', '增量窗口的起点不是有效时间戳。')
@@ -182,15 +180,6 @@ async function readGiteaChanges(
   const repository = await readRepository(deps.run, workspaceRoot)
   // 版本查询与列表共用同一个仓库识别；版本读不到时 revision 为 null，宿主退回全量。
   const revision = await readGiteaRevision(deps, workspaceRoot, repository)
-  if (ifRevision !== undefined && revision?.id === ifRevision) {
-    return {
-      tickets: [],
-      truncated: false,
-      revision,
-      notModified: true,
-      hierarchy: 'convention',
-    }
-  }
 
   const viewer = readCurrentViewer(deps, workspaceRoot)
   const issues = await readIssues(deps, workspaceRoot, repository, pageSize, since)
