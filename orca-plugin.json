@@ -2,7 +2,7 @@
   "manifestVersion": 2,
   "id": "mattpocock-workflow",
   "name": "MattWorkflow",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Matt Pocock workflow panel: ticket triage, backlog overview, environment checks, one-click prompt copy, and Orca worktree creation.",
   "license": "MIT",
   "author": {

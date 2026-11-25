@@ -1364,7 +1364,7 @@
           return dispatcher;
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var React36 = require_react(), Internals = {
+        var React37 = require_react(), Internals = {
           d: {
             f: noop,
             r: function() {
@@ -1382,7 +1382,7 @@
           },
           p: 0,
           findDOMNode: null
-        }, REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), REACT_OPTIMISTIC_KEY = /* @__PURE__ */ Symbol.for("react.optimistic_key"), ReactSharedInternals = React36.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+        }, REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), REACT_OPTIMISTIC_KEY = /* @__PURE__ */ Symbol.for("react.optimistic_key"), ReactSharedInternals = React37.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
         "function" === typeof Map && null != Map.prototype && "function" === typeof Map.prototype.forEach && "function" === typeof Set && null != Set.prototype && "function" === typeof Set.prototype.clear && "function" === typeof Set.prototype.forEach || console.error(
           "React depends on Map and Set built-in types. Make sure that you load a polyfill in older browsers. https://reactjs.org/link/react-polyfills"
         );
@@ -3068,7 +3068,7 @@
           node.defaultValue !== "" + value && (node.defaultValue = "" + value);
         }
         function validateOptionProps(element, props) {
-          null == props.value && ("object" === typeof props.children && null !== props.children ? React36.Children.forEach(props.children, function(child) {
+          null == props.value && ("object" === typeof props.children && null !== props.children ? React37.Children.forEach(props.children, function(child) {
             null == child || "string" === typeof child || "number" === typeof child || "bigint" === typeof child || didWarnInvalidChild || (didWarnInvalidChild = true, console.error(
               "Cannot infer the option value of complex children. Pass a `value` prop or use a plain string as children to <option>."
             ));
@@ -20216,11 +20216,11 @@
           ));
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var Scheduler = require_scheduler(), React36 = require_react(), ReactDOM = require_react_dom(), searchTarget = null, searchBoundary = null, assign = Object.assign, REACT_LEGACY_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.element"), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy");
+        var Scheduler = require_scheduler(), React37 = require_react(), ReactDOM = require_react_dom(), searchTarget = null, searchBoundary = null, assign = Object.assign, REACT_LEGACY_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.element"), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy");
         /* @__PURE__ */ Symbol.for("react.scope");
         var REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity"), REACT_LEGACY_HIDDEN_TYPE = /* @__PURE__ */ Symbol.for("react.legacy_hidden");
         /* @__PURE__ */ Symbol.for("react.tracing_marker");
-        var REACT_MEMO_CACHE_SENTINEL = /* @__PURE__ */ Symbol.for("react.memo_cache_sentinel"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), MAYBE_ITERATOR_SYMBOL = Symbol.iterator, REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), isArrayImpl = Array.isArray, ReactSharedInternals = React36.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, NotPending = Object.freeze({
+        var REACT_MEMO_CACHE_SENTINEL = /* @__PURE__ */ Symbol.for("react.memo_cache_sentinel"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_RECOVERABLE_TYPE = /* @__PURE__ */ Symbol.for("react.recoverable"), MAYBE_ITERATOR_SYMBOL = Symbol.iterator, REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), isArrayImpl = Array.isArray, ReactSharedInternals = React37.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, NotPending = Object.freeze({
           pending: false,
           data: null,
           method: null,
@@ -23412,7 +23412,7 @@
           }
         };
         (function() {
-          var isomorphicReactPackageVersion = React36.version;
+          var isomorphicReactPackageVersion = React37.version;
           if ("19.3.1" !== isomorphicReactPackageVersion)
             throw Error(
               'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' + (isomorphicReactPackageVersion + "\n  - react-dom:  19.3.1\nLearn more: https://react.dev/warnings/version-mismatch")
@@ -23768,18 +23768,18 @@
         function isValidElement(object) {
           return "object" === typeof object && null !== object && object.$$typeof === REACT_ELEMENT_TYPE;
         }
-        var React36 = require_react(), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), ReactSharedInternals = React36.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
+        var React37 = require_react(), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), ReactSharedInternals = React37.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
           return null;
         };
-        React36 = {
+        React37 = {
           react_stack_bottom_frame: function(callStackForError) {
             return callStackForError();
           }
         };
         var specialPropKeyWarningShown;
         var didWarnAboutElementRef = {};
-        var unknownOwnerDebugStack = React36.react_stack_bottom_frame.bind(
-          React36,
+        var unknownOwnerDebugStack = React37.react_stack_bottom_frame.bind(
+          React37,
           UnknownOwner
         )();
         var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
@@ -23836,7 +23836,7 @@
   });
 
   // src/panel/main.tsx
-  var React35 = __toESM(require_react(), 1);
+  var React36 = __toESM(require_react(), 1);
   var import_client = __toESM(require_client(), 1);
 
   // src/panel/avatar-source.ts
@@ -25344,7 +25344,6 @@
         const params = {
           workspaceRoot,
           ...options?.full === true ? { full: true } : {},
-          ...options?.ifRevision === void 0 ? {} : { ifRevision: options.ifRevision },
           ...options?.storeRevision === void 0 ? {} : { storeRevision: options.storeRevision }
         };
         return call(request, RPC_METHODS.snapshotRefresh, params, isSnapshotRefreshResult);
@@ -25711,7 +25710,7 @@
   }
 
   // src/panel/task-panel.tsx
-  var React33 = __toESM(require_react(), 1);
+  var React34 = __toESM(require_react(), 1);
 
   // src/panel/detail-navigation.ts
   var React3 = __toESM(require_react(), 1);
@@ -26135,6 +26134,7 @@
     color: COLORS.secondary
   };
   var LIST_STYLE = {
+    position: "relative",
     display: "flex",
     flexDirection: "column",
     gap: 6,
@@ -28341,11 +28341,394 @@ ${MARKDOWN_SHEET}
     return lines;
   }
 
+  // src/panel/language-menu.tsx
+  var React9 = __toESM(require_react(), 1);
+
+  // src/panel/icons.tsx
+  var React8 = __toESM(require_react(), 1);
+  var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
+  function FolderIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      "svg",
+      {
+        width: "13",
+        height: "13",
+        viewBox: "0 0 16 16",
+        fill: "none",
+        "aria-hidden": "true",
+        style: { flex: "none" },
+        children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+          "path",
+          {
+            d: "M1.8 4.2A1.2 1.2 0 0 1 3 3h3.1l1.4 1.5H13a1.2 1.2 0 0 1 1.2 1.2v6.1A1.2 1.2 0 0 1 13 13H3a1.2 1.2 0 0 1-1.2-1.2V4.2Z",
+            stroke: "currentColor",
+            strokeWidth: "1.2",
+            strokeLinejoin: "round"
+          }
+        )
+      }
+    );
+  }
+  function PeopleIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+      "svg",
+      {
+        width: "13",
+        height: "13",
+        viewBox: "0 0 16 16",
+        fill: "none",
+        "aria-hidden": "true",
+        style: { flex: "none" },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { cx: "8", cy: "5", r: "2.6", stroke: "currentColor", strokeWidth: "1.3" }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+            "path",
+            {
+              d: "M3.2 13.2c.5-2.5 2.4-4 4.8-4s4.3 1.5 4.8 4",
+              stroke: "currentColor",
+              strokeWidth: "1.3",
+              strokeLinecap: "round"
+            }
+          )
+        ]
+      }
+    );
+  }
+  function RefreshIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      "path",
+      {
+        d: "M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3.2h-3.2",
+        stroke: "currentColor",
+        strokeWidth: "1.4",
+        strokeLinecap: "round",
+        strokeLinejoin: "round"
+      }
+    ) });
+  }
+  function PlusIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M8 3v10M3 8h10", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round" }) });
+  }
+  function CopyIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+      "svg",
+      {
+        width: "12",
+        height: "12",
+        viewBox: "0 0 16 16",
+        fill: "none",
+        "aria-hidden": "true",
+        style: { flex: "none" },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+            "rect",
+            {
+              x: "5.4",
+              y: "5.4",
+              width: "8.1",
+              height: "8.1",
+              rx: "1.6",
+              stroke: "currentColor",
+              strokeWidth: "1.3"
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+            "path",
+            {
+              d: "M10.6 5.4V4a1.4 1.4 0 0 0-1.4-1.4H4A1.4 1.4 0 0 0 2.6 4v5.2A1.4 1.4 0 0 0 4 10.6h1.4",
+              stroke: "currentColor",
+              strokeWidth: "1.3",
+              strokeLinecap: "round"
+            }
+          )
+        ]
+      }
+    );
+  }
+  function CheckIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      "svg",
+      {
+        width: "12",
+        height: "12",
+        viewBox: "0 0 16 16",
+        fill: "none",
+        "aria-hidden": "true",
+        style: { flex: "none" },
+        children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+          "path",
+          {
+            d: "m3.2 8.4 3.2 3.2 6.4-6.8",
+            stroke: "currentColor",
+            strokeWidth: "1.6",
+            strokeLinecap: "round",
+            strokeLinejoin: "round"
+          }
+        )
+      }
+    );
+  }
+  function ChevronLeftIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      "path",
+      {
+        d: "M10 3.5 5.5 8l4.5 4.5",
+        stroke: "currentColor",
+        strokeWidth: "1.6",
+        strokeLinecap: "round",
+        strokeLinejoin: "round"
+      }
+    ) });
+  }
+  function CloseIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M4 4l8 8M12 4l-8 8", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round" }) });
+  }
+  function TagIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "path",
+        {
+          d: "M2 3.2A1.2 1.2 0 0 1 3.2 2h4.1l6.4 6.4a1.2 1.2 0 0 1 0 1.7l-3.6 3.6a1.2 1.2 0 0 1-1.7 0L2 7.3V3.2Z",
+          stroke: "currentColor",
+          strokeWidth: "1.2",
+          strokeLinejoin: "round"
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { cx: "5.2", cy: "5.2", r: "1", fill: "currentColor" })
+    ] });
+  }
+  function PersonIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { cx: "8", cy: "5.5", r: "2.7", stroke: "currentColor", strokeWidth: "1.2" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "path",
+        {
+          d: "M2.8 13.6c.6-2.5 2.7-4 5.2-4s4.6 1.5 5.2 4",
+          stroke: "currentColor",
+          strokeWidth: "1.2",
+          strokeLinecap: "round"
+        }
+      )
+    ] });
+  }
+  function LinkIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      "path",
+      {
+        d: "M6.8 9.2a2.8 2.8 0 0 0 4 0l2.2-2.2a2.8 2.8 0 0 0-4-4l-.8.8M9.2 6.8a2.8 2.8 0 0 0-4 0L3 9a2.8 2.8 0 0 0 4 4l.8-.8",
+        stroke: "currentColor",
+        strokeWidth: "1.4",
+        strokeLinecap: "round"
+      }
+    ) });
+  }
+  function MoreIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "currentColor", "aria-hidden": "true", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { cx: "3.5", cy: "8", r: "1.3" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { cx: "8", cy: "8", r: "1.3" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { cx: "12.5", cy: "8", r: "1.3" })
+    ] });
+  }
+  function TrashIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      "path",
+      {
+        d: "M2.5 4h11M6.2 4V2.6h3.6V4M4 4l.7 9.2a1 1 0 0 0 1 .8h4.6a1 1 0 0 0 1-.8L12 4",
+        stroke: "currentColor",
+        strokeWidth: "1.3",
+        strokeLinecap: "round",
+        strokeLinejoin: "round"
+      }
+    ) });
+  }
+  function DisplaySettingsIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "path",
+        {
+          d: "M2.5 5h2M7.5 5h6M2.5 11h6M11.5 11h2",
+          stroke: "currentColor",
+          strokeWidth: "1.2",
+          strokeLinecap: "round"
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { cx: "6", cy: "5", r: "1.6", stroke: "currentColor", strokeWidth: "1.2" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { cx: "10", cy: "11", r: "1.6", stroke: "currentColor", strokeWidth: "1.2" })
+    ] });
+  }
+  function FlatListIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      "path",
+      {
+        d: "M2.5 4h11M2.5 8h11M2.5 12h11",
+        stroke: "currentColor",
+        strokeWidth: "1.3",
+        strokeLinecap: "round"
+      }
+    ) });
+  }
+  function HierarchyIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      "path",
+      {
+        d: "M2.5 3.5h5M2.5 8h11M5.5 12.5h8",
+        stroke: "currentColor",
+        strokeWidth: "1.3",
+        strokeLinecap: "round"
+      }
+    ) });
+  }
+  function GlobeIcon() {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { cx: "8", cy: "8", r: "6.2", stroke: "currentColor", strokeWidth: "1.3" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "path",
+        {
+          d: "M1.9 8h12.2M8 1.8c1.7 1.7 2.6 3.8 2.6 6.2S9.7 12.5 8 14.2C6.3 12.5 5.4 10.4 5.4 8S6.3 3.5 8 1.8Z",
+          stroke: "currentColor",
+          strokeWidth: "1.2",
+          strokeLinecap: "round"
+        }
+      )
+    ] });
+  }
+
+  // src/panel/language-menu.tsx
+  var import_jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
+  function LanguageMenu() {
+    const t = useMessages();
+    const { setting, setSetting, locale } = useLocale();
+    const [open, setOpen] = React9.useState(false);
+    const wrapper = React9.useRef(null);
+    const trigger = React9.useRef(null);
+    const menuId = React9.useId();
+    const languageName = locale === "zh-CN" ? t("language.zhCN") : t("language.en");
+    const options = [
+      { value: "auto", label: t("language.autoEffective", { language: languageName }) },
+      { value: "zh-CN", label: t("language.zhCN") },
+      { value: "en", label: t("language.en") }
+    ];
+    React9.useEffect(() => {
+      if (!open) return;
+      const onPointer = (event) => {
+        if (wrapper.current?.contains(event.target) !== true) setOpen(false);
+      };
+      document.addEventListener("mousedown", onPointer);
+      return () => {
+        document.removeEventListener("mousedown", onPointer);
+      };
+    }, [open]);
+    const close = () => {
+      setOpen(false);
+      trigger.current?.focus();
+    };
+    const currentLabel = t("language.effective", { language: languageName });
+    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+      "div",
+      {
+        ref: wrapper,
+        style: WRAPPER_STYLE,
+        onKeyDown: (event) => {
+          if (event.key === "Escape" && open) {
+            event.stopPropagation();
+            close();
+          }
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+            "button",
+            {
+              ref: trigger,
+              type: "button",
+              "data-testid": "language-menu",
+              "data-hover": "soft",
+              "aria-label": t("language.label"),
+              "aria-haspopup": "menu",
+              "aria-expanded": open,
+              "aria-controls": open ? menuId : void 0,
+              title: currentLabel,
+              onClick: () => {
+                setOpen((value) => !value);
+              },
+              style: TRIGGER_STYLE,
+              children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(GlobeIcon, {})
+            }
+          ),
+          open ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { id: menuId, role: "menu", "aria-label": t("language.label"), style: MENU_STYLE, children: options.map((option) => {
+            const checked = option.value === setting;
+            return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+              "button",
+              {
+                type: "button",
+                role: "menuitemradio",
+                "data-testid": `language-option-${option.value}`,
+                "data-hover": "soft",
+                "aria-checked": checked,
+                autoFocus: checked,
+                onClick: () => {
+                  setSetting(option.value);
+                  close();
+                },
+                style: ITEM_STYLE,
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { "aria-hidden": "true", style: CHECK_SLOT_STYLE, children: checked ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(CheckIcon, {}) : null }),
+                  option.label
+                ]
+              },
+              option.value
+            );
+          }) }) : null
+        ]
+      }
+    );
+  }
+  var WRAPPER_STYLE = {
+    position: "relative",
+    flex: "none"
+  };
+  var TRIGGER_STYLE = ICON_BUTTON_STYLE;
+  var MENU_STYLE = {
+    position: "absolute",
+    top: "calc(100% + 4px)",
+    right: 0,
+    zIndex: 10,
+    minWidth: 150,
+    padding: 4,
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: 8,
+    background: COLORS.surfaceRaised,
+    boxShadow: "0 6px 16px rgba(0, 0, 0, 0.12)"
+  };
+  var ITEM_STYLE = {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    width: "100%",
+    border: "none",
+    borderRadius: 4,
+    padding: "5px 8px",
+    color: COLORS.text,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    fontSize: 12,
+    textAlign: "left",
+    whiteSpace: "nowrap"
+  };
+  var CHECK_SLOT_STYLE = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: "none",
+    width: 12,
+    height: 12,
+    color: COLORS.accent
+  };
+
   // src/panel/overview-view.tsx
-  var React14 = __toESM(require_react(), 1);
+  var React15 = __toESM(require_react(), 1);
 
   // src/panel/error-banner.tsx
-  var React8 = __toESM(require_react(), 1);
+  var React10 = __toESM(require_react(), 1);
 
   // src/panel/error-text.ts
   var ERROR_MESSAGES = {
@@ -28368,12 +28751,12 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/error-banner.tsx
-  var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
   function ErrorBanner(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { role: "alert", "data-testid": "error", style: ERROR_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { children: errorText(props.error, t) }),
-      isEnvIssue(props.error.code) ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { role: "alert", "data-testid": "error", style: ERROR_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { children: errorText(props.error, t) }),
+      isEnvIssue(props.error.code) ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
         "button",
         {
           type: "button",
@@ -28387,241 +28770,6 @@ ${MARKDOWN_SHEET}
         }
       ) : null
     ] });
-  }
-
-  // src/panel/icons.tsx
-  var React9 = __toESM(require_react(), 1);
-  var import_jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
-  function FolderIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-      "svg",
-      {
-        width: "13",
-        height: "13",
-        viewBox: "0 0 16 16",
-        fill: "none",
-        "aria-hidden": "true",
-        style: { flex: "none" },
-        children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-          "path",
-          {
-            d: "M1.8 4.2A1.2 1.2 0 0 1 3 3h3.1l1.4 1.5H13a1.2 1.2 0 0 1 1.2 1.2v6.1A1.2 1.2 0 0 1 13 13H3a1.2 1.2 0 0 1-1.2-1.2V4.2Z",
-            stroke: "currentColor",
-            strokeWidth: "1.2",
-            strokeLinejoin: "round"
-          }
-        )
-      }
-    );
-  }
-  function PeopleIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
-      "svg",
-      {
-        width: "13",
-        height: "13",
-        viewBox: "0 0 16 16",
-        fill: "none",
-        "aria-hidden": "true",
-        style: { flex: "none" },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "8", cy: "5", r: "2.6", stroke: "currentColor", strokeWidth: "1.3" }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-            "path",
-            {
-              d: "M3.2 13.2c.5-2.5 2.4-4 4.8-4s4.3 1.5 4.8 4",
-              stroke: "currentColor",
-              strokeWidth: "1.3",
-              strokeLinecap: "round"
-            }
-          )
-        ]
-      }
-    );
-  }
-  function RefreshIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-      "path",
-      {
-        d: "M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3.2h-3.2",
-        stroke: "currentColor",
-        strokeWidth: "1.4",
-        strokeLinecap: "round",
-        strokeLinejoin: "round"
-      }
-    ) });
-  }
-  function PlusIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M8 3v10M3 8h10", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round" }) });
-  }
-  function CopyIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
-      "svg",
-      {
-        width: "12",
-        height: "12",
-        viewBox: "0 0 16 16",
-        fill: "none",
-        "aria-hidden": "true",
-        style: { flex: "none" },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-            "rect",
-            {
-              x: "5.4",
-              y: "5.4",
-              width: "8.1",
-              height: "8.1",
-              rx: "1.6",
-              stroke: "currentColor",
-              strokeWidth: "1.3"
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-            "path",
-            {
-              d: "M10.6 5.4V4a1.4 1.4 0 0 0-1.4-1.4H4A1.4 1.4 0 0 0 2.6 4v5.2A1.4 1.4 0 0 0 4 10.6h1.4",
-              stroke: "currentColor",
-              strokeWidth: "1.3",
-              strokeLinecap: "round"
-            }
-          )
-        ]
-      }
-    );
-  }
-  function CheckIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-      "svg",
-      {
-        width: "12",
-        height: "12",
-        viewBox: "0 0 16 16",
-        fill: "none",
-        "aria-hidden": "true",
-        style: { flex: "none" },
-        children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-          "path",
-          {
-            d: "m3.2 8.4 3.2 3.2 6.4-6.8",
-            stroke: "currentColor",
-            strokeWidth: "1.6",
-            strokeLinecap: "round",
-            strokeLinejoin: "round"
-          }
-        )
-      }
-    );
-  }
-  function ChevronLeftIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-      "path",
-      {
-        d: "M10 3.5 5.5 8l4.5 4.5",
-        stroke: "currentColor",
-        strokeWidth: "1.6",
-        strokeLinecap: "round",
-        strokeLinejoin: "round"
-      }
-    ) });
-  }
-  function CloseIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M4 4l8 8M12 4l-8 8", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round" }) });
-  }
-  function TagIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-        "path",
-        {
-          d: "M2 3.2A1.2 1.2 0 0 1 3.2 2h4.1l6.4 6.4a1.2 1.2 0 0 1 0 1.7l-3.6 3.6a1.2 1.2 0 0 1-1.7 0L2 7.3V3.2Z",
-          stroke: "currentColor",
-          strokeWidth: "1.2",
-          strokeLinejoin: "round"
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "5.2", cy: "5.2", r: "1", fill: "currentColor" })
-    ] });
-  }
-  function PersonIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "8", cy: "5.5", r: "2.7", stroke: "currentColor", strokeWidth: "1.2" }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-        "path",
-        {
-          d: "M2.8 13.6c.6-2.5 2.7-4 5.2-4s4.6 1.5 5.2 4",
-          stroke: "currentColor",
-          strokeWidth: "1.2",
-          strokeLinecap: "round"
-        }
-      )
-    ] });
-  }
-  function LinkIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-      "path",
-      {
-        d: "M6.8 9.2a2.8 2.8 0 0 0 4 0l2.2-2.2a2.8 2.8 0 0 0-4-4l-.8.8M9.2 6.8a2.8 2.8 0 0 0-4 0L3 9a2.8 2.8 0 0 0 4 4l.8-.8",
-        stroke: "currentColor",
-        strokeWidth: "1.4",
-        strokeLinecap: "round"
-      }
-    ) });
-  }
-  function MoreIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "currentColor", "aria-hidden": "true", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "3.5", cy: "8", r: "1.3" }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "8", cy: "8", r: "1.3" }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "12.5", cy: "8", r: "1.3" })
-    ] });
-  }
-  function TrashIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-      "path",
-      {
-        d: "M2.5 4h11M6.2 4V2.6h3.6V4M4 4l.7 9.2a1 1 0 0 0 1 .8h4.6a1 1 0 0 0 1-.8L12 4",
-        stroke: "currentColor",
-        strokeWidth: "1.3",
-        strokeLinecap: "round",
-        strokeLinejoin: "round"
-      }
-    ) });
-  }
-  function DisplaySettingsIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-        "path",
-        {
-          d: "M2.5 5h2M7.5 5h6M2.5 11h6M11.5 11h2",
-          stroke: "currentColor",
-          strokeWidth: "1.2",
-          strokeLinecap: "round"
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "6", cy: "5", r: "1.6", stroke: "currentColor", strokeWidth: "1.2" }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "10", cy: "11", r: "1.6", stroke: "currentColor", strokeWidth: "1.2" })
-    ] });
-  }
-  function FlatListIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-      "path",
-      {
-        d: "M2.5 4h11M2.5 8h11M2.5 12h11",
-        stroke: "currentColor",
-        strokeWidth: "1.3",
-        strokeLinecap: "round"
-      }
-    ) });
-  }
-  function HierarchyIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-      "path",
-      {
-        d: "M2.5 3.5h5M2.5 8h11M5.5 12.5h8",
-        stroke: "currentColor",
-        strokeWidth: "1.3",
-        strokeLinecap: "round"
-      }
-    ) });
   }
 
   // src/panel/overview-chart-data.ts
@@ -28841,7 +28989,7 @@ ${MARKDOWN_SHEET}
   };
 
   // src/panel/overview-charts.tsx
-  var React10 = __toESM(require_react(), 1);
+  var React11 = __toESM(require_react(), 1);
 
   // src/panel/overview-styles.ts
   var TIER_COLORS = {
@@ -29273,11 +29421,11 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/overview-charts.tsx
-  var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
   function TierMeter(props) {
     const level = tierLevel(props.tier);
     const fill = props.tier === null ? COLORS.track : TIER_COLORS[props.tier];
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { role: "img", "aria-label": props.label, title: props.label, style: TIER_METER_STYLE, children: [1, 2, 3].map((step) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { role: "img", "aria-label": props.label, title: props.label, style: TIER_METER_STYLE, children: [1, 2, 3].map((step) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
       "span",
       {
         style: {
@@ -29293,13 +29441,13 @@ ${MARKDOWN_SHEET}
   function FlowChart(props) {
     const t = useMessages();
     const { buckets } = props;
-    const [active, setActive] = React10.useState(null);
+    const [active, setActive] = React11.useState(null);
     const hasClosed = buckets.some((bucket) => bucket.closed !== null);
     const peak = Math.max(1, ...buckets.map((bucket) => Math.max(bucket.opened, bucket.closed ?? 0)));
     const shown = buckets[active ?? buckets.length - 1];
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { "data-testid": "flow-chart", style: { display: "flex", flexDirection: "column", gap: 6 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(FlowLegend, { hasClosed }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { "data-testid": "flow-chart", style: { display: "flex", flexDirection: "column", gap: 6 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(FlowLegend, { hasClosed }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
         "div",
         {
           style: { ...FLOW_PLOT_STYLE, marginTop: 14 },
@@ -29307,8 +29455,8 @@ ${MARKDOWN_SHEET}
             setActive(null);
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { "aria-hidden": "true", style: FLOW_PEAK_LINE_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: FLOW_PEAK_LABEL_STYLE, children: String(peak) }) }),
-            buckets.map((bucket, index) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { "aria-hidden": "true", style: FLOW_PEAK_LINE_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { style: FLOW_PEAK_LABEL_STYLE, children: String(peak) }) }),
+            buckets.map((bucket, index) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
               "div",
               {
                 "data-testid": "flow-week",
@@ -29328,7 +29476,7 @@ ${MARKDOWN_SHEET}
                   background: active === index ? COLORS.track : "transparent"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
                     FlowBar,
                     {
                       value: bucket.opened,
@@ -29338,7 +29486,7 @@ ${MARKDOWN_SHEET}
                       index
                     }
                   ),
-                  bucket.closed === null ? null : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+                  bucket.closed === null ? null : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
                     FlowBar,
                     {
                       value: bucket.closed,
@@ -29355,12 +29503,12 @@ ${MARKDOWN_SHEET}
           ]
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { "aria-hidden": "true", style: FLOW_AXIS_STYLE, children: buckets.map((bucket, index) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: FLOW_AXIS_LABEL_STYLE, children: axisLabel(bucket, buckets.length - 1 - index, t) }, bucket.start)) }),
-      shown === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(FlowReadout, { bucket: shown })
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { "aria-hidden": "true", style: FLOW_AXIS_STYLE, children: buckets.map((bucket, index) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { style: FLOW_AXIS_LABEL_STYLE, children: axisLabel(bucket, buckets.length - 1 - index, t) }, bucket.start)) }),
+      shown === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(FlowReadout, { bucket: shown })
     ] });
   }
   function FlowBar(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
       "span",
       {
         style: {
@@ -29375,13 +29523,13 @@ ${MARKDOWN_SHEET}
   }
   function FlowLegend(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: LEGEND_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { style: LEGEND_ITEM_STYLE2, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { "aria-hidden": "true", style: { ...SERIES_KEY_STYLE, background: OPENED_COLOR } }),
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: LEGEND_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { style: LEGEND_ITEM_STYLE2, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { "aria-hidden": "true", style: { ...SERIES_KEY_STYLE, background: OPENED_COLOR } }),
         t("chart.opened")
       ] }),
-      props.hasClosed ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { style: LEGEND_ITEM_STYLE2, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { "aria-hidden": "true", style: { ...SERIES_KEY_STYLE, background: CLOSED_COLOR } }),
+      props.hasClosed ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { style: LEGEND_ITEM_STYLE2, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { "aria-hidden": "true", style: { ...SERIES_KEY_STYLE, background: CLOSED_COLOR } }),
         t("chart.closed")
       ] }) : null
     ] });
@@ -29389,15 +29537,15 @@ ${MARKDOWN_SHEET}
   function FlowReadout(props) {
     const t = useMessages();
     const { bucket } = props;
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { "data-testid": "flow-readout", "aria-live": "polite", style: READOUT_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: flowRange(bucket) }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: READOUT_VALUE_STYLE, children: String(bucket.opened) }),
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { "data-testid": "flow-readout", "aria-live": "polite", style: READOUT_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: flowRange(bucket) }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { style: READOUT_VALUE_STYLE, children: String(bucket.opened) }),
         " ",
         t("chart.readoutOpened")
       ] }),
-      bucket.closed === null ? null : /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: READOUT_VALUE_STYLE, children: String(bucket.closed) }),
+      bucket.closed === null ? null : /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { style: READOUT_VALUE_STYLE, children: String(bucket.closed) }),
         " ",
         t("chart.readoutClosed")
       ] })
@@ -29421,14 +29569,14 @@ ${MARKDOWN_SHEET}
   function AgeHistogram(props) {
     const t = useMessages();
     const peak = Math.max(1, ...props.buckets.map((bucket) => bucket.count));
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { "data-testid": "age-histogram", style: AGE_LIST_STYLE, children: props.buckets.map((bucket) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(React10.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: AGE_LABEL_STYLE, children: bucket.label }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { "data-testid": "age-histogram", style: AGE_LIST_STYLE, children: props.buckets.map((bucket) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(React11.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { style: AGE_LABEL_STYLE, children: bucket.label }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
         "span",
         {
           style: AGE_TRACK_STYLE,
           title: t("chart.ageTooltip", { label: bucket.label, count: bucket.count }),
-          children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+          children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
             "span",
             {
               style: {
@@ -29441,7 +29589,7 @@ ${MARKDOWN_SHEET}
           )
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { "data-testid": `age-${bucket.key}`, style: AGE_COUNT_STYLE, children: String(bucket.count) })
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { "data-testid": `age-${bucket.key}`, style: AGE_COUNT_STYLE, children: String(bucket.count) })
     ] }, bucket.key)) });
   }
   var INLINE_LABEL_MIN_RATIO = 0.12;
@@ -29456,9 +29604,9 @@ ${MARKDOWN_SHEET}
         percent: formatPercent(segmentRatio(segment, total))
       })
     ).join(t("common.comma"));
-    return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { "data-testid": props.testId, style: { display: "flex", flexDirection: "column", gap: 6 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: { color: COLORS.secondary, fontSize: 11 }, children: props.title }),
-      visible.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: EMPTY_BAR_STYLE }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { "data-testid": props.testId, style: { display: "flex", flexDirection: "column", gap: 6 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { style: { color: COLORS.secondary, fontSize: 11 }, children: props.title }),
+      visible.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: EMPTY_BAR_STYLE }) : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
         "div",
         {
           role: "img",
@@ -29466,7 +29614,7 @@ ${MARKDOWN_SHEET}
           style: SEGMENTED_BAR_STYLE,
           children: visible.map((segment) => {
             const ratio = segmentRatio(segment, total);
-            return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+            return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
               "span",
               {
                 title: t("chart.segmentTooltip", {
@@ -29487,13 +29635,13 @@ ${MARKDOWN_SHEET}
           })
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: LEGEND_STYLE, children: props.segments.map((segment) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: LEGEND_STYLE, children: props.segments.map((segment) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
         "span",
         {
           "data-testid": `${props.testId}-${segment.key}`,
           style: LEGEND_ITEM_STYLE2,
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
               "span",
               {
                 "aria-hidden": "true",
@@ -29513,16 +29661,16 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/overview-pressure.tsx
-  var React11 = __toESM(require_react(), 1);
-  var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
+  var React12 = __toESM(require_react(), 1);
+  var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
   function PressureSection(props) {
     const t = useMessages();
     const { snapshot } = props;
     const { pressure, coverage } = snapshot.metrics;
-    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("section", { "data-testid": "pressure-overview", style: SECTION_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: SECTION_TITLE_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: t("overview.pressure") }),
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("section", { "data-testid": "pressure-overview", style: SECTION_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: SECTION_TITLE_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { children: t("overview.pressure") }),
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
           "span",
           {
             "data-testid": "pressure-tier",
@@ -29532,7 +29680,7 @@ ${MARKDOWN_SHEET}
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { "data-testid": "metric-grid", style: DIMENSION_GRID_STYLE, children: pressure.dimensions.map((report) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { "data-testid": "metric-grid", style: DIMENSION_GRID_STYLE, children: pressure.dimensions.map((report) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
         DimensionCard,
         {
           report,
@@ -29540,9 +29688,9 @@ ${MARKDOWN_SHEET}
         },
         report.dimension
       )) }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: NOTE_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: NOTE_STYLE, children: [
         t("overview.pressureNote"),
-        coverage.truncated ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { "data-testid": "pressure-coverage", children: t("overview.pressureCoverage", {
+        coverage.truncated ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { "data-testid": "pressure-coverage", children: t("overview.pressureCoverage", {
           loaded: snapshot.loaded,
           total: snapshot.total
         }) }) : t("common.period")
@@ -29555,18 +29703,18 @@ ${MARKDOWN_SHEET}
     const name = pressureDimensionLabel(report.dimension, t);
     const basis = pressureDimensionBasis(report.dimension, t);
     const tierLabel = report.tier === null ? t("overview.metricUnavailable") : pressureTierLabel(report.tier, t);
-    return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
       "div",
       {
         "data-testid": `pressure-${report.dimension}`,
         "data-tier": report.tier,
         style: DIMENSION_CARD_STYLE,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: DIMENSION_HEAD_STYLE, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { style: DIMENSION_NAME_STYLE, title: t("overview.dimensionHint", { basis }), children: name }),
-            report.provisional ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { "data-testid": `pressure-provisional-${report.dimension}`, style: PROVISIONAL_STYLE, children: t("overview.provisional") }) : null,
-            /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { style: { ...TIER_TEXT_STYLE, marginLeft: "auto" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: DIMENSION_HEAD_STYLE, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: DIMENSION_NAME_STYLE, title: t("overview.dimensionHint", { basis }), children: name }),
+            report.provisional ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { "data-testid": `pressure-provisional-${report.dimension}`, style: PROVISIONAL_STYLE, children: t("overview.provisional") }) : null,
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { style: { ...TIER_TEXT_STYLE, marginLeft: "auto" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
                 "span",
                 {
                   "aria-hidden": "true",
@@ -29576,25 +29724,25 @@ ${MARKDOWN_SHEET}
                   }
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { "data-testid": `pressure-tier-${report.dimension}`, children: tierLabel })
+              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { "data-testid": `pressure-tier-${report.dimension}`, children: tierLabel })
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
             TierMeter,
             {
               tier: report.tier,
               label: t("overview.tierMeterLabel", { name, tier: tierLabel })
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { "data-testid": `pressure-facts-${report.dimension}`, style: DIMENSION_FACT_STYLE, children: pressureFacts(report, t) }),
-            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: DIMENSION_BASIS_STYLE, children: t("overview.dimensionHint", { basis }) }),
-            pressureGaps(report, t).map((gap) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { "data-testid": `pressure-gap-${report.dimension}`, style: NOTE_STYLE, children: gap }, gap))
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { "data-testid": `pressure-facts-${report.dimension}`, style: DIMENSION_FACT_STYLE, children: pressureFacts(report, t) }),
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: DIMENSION_BASIS_STYLE, children: t("overview.dimensionHint", { basis }) }),
+            pressureGaps(report, t).map((gap) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { "data-testid": `pressure-gap-${report.dimension}`, style: NOTE_STYLE, children: gap }, gap))
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("dl", { style: METRIC_ROWS_STYLE, children: props.rows.map((row) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { "data-testid": row.testId, style: { display: "contents" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("dt", { style: METRIC_ROW_LABEL_STYLE, children: row.label }),
-            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("dd", { style: METRIC_ROW_VALUE_STYLE, children: row.value }),
-            row.note === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("dd", { style: METRIC_ROW_NOTE_STYLE, children: row.note })
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("dl", { style: METRIC_ROWS_STYLE, children: props.rows.map((row) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { "data-testid": row.testId, style: { display: "contents" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("dt", { style: METRIC_ROW_LABEL_STYLE, children: row.label }),
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("dd", { style: METRIC_ROW_VALUE_STYLE, children: row.value }),
+            row.note === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("dd", { style: METRIC_ROW_NOTE_STYLE, children: row.note })
           ] }, row.testId)) })
         ]
       }
@@ -29677,11 +29825,11 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/snapshot-age.ts
-  var React12 = __toESM(require_react(), 1);
+  var React13 = __toESM(require_react(), 1);
   var AGE_TICK_MS = 3e4;
   function useNow(clock) {
-    const [now, setNow] = React12.useState(() => clock());
-    React12.useEffect(() => {
+    const [now, setNow] = React13.useState(() => clock());
+    React13.useEffect(() => {
       const id = setInterval(() => {
         setNow(clock());
       }, AGE_TICK_MS);
@@ -29702,7 +29850,9 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/snapshot-request.ts
-  var React13 = __toESM(require_react(), 1);
+  var React14 = __toESM(require_react(), 1);
+  var AUTO_REFRESH_INTERVAL_MS = 6e4;
+  var FOCUS_REFRESH_MIN_MS = 6e4;
   function snapshotRefreshNotice(snapshot, refreshError, t) {
     if (refreshError !== null) return refreshError.message;
     const hostMessage = snapshot?.refreshError?.message;
@@ -29760,16 +29910,10 @@ ${MARKDOWN_SHEET}
     return current === null ? null : applySnapshotDelta(current, result);
   }
   function snapshotBaselineOf(snapshot) {
-    if (snapshot === null) return null;
-    const hasRevision = snapshot.revision !== null;
-    const hasStore = snapshot.storeRevision > 0;
-    if (!hasRevision && !hasStore) return null;
-    return {
-      ...snapshot.revision === null ? {} : { ifRevision: snapshot.revision },
-      ...hasStore ? { storeRevision: snapshot.storeRevision } : {}
-    };
+    if (snapshot === null || snapshot.storeRevision <= 0) return null;
+    return { storeRevision: snapshot.storeRevision };
   }
-  function useSnapshotRequest(client2, workspaceRoot, reloadToken = 0) {
+  function useSnapshotRequest(client2, workspaceRoot, reloadToken = 0, options = {}) {
     const {
       snapshot,
       error,
@@ -29780,35 +29924,65 @@ ${MARKDOWN_SHEET}
       applyRefresh,
       append
     } = useSnapshotLoader(client2, workspaceRoot);
-    const autoRefreshed = React13.useRef(false);
-    const run = React13.useCallback(
+    const intervalMs = options.intervalMs ?? AUTO_REFRESH_INTERVAL_MS;
+    const focusMinMs = options.focusMinMs ?? FOCUS_REFRESH_MIN_MS;
+    const lastRequestAt = React14.useRef(0);
+    const busy = React14.useRef(true);
+    busy.current = phase === "loading" || phase === "refreshing" || appending;
+    const hasSnapshot = React14.useRef(false);
+    hasSnapshot.current = snapshot !== null;
+    const run = React14.useCallback(
       async (mode) => {
+        lastRequestAt.current = Date.now();
         const applied = await load(mode);
-        if (applied === null || applied.snapshot === null) return;
-        if (applied.settled) {
-          autoRefreshed.current = false;
+        if (mode !== "get" || applied === null || applied.snapshot === null || applied.settled) {
           return;
         }
-        if (autoRefreshed.current) return;
-        autoRefreshed.current = true;
-        const refreshed = await load("refresh");
-        if (refreshed !== null && refreshed.settled) autoRefreshed.current = false;
+        lastRequestAt.current = Date.now();
+        await load("refresh");
       },
       [load]
     );
-    React13.useEffect(() => {
-      autoRefreshed.current = false;
+    React14.useEffect(() => {
       void run("get");
     }, [run, reloadToken]);
-    const refresh = React13.useCallback(() => {
+    const autoRun = React14.useCallback(() => {
+      if (busy.current) return;
+      void run(hasSnapshot.current ? "refresh" : "get");
+    }, [run]);
+    React14.useEffect(() => {
+      if (workspaceRoot === void 0 || intervalMs <= 0) return void 0;
+      const timer = setInterval(() => {
+        if (document.visibilityState === "hidden") return;
+        autoRun();
+      }, intervalMs);
+      return () => {
+        clearInterval(timer);
+      };
+    }, [autoRun, intervalMs, workspaceRoot]);
+    React14.useEffect(() => {
+      if (workspaceRoot === void 0) return void 0;
+      const onReturn = () => {
+        if (document.visibilityState === "hidden") return;
+        if (Date.now() - lastRequestAt.current < focusMinMs) return;
+        autoRun();
+      };
+      document.addEventListener("visibilitychange", onReturn);
+      window.addEventListener("focus", onReturn);
+      return () => {
+        document.removeEventListener("visibilitychange", onReturn);
+        window.removeEventListener("focus", onReturn);
+      };
+    }, [autoRun, focusMinMs, workspaceRoot]);
+    const refresh = React14.useCallback(() => {
       if (phase === "loading" || phase === "refreshing") return;
       void run("refresh");
     }, [phase, run]);
-    const refreshFull = React13.useCallback(() => {
+    const refreshFull = React14.useCallback(() => {
       if (phase === "loading" || phase === "refreshing") return;
       void run("refresh-full");
     }, [phase, run]);
-    const loadMore = React13.useCallback(() => {
+    const loadMore = React14.useCallback(() => {
       if (phase === "loading" || phase === "refreshing" || appending) return;
       void append();
     }, [appending, append, phase]);
@@ -29826,18 +30000,18 @@ ${MARKDOWN_SHEET}
   }
   function useSnapshotLoader(client2, workspaceRoot) {
     const t = useMessages();
-    const [snapshot, setSnapshot] = React13.useState(null);
-    const [error, setError] = React13.useState(null);
-    const [refreshError, setRefreshError] = React13.useState(null);
-    const [phase, setPhase] = React13.useState("loading");
-    const [appending, setAppending] = React13.useState(false);
-    const sequence = React13.useRef(0);
-    const current = React13.useRef(null);
-    const hasData = React13.useRef(false);
-    const workspace = React13.useRef(workspaceRoot);
+    const [snapshot, setSnapshot] = React14.useState(null);
+    const [error, setError] = React14.useState(null);
+    const [refreshError, setRefreshError] = React14.useState(null);
+    const [phase, setPhase] = React14.useState("loading");
+    const [appending, setAppending] = React14.useState(false);
+    const sequence = React14.useRef(0);
+    const current = React14.useRef(null);
+    const hasData = React14.useRef(false);
+    const workspace = React14.useRef(workspaceRoot);
     workspace.current = workspaceRoot;
-    const appendingRef = React13.useRef(false);
-    const commit = React13.useCallback((next) => {
+    const appendingRef = React14.useRef(false);
+    const commit = React14.useCallback((next) => {
       current.current = next;
       hasData.current = true;
       setSnapshot(next);
@@ -29845,7 +30019,7 @@ ${MARKDOWN_SHEET}
       setRefreshError(null);
       setPhase("ready");
     }, []);
-    const load = React13.useCallback(
+    const load = React14.useCallback(
       async (mode) => {
         const request = sequence.current + 1;
         sequence.current = request;
@@ -29903,14 +30077,14 @@ ${MARKDOWN_SHEET}
       },
       [client2, commit, workspaceRoot, t]
     );
-    React13.useEffect(() => {
+    React14.useEffect(() => {
       current.current = null;
       hasData.current = false;
       setSnapshot(null);
       setError(null);
       setRefreshError(null);
     }, [workspaceRoot]);
-    const append = React13.useCallback(async () => {
+    const append = React14.useCallback(async () => {
       if (appendingRef.current || workspaceRoot === void 0) return;
       const started = sequence.current;
       appendingRef.current = true;
@@ -29928,7 +30102,7 @@ ${MARKDOWN_SHEET}
         setAppending(false);
       }
     }, [client2, commit, workspaceRoot]);
-    const applyBlockersLater = React13.useCallback(
+    const applyBlockersLater = React14.useCallback(
       (applied, started = sequence.current) => {
         if (applied.blockersFinalized || workspaceRoot === void 0) return;
         void client2.resolveBlockers(workspaceRoot).then((finalized) => {
@@ -29939,7 +30113,7 @@ ${MARKDOWN_SHEET}
       },
       [client2, commit, workspaceRoot]
     );
-    const applyRefresh = React13.useCallback(
+    const applyRefresh = React14.useCallback(
       (result) => {
         if (workspaceRoot === void 0 || workspace.current !== workspaceRoot) return;
         const started = sequence.current;
@@ -29963,7 +30137,7 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/overview-view.tsx
-  var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
   var REFRESH_ERROR_STYLE = {
     color: COLORS.error,
     fontSize: 11,
@@ -29978,13 +30152,13 @@ ${MARKDOWN_SHEET}
     const { snapshot, error, refreshError, phase, refresh } = props.request;
     const nowValue = useNow(clock);
     const busy = phase === "loading" || phase === "refreshing";
-    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
       "div",
       {
         "data-testid": "overview-view",
         style: { display: "flex", flexDirection: "column", flex: 1, minHeight: 0 },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
             Identity,
             {
               snapshot,
@@ -29995,13 +30169,13 @@ ${MARKDOWN_SHEET}
               onRefresh: refresh
             }
           ),
-          error === null ? null : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(ErrorBanner, { error, onOpenEnvCheck: props.onOpenEnvCheck }),
-          snapshot === null ? phase === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { "data-testid": "overview-loading", style: EMPTY_STYLE, children: t("common.loadingTickets") }) : null : /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: OVERVIEW_STYLE, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(PressureSection, { snapshot }),
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(FlowSection, { snapshot }),
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(AgeSection, { snapshot }),
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(CompositionSection, { snapshot }),
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(AttentionSection, { items: snapshot.metrics.attention, onOpenTicket: props.onOpenTicket })
+          error === null ? null : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(ErrorBanner, { error, onOpenEnvCheck: props.onOpenEnvCheck }),
+          snapshot === null ? phase === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { "data-testid": "overview-loading", style: EMPTY_STYLE, children: t("common.loadingTickets") }) : null : /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: OVERVIEW_STYLE, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(PressureSection, { snapshot }),
+            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(FlowSection, { snapshot }),
+            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(AgeSection, { snapshot }),
+            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(CompositionSection, { snapshot }),
+            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(AttentionSection, { items: snapshot.metrics.attention, onOpenTicket: props.onOpenTicket })
           ] })
         ]
       }
@@ -30009,7 +30183,7 @@ ${MARKDOWN_SHEET}
   }
   function SourceBadge(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
       "span",
       {
         "data-testid": "overview-source",
@@ -30025,11 +30199,11 @@ ${MARKDOWN_SHEET}
     const t = useMessages();
     const snapshot = props.snapshot;
     const host = snapshot?.repositoryHost ?? null;
-    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("header", { style: IDENTITY_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: IDENTITY_ROW_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: REPO_CHIP_STYLE, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(FolderIcon, {}),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("header", { style: IDENTITY_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: IDENTITY_ROW_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: REPO_CHIP_STYLE, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(FolderIcon, {}),
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
             "span",
             {
               "data-testid": "overview-repo",
@@ -30039,13 +30213,13 @@ ${MARKDOWN_SHEET}
             }
           )
         ] }),
-        snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { "data-testid": "overview-backend", style: BACKEND_BADGE_STYLE, children: backendLabel(snapshot.backend, t) }),
-        snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(SourceBadge, { source: snapshot.source }),
-        host === null ? null : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { "data-testid": "overview-host", title: host, style: REPO_HOST_STYLE, children: host })
+        snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { "data-testid": "overview-backend", style: BACKEND_BADGE_STYLE, children: backendLabel(snapshot.backend, t) }),
+        snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(SourceBadge, { source: snapshot.source }),
+        host === null ? null : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { "data-testid": "overview-host", title: host, style: REPO_HOST_STYLE, children: host })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: IDENTITY_META_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { "data-testid": "overview-age", style: { ...AGE_STYLE, fontSize: "inherit" }, children: snapshot === null ? t("common.noSnapshot") : formatAge(snapshot.fetchedAt, props.now, t) }),
-        props.notice === null ? null : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: IDENTITY_META_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { "data-testid": "overview-age", style: { ...AGE_STYLE, fontSize: "inherit" }, children: snapshot === null ? t("common.noSnapshot") : formatAge(snapshot.fetchedAt, props.now, t) }),
+        props.notice === null ? null : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
           "span",
           {
             "data-testid": "overview-refresh-error",
@@ -30054,9 +30228,9 @@ ${MARKDOWN_SHEET}
             children: props.notice
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { "aria-hidden": "true", style: IDENTITY_SEPARATOR_STYLE, children: "\xB7" }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { "data-testid": "overview-loaded", children: snapshot === null ? props.loading ? t("common.loadingTickets") : t("overview.noTicketsLoaded") : t("overview.loadedTickets", { loaded: snapshot.loaded, total: snapshot.total }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { "aria-hidden": "true", style: IDENTITY_SEPARATOR_STYLE, children: "\xB7" }),
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { "data-testid": "overview-loaded", children: snapshot === null ? props.loading ? t("common.loadingTickets") : t("overview.noTicketsLoaded") : t("overview.loadedTickets", { loaded: snapshot.loaded, total: snapshot.total }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
           "button",
           {
             type: "button",
@@ -30071,7 +30245,7 @@ ${MARKDOWN_SHEET}
               opacity: props.busy ? 0.6 : 1
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(RefreshIcon, {}),
+              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(RefreshIcon, {}),
               props.busy ? t("common.refreshBusy") : t("common.refresh")
             ]
           }
@@ -30086,11 +30260,11 @@ ${MARKDOWN_SHEET}
     const truncated = metrics.coverage.truncated;
     const sample = sampleNote(props.snapshot, t);
     const count = (value) => t("overview.count", { n: value });
-    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("section", { "data-testid": "flow", style: SECTION_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: SECTION_TITLE_STYLE, children: t("overview.section.flow") }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: CHART_CARD_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: FLOW_STATS_STYLE, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("section", { "data-testid": "flow", style: SECTION_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: SECTION_TITLE_STYLE, children: t("overview.section.flow") }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: CHART_CARD_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: FLOW_STATS_STYLE, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
             MetricCard,
             {
               testId: "metric-opened",
@@ -30099,7 +30273,7 @@ ${MARKDOWN_SHEET}
               note: joinNotes(gapNote(metrics.openedLast30Days, t), sample)
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
             MetricCard,
             {
               testId: "metric-closed",
@@ -30112,7 +30286,7 @@ ${MARKDOWN_SHEET}
               )
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
             MetricCard,
             {
               testId: "metric-net-flow",
@@ -30130,7 +30304,7 @@ ${MARKDOWN_SHEET}
             }
           )
         ] }),
-        hasTicketTimes(props.snapshot) ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+        hasTicketTimes(props.snapshot) ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
           FlowChart,
           {
             buckets: weeklyFlow(tickets, fetchedAt, {
@@ -30149,27 +30323,27 @@ ${MARKDOWN_SHEET}
     const t = useMessages();
     const { tickets, fetchedAt } = props.snapshot;
     if (!hasTicketTimes(props.snapshot)) return null;
-    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("section", { "data-testid": "age", style: SECTION_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: SECTION_TITLE_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { children: t("overview.section.age") }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: CHART_CAPTION_STYLE, children: t("overview.ageCaption") })
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("section", { "data-testid": "age", style: SECTION_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: SECTION_TITLE_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { children: t("overview.section.age") }),
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: CHART_CAPTION_STYLE, children: t("overview.ageCaption") })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: CHART_CARD_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(AgeHistogram, { buckets: updateAgeBuckets(tickets, fetchedAt, t) }) })
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: CHART_CARD_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(AgeHistogram, { buckets: updateAgeBuckets(tickets, fetchedAt, t) }) })
     ] });
   }
   function MetricCard(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { "data-testid": props.testId, style: FLAT_METRIC_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: METRIC_LABEL_STYLE, children: props.label }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: METRIC_VALUE_STYLE, children: props.value }),
-      props.note === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: METRIC_NOTE_STYLE, title: props.note, children: props.note })
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { "data-testid": props.testId, style: FLAT_METRIC_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: METRIC_LABEL_STYLE, children: props.label }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: METRIC_VALUE_STYLE, children: props.value }),
+      props.note === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: METRIC_NOTE_STYLE, title: props.note, children: props.note })
     ] });
   }
   function CompositionSection(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("section", { "data-testid": "composition", style: SECTION_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: SECTION_TITLE_STYLE, children: t("overview.section.composition") }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { ...CHART_CARD_STYLE, gap: 14 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("section", { "data-testid": "composition", style: SECTION_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: SECTION_TITLE_STYLE, children: t("overview.section.composition") }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: { ...CHART_CARD_STYLE, gap: 14 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
           SegmentedBar,
           {
             testId: "status-distribution",
@@ -30177,7 +30351,7 @@ ${MARKDOWN_SHEET}
             segments: statusSegments(props.snapshot.tickets, t)
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
           SegmentedBar,
           {
             testId: "category-distribution",
@@ -30190,12 +30364,12 @@ ${MARKDOWN_SHEET}
   }
   function AttentionSection(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("section", { "data-testid": "attention", style: SECTION_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: SECTION_TITLE_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { children: t("overview.section.attention") }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: CARD_BASIS_STYLE, children: t("overview.attentionCount", { n: props.items.length }) })
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("section", { "data-testid": "attention", style: SECTION_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: SECTION_TITLE_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { children: t("overview.section.attention") }),
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: CARD_BASIS_STYLE, children: t("overview.attentionCount", { n: props.items.length }) })
       ] }),
-      props.items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { "data-testid": "attention-empty", style: NOTE_STYLE, children: t("overview.attentionEmpty") }) : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: ATTENTION_LIST_STYLE, children: props.items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+      props.items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { "data-testid": "attention-empty", style: NOTE_STYLE, children: t("overview.attentionEmpty") }) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: ATTENTION_LIST_STYLE, children: props.items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
         "button",
         {
           type: "button",
@@ -30208,9 +30382,9 @@ ${MARKDOWN_SHEET}
           },
           style: ATTENTION_ITEM_STYLE,
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: ATTENTION_REF_STYLE, title: item.ref, children: displayRef(item) }),
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: ATTENTION_TITLE_STYLE, title: item.title, children: item.title }),
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: ATTENTION_REASON_STYLE, children: attentionText(item, t) })
+            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: ATTENTION_REF_STYLE, title: item.ref, children: displayRef(item) }),
+            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: ATTENTION_TITLE_STYLE, title: item.title, children: item.title }),
+            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: ATTENTION_REASON_STYLE, children: attentionText(item, t) })
           ]
         },
         item.ref
@@ -30224,7 +30398,7 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/ticket-detail-view.tsx
-  var React26 = __toESM(require_react(), 1);
+  var React27 = __toESM(require_react(), 1);
 
   // src/panel/author-text.ts
   function authorName(user) {
@@ -30235,7 +30409,7 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/skill-action-badge.tsx
-  var React15 = __toESM(require_react(), 1);
+  var React16 = __toESM(require_react(), 1);
 
   // src/panel/skill-action-text.ts
   var ACTION_HINTS = {
@@ -30274,14 +30448,14 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/skill-action-badge.tsx
-  var import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
   function SkillActionBadge(props) {
     const t = useMessages();
     const { ticket } = props;
     const label = actionBadgeLabel(ticket, t);
     const hint = actionHint(ticket, t);
     if (ticket.skillAction === "none") {
-      return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
         "span",
         {
           "data-testid": "action-reason",
@@ -30294,7 +30468,7 @@ ${MARKDOWN_SHEET}
       );
     }
     const buttonHint = props.copied ? t("skill.badge.copiedHint", { hint }) : hint;
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
       "button",
       {
         type: "button",
@@ -30314,7 +30488,7 @@ ${MARKDOWN_SHEET}
           ...props.style
         },
         children: [
-          props.copied ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(CheckIcon, {}) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(CopyIcon, {}),
+          props.copied ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CheckIcon, {}) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(CopyIcon, {}),
           label
         ]
       }
@@ -30322,7 +30496,7 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/ticket-blockers.tsx
-  var React16 = __toESM(require_react(), 1);
+  var React17 = __toESM(require_react(), 1);
 
   // src/panel/ticket-detail-styles.ts
   var CONTROL_LINE_HEIGHT = "18px";
@@ -30376,6 +30550,7 @@ ${MARKDOWN_SHEET}
     textUnderlineOffset: 2
   };
   var DETAIL_SCROLL_STYLE = {
+    position: "relative",
     display: "flex",
     flexDirection: "column",
     gap: 14,
@@ -30616,7 +30791,7 @@ ${MARKDOWN_SHEET}
   };
 
   // src/panel/ticket-blockers.tsx
-  var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
   var BLOCKERS_PANEL_ID = "detail-blockers";
   function blockerItems(ticket, tickets) {
     const refs = ticket?.blockedBy;
@@ -30637,7 +30812,7 @@ ${MARKDOWN_SHEET}
     const t = useMessages();
     const action = t(props.expanded ? "detail.blockers.collapse" : "detail.blockers.expand");
     const hint = t("detail.blockers.hint", { hint: props.hint, action });
-    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
       "button",
       {
         type: "button",
@@ -30651,7 +30826,7 @@ ${MARKDOWN_SHEET}
         style: DETAIL_BLOCKERS_TOGGLE_STYLE,
         children: [
           props.label,
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
             "span",
             {
               style: {
@@ -30659,7 +30834,7 @@ ${MARKDOWN_SHEET}
                 transform: props.expanded ? "rotate(90deg)" : "rotate(-90deg)"
               },
               "aria-hidden": "true",
-              children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(ChevronLeftIcon, {})
+              children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(ChevronLeftIcon, {})
             }
           )
         ]
@@ -30668,7 +30843,7 @@ ${MARKDOWN_SHEET}
   }
   function BlockersSection(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
       "section",
       {
         id: BLOCKERS_PANEL_ID,
@@ -30676,8 +30851,8 @@ ${MARKDOWN_SHEET}
         "aria-label": t("detail.blockers.title"),
         style: DETAIL_BLOCKERS_SECTION_STYLE,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h3", { style: DETAIL_BLOCKERS_TITLE_STYLE, children: t("detail.blockers.title") }),
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: DETAIL_BLOCKERS_LIST_STYLE, children: props.items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(BlockerRow, { item, onOpen: props.onOpen }, item.ref)) })
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h3", { style: DETAIL_BLOCKERS_TITLE_STYLE, children: t("detail.blockers.title") }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: DETAIL_BLOCKERS_LIST_STYLE, children: props.items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(BlockerRow, { item, onOpen: props.onOpen }, item.ref)) })
         ]
       }
     );
@@ -30686,7 +30861,7 @@ ${MARKDOWN_SHEET}
     const t = useMessages();
     const row = props.item.ticket;
     const title = row === null ? t("detail.blockers.unloadedTitle") : t("detail.blockers.openTitle", { ref: props.item.ref, title: row.title });
-    return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
       "button",
       {
         type: "button",
@@ -30699,10 +30874,10 @@ ${MARKDOWN_SHEET}
         },
         style: DETAIL_BLOCKER_ROW_STYLE,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { "data-testid": "blocker-ref", style: DETAIL_BLOCKER_REF_STYLE, children: props.item.ref }),
-          row === null ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { "data-testid": "blocker-unloaded", style: DETAIL_BLOCKER_UNLOADED_STYLE, children: t("detail.blockers.unloaded") }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_jsx_runtime11.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { "data-testid": "blocker-title", style: DETAIL_BLOCKER_TITLE_STYLE, children: row.title }),
-            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { "data-testid": "blocker-ref", style: DETAIL_BLOCKER_REF_STYLE, children: props.item.ref }),
+          row === null ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { "data-testid": "blocker-unloaded", style: DETAIL_BLOCKER_UNLOADED_STYLE, children: t("detail.blockers.unloaded") }) : /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { "data-testid": "blocker-title", style: DETAIL_BLOCKER_TITLE_STYLE, children: row.title }),
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
               "span",
               {
                 "data-testid": "blocker-state",
@@ -30720,7 +30895,7 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/ticket-delete.tsx
-  var React17 = __toESM(require_react(), 1);
+  var React18 = __toESM(require_react(), 1);
 
   // src/panel/ticket-timeline-styles.ts
   var CARD_HEADER_BG = "rgba(128, 128, 128, 0.07)";
@@ -30873,7 +31048,7 @@ ${MARKDOWN_SHEET}
     flex: "none"
   };
   var MENU_TRIGGER_STYLE = HEADER_ICON_BUTTON_STYLE;
-  var MENU_STYLE = {
+  var MENU_STYLE2 = {
     position: "absolute",
     top: "calc(100% + 4px)",
     right: 0,
@@ -30925,13 +31100,13 @@ ${MARKDOWN_SHEET}
   };
 
   // src/panel/ticket-delete.tsx
-  var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
   function MoreMenu(props) {
     const t = useMessages();
-    const [open, setOpen] = React17.useState(false);
-    const wrapper = React17.useRef(null);
-    const menuId = React17.useId();
-    React17.useEffect(() => {
+    const [open, setOpen] = React18.useState(false);
+    const wrapper = React18.useRef(null);
+    const menuId = React18.useId();
+    React18.useEffect(() => {
       if (!open) return;
       const onPointer = (event) => {
         if (wrapper.current?.contains(event.target) !== true) setOpen(false);
@@ -30941,7 +31116,7 @@ ${MARKDOWN_SHEET}
         document.removeEventListener("mousedown", onPointer);
       };
     }, [open]);
-    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
       "div",
       {
         ref: wrapper,
@@ -30953,7 +31128,7 @@ ${MARKDOWN_SHEET}
           }
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
             "button",
             {
               type: "button",
@@ -30968,10 +31143,10 @@ ${MARKDOWN_SHEET}
                 setOpen((value) => !value);
               },
               style: MENU_TRIGGER_STYLE,
-              children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(MoreIcon, {})
+              children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(MoreIcon, {})
             }
           ),
-          open ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { id: menuId, role: "menu", "aria-label": t("detail.more"), style: MENU_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+          open ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { id: menuId, role: "menu", "aria-label": t("detail.more"), style: MENU_STYLE2, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
             "button",
             {
               type: "button",
@@ -30985,7 +31160,7 @@ ${MARKDOWN_SHEET}
               },
               style: MENU_ITEM_DANGER_STYLE,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(TrashIcon, {}),
+                /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(TrashIcon, {}),
                 t("detail.delete.menu")
               ]
             }
@@ -30996,11 +31171,11 @@ ${MARKDOWN_SHEET}
   }
   function DeleteConfirm(props) {
     const t = useMessages();
-    const [typed, setTyped] = React17.useState("");
-    const titleId = React17.useId();
-    const inputId = React17.useId();
+    const [typed, setTyped] = React18.useState("");
+    const titleId = React18.useId();
+    const inputId = React18.useId();
     const confirmed = typed.trim() === TICKET_DELETE_CONFIRMATION;
-    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
       "section",
       {
         role: "alertdialog",
@@ -31014,14 +31189,14 @@ ${MARKDOWN_SHEET}
         },
         style: DELETE_PANEL_STYLE,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h3", { id: titleId, style: DELETE_PANEL_TITLE_STYLE, children: t("detail.delete.title", { ref: props.refText }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { style: DELETE_PANEL_TEXT_STYLE, children: t("detail.delete.body", { title: props.title, backend: props.backendLabel }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("label", { htmlFor: inputId, style: DELETE_PANEL_TEXT_STYLE, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("h3", { id: titleId, style: DELETE_PANEL_TITLE_STYLE, children: t("detail.delete.title", { ref: props.refText }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { style: DELETE_PANEL_TEXT_STYLE, children: t("detail.delete.body", { title: props.title, backend: props.backendLabel }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("label", { htmlFor: inputId, style: DELETE_PANEL_TEXT_STYLE, children: [
             t("detail.delete.confirmPrefix"),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("code", { children: TICKET_DELETE_CONFIRMATION }),
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("code", { children: TICKET_DELETE_CONFIRMATION }),
             t("detail.delete.confirmSuffix")
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
             "input",
             {
               id: inputId,
@@ -31040,8 +31215,8 @@ ${MARKDOWN_SHEET}
               style: DETAIL_INPUT_STYLE
             }
           ),
-          props.error === null ? null : /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { role: "alert", "data-testid": "delete-error", style: DELETE_PANEL_TEXT_STYLE, children: errorText(props.error, t) }),
-          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+          props.error === null ? null : /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { role: "alert", "data-testid": "delete-error", style: DELETE_PANEL_TEXT_STYLE, children: errorText(props.error, t) }),
+          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
             DeleteActions,
             {
               confirmed,
@@ -31056,8 +31231,8 @@ ${MARKDOWN_SHEET}
   }
   function DeleteActions(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { style: DELETE_PANEL_ACTIONS_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: DELETE_PANEL_ACTIONS_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
         "button",
         {
           type: "button",
@@ -31069,7 +31244,7 @@ ${MARKDOWN_SHEET}
           children: t("common.cancel")
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
         "button",
         {
           type: "button",
@@ -31085,13 +31260,13 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/ticket-detail-fields.tsx
-  var React20 = __toESM(require_react(), 1);
+  var React21 = __toESM(require_react(), 1);
 
   // src/panel/ticket-combobox.tsx
-  var React19 = __toESM(require_react(), 1);
+  var React20 = __toESM(require_react(), 1);
 
   // src/panel/user-avatar.tsx
-  var React18 = __toESM(require_react(), 1);
+  var React19 = __toESM(require_react(), 1);
 
   // src/panel/ticket-row-styles.ts
   var CARD_META_STYLE = {
@@ -31198,7 +31373,7 @@ ${MARKDOWN_SHEET}
     display: "inline-flex"
   };
   var ROW_DISPLAY_MENU_STYLE = {
-    ...MENU_STYLE,
+    ...MENU_STYLE2,
     display: "flex",
     flexDirection: "column",
     gap: 2,
@@ -31308,22 +31483,22 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/user-avatar.tsx
-  var import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
   var NO_AVATAR_SOURCE = () => Promise.resolve(null);
-  var AvatarSourceContext = React18.createContext(NO_AVATAR_SOURCE);
+  var AvatarSourceContext = React19.createContext(NO_AVATAR_SOURCE);
   function AvatarSourceProvider(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(AvatarSourceContext.Provider, { value: props.loader, children: props.children });
+    return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(AvatarSourceContext.Provider, { value: props.loader, children: props.children });
   }
   function UserAvatar(props) {
     const t = useMessages();
-    const [failedSrc, setFailedSrc] = React18.useState(null);
-    const loader = React18.useContext(AvatarSourceContext);
+    const [failedSrc, setFailedSrc] = React19.useState(null);
+    const loader = React19.useContext(AvatarSourceContext);
     const { user, size } = props;
     const label = avatarLabel(props.role, user, t);
     const hint = avatarHint(user, t);
     const src = usableAvatarUrl(user?.avatarUrl ?? null);
-    const [resolved, setResolved] = React18.useState(null);
-    React18.useEffect(() => {
+    const [resolved, setResolved] = React19.useState(null);
+    React19.useEffect(() => {
       if (src === null) {
         setResolved(null);
         return;
@@ -31345,7 +31520,7 @@ ${MARKDOWN_SHEET}
     const box = { ...AVATAR_STYLE, width: size, height: size };
     const testId = props.testId ?? "user-avatar";
     if (src !== null && dataUrl !== null && src !== failedSrc) {
-      return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         "img",
         {
           "data-testid": testId,
@@ -31360,7 +31535,7 @@ ${MARKDOWN_SHEET}
         }
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
       "span",
       {
         "data-testid": testId,
@@ -31380,14 +31555,14 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/ticket-combobox.tsx
-  var import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
   var MAX_VISIBLE = 8;
   function TokenEditor(props) {
     const t = useMessages();
     const { kind, busy } = props;
-    const listId = React19.useId();
-    const [draft, setDraft] = React19.useState("");
-    const [active, setActive] = React19.useState(0);
+    const listId = React20.useId();
+    const [draft, setDraft] = React20.useState("");
+    const [active, setActive] = React20.useState(0);
     const query = draft.trim();
     const matches = filterSuggestions(props.source, props.selected, query);
     const activeItem = matches[active];
@@ -31404,8 +31579,8 @@ ${MARKDOWN_SHEET}
       },
       onClose: props.onClose
     });
-    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(import_jsx_runtime14.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_jsx_runtime15.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
         "input",
         {
           "data-testid": `${kind}-input`,
@@ -31432,7 +31607,7 @@ ${MARKDOWN_SHEET}
           style: DETAIL_INLINE_INPUT_STYLE
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
         EditorButtons,
         {
           kind,
@@ -31445,7 +31620,7 @@ ${MARKDOWN_SHEET}
           onClose: props.onClose
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
         SuggestionList,
         {
           listId,
@@ -31479,8 +31654,8 @@ ${MARKDOWN_SHEET}
   function EditorButtons(props) {
     const t = useMessages();
     const assignSelf = props.onAssignSelf;
-    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(import_jsx_runtime14.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_jsx_runtime15.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
         "button",
         {
           type: "button",
@@ -31493,7 +31668,7 @@ ${MARKDOWN_SHEET}
           children: t("common.add")
         }
       ),
-      assignSelf === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+      assignSelf === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
         "button",
         {
           type: "button",
@@ -31514,7 +31689,7 @@ ${MARKDOWN_SHEET}
   function SuggestionList(props) {
     const t = useMessages();
     const note = listNote(props.source, props.matches.length, props.query, t);
-    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
       "ul",
       {
         id: props.listId,
@@ -31523,7 +31698,7 @@ ${MARKDOWN_SHEET}
         "aria-label": t("detail.combobox.suggestions"),
         style: COMBO_LIST_STYLE,
         children: [
-          props.matches.map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+          props.matches.map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
             "li",
             {
               id: optionId(props.listId, index),
@@ -31539,21 +31714,21 @@ ${MARKDOWN_SHEET}
               },
               style: index === props.active ? { ...COMBO_OPTION_STYLE, ...COMBO_OPTION_ACTIVE_STYLE } : COMBO_OPTION_STYLE,
               children: [
-                item.color === null ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                item.color === null ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
                   UserAvatar,
                   {
                     user: { login: item.value, displayName: item.detail, avatarUrl: null },
                     role: "candidate",
                     size: 18
                   }
-                ) : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: { ...COMBO_SWATCH_STYLE, background: item.color } }),
-                /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { "data-option-name": "", style: { minWidth: 0 }, children: item.value }),
-                item.detail === null ? null : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: COMBO_OPTION_DETAIL_STYLE, children: item.detail })
+                ) : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: { ...COMBO_SWATCH_STYLE, background: item.color } }),
+                /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { "data-option-name": "", style: { minWidth: 0 }, children: item.value }),
+                item.detail === null ? null : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: COMBO_OPTION_DETAIL_STYLE, children: item.detail })
               ]
             },
             item.value
           )),
-          note === null ? null : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("li", { role: "presentation", style: COMBO_EMPTY_STYLE, children: note })
+          note === null ? null : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("li", { role: "presentation", style: COMBO_EMPTY_STYLE, children: note })
         ]
       }
     );
@@ -31612,14 +31787,14 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/ticket-detail-fields.tsx
-  var import_jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
   function HeaderActions(props) {
     const t = useMessages();
     const { detail, busy } = props;
     const next = detail.state === "open" ? "closed" : "open";
     const copied = props.copy.status === "copied";
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_jsx_runtime15.Fragment, { children: [
-      detail.capabilities.state ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_jsx_runtime16.Fragment, { children: [
+      detail.capabilities.state ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
         "button",
         {
           type: "button",
@@ -31634,7 +31809,7 @@ ${MARKDOWN_SHEET}
         }
       ) : null,
       props.afterState,
-      detail.url === null ? null : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+      detail.url === null ? null : /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
         "button",
         {
           type: "button",
@@ -31644,17 +31819,17 @@ ${MARKDOWN_SHEET}
           title: copied ? t("common.copied") : t("detail.copyLinkWithUrl", { url: detail.url }),
           onClick: props.onCopy,
           style: copied ? { ...HEADER_ICON_BUTTON_STYLE, color: COLORS.success } : HEADER_ICON_BUTTON_STYLE,
-          children: copied ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(CheckIcon, {}) : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(LinkIcon, {})
+          children: copied ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(CheckIcon, {}) : /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(LinkIcon, {})
         }
       ),
-      copied ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { role: "status", "data-testid": "copy-notice", style: VISUALLY_HIDDEN_STYLE, children: t("detail.copiedLinkNotice") }) : null
+      copied ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { role: "status", "data-testid": "copy-notice", style: VISUALLY_HIDDEN_STYLE, children: t("detail.copiedLinkNotice") }) : null
     ] });
   }
   function CopyFailure(props) {
     const t = useMessages();
     const { copy, url } = props;
     if (copy.status !== "failed" || url === null) return null;
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
       "div",
       {
         role: "alert",
@@ -31662,7 +31837,7 @@ ${MARKDOWN_SHEET}
         style: { ...DETAIL_ERROR_STYLE, ...DETAIL_STACK_STYLE },
         children: [
           copy.message,
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
             "input",
             {
               "data-testid": props.inputTestId ?? "detail-link",
@@ -31683,15 +31858,15 @@ ${MARKDOWN_SHEET}
     const t = useMessages();
     const { detail, busy, options } = props;
     const unsupported = unsupportedActions(detail).map((id) => t(id));
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: DETAIL_STACK_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: DETAIL_STRIP_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: DETAIL_STACK_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: DETAIL_STRIP_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
           TokenGroup,
           {
             kind: "label",
             name: t("detail.labels"),
             addLabel: t("detail.addLabels"),
-            icon: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(TagIcon, {}),
+            icon: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(TagIcon, {}),
             values: detail.labels.map((name) => ({
               kind: "label",
               name,
@@ -31708,13 +31883,13 @@ ${MARKDOWN_SHEET}
             }
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
           TokenGroup,
           {
             kind: "assignee",
             name: t("detail.assignees"),
             addLabel: t("detail.addAssignees"),
-            icon: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(PersonIcon, {}),
+            icon: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(PersonIcon, {}),
             values: detail.assignees.map((user) => ({ kind: "assignee", user })),
             emptyText: t("detail.unassigned"),
             placeholder: t("detail.searchAssignees"),
@@ -31731,7 +31906,7 @@ ${MARKDOWN_SHEET}
           }
         )
       ] }),
-      unsupported.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { "data-testid": "detail-unsupported-note", style: DETAIL_HINT_STYLE, children: t("detail.unsupported", {
+      unsupported.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { "data-testid": "detail-unsupported-note", style: DETAIL_HINT_STYLE, children: t("detail.unsupported", {
         backend: backendLabel(detail.backend, t),
         actions: unsupported.join(t("common.listSeparator"))
       }) })
@@ -31742,9 +31917,9 @@ ${MARKDOWN_SHEET}
   }
   function TokenGroup(props) {
     const { kind, values, busy } = props;
-    const [editing, setEditing] = React20.useState(false);
+    const [editing, setEditing] = React21.useState(false);
     const keys = values.map(tokenKey);
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
       "div",
       {
         role: "group",
@@ -31752,9 +31927,9 @@ ${MARKDOWN_SHEET}
         "data-testid": kind === "label" ? "detail-labels" : "detail-assignees",
         style: editing ? { ...DETAIL_GROUP_STYLE, flexBasis: "100%" } : DETAIL_GROUP_STYLE,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { title: props.name, style: DETAIL_GROUP_ICON_STYLE, children: props.icon }),
-          values.length === 0 && !editing ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: DETAIL_TOKEN_EMPTY_STYLE, children: props.emptyText }) : null,
-          values.map((item) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { title: props.name, style: DETAIL_GROUP_ICON_STYLE, children: props.icon }),
+          values.length === 0 && !editing ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: DETAIL_TOKEN_EMPTY_STYLE, children: props.emptyText }) : null,
+          values.map((item) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
             Token,
             {
               kind,
@@ -31768,7 +31943,7 @@ ${MARKDOWN_SHEET}
             },
             tokenKey(item)
           )),
-          !props.editable ? null : editing ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+          !props.editable ? null : editing ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
             TokenEditor,
             {
               kind,
@@ -31785,7 +31960,7 @@ ${MARKDOWN_SHEET}
                 setEditing(false);
               }
             }
-          ) : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+          ) : /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
             "button",
             {
               type: "button",
@@ -31799,7 +31974,7 @@ ${MARKDOWN_SHEET}
                 setEditing(true);
               },
               style: DETAIL_ADD_STYLE,
-              children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(PlusIcon, {})
+              children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(PlusIcon, {})
             }
           )
         ]
@@ -31817,16 +31992,16 @@ ${MARKDOWN_SHEET}
       ...isAssignee ? { paddingLeft: 2 } : labelColorStyle(item.color),
       ...props.editable ? {} : { paddingRight: 9 }
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
       "span",
       {
         "data-testid": `${props.kind}-chip`,
         style,
         ...isAssignee ? { title: authorTitle(item.user, t) } : {},
         children: [
-          isAssignee ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(UserAvatar, { user: item.user, role: "assignee", size: 16 }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { "data-token-name": "", style: isAssignee ? { marginLeft: 3 } : void 0, children: text }),
-          props.editable ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+          isAssignee ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(UserAvatar, { user: item.user, role: "assignee", size: 16 }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { "data-token-name": "", style: isAssignee ? { marginLeft: 3 } : void 0, children: text }),
+          props.editable ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
             "button",
             {
               type: "button",
@@ -31837,7 +32012,7 @@ ${MARKDOWN_SHEET}
               disabled: props.busy,
               onClick: props.onRemove,
               style: { ...DETAIL_TOKEN_REMOVE_STYLE, color: "inherit", opacity: 0.7 },
-              children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(CloseIcon, {})
+              children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(CloseIcon, {})
             }
           ) : null
         ]
@@ -31854,7 +32029,7 @@ ${MARKDOWN_SHEET}
   }
 
   // src/panel/ticket-detail-hooks.ts
-  var React21 = __toESM(require_react(), 1);
+  var React22 = __toESM(require_react(), 1);
 
   // src/panel/detail-cache.ts
   var DETAIL_CACHE_PER_WORKSPACE = 100;
@@ -31891,12 +32066,12 @@ ${MARKDOWN_SHEET}
 
   // src/panel/ticket-detail-hooks.ts
   function useDetailRequest(client2, workspaceRoot, ref, number, currentUpdatedAt) {
-    const [detail, setDetail] = React21.useState(null);
-    const [error, setError] = React21.useState(null);
-    const [phase, setPhase] = React21.useState("loading");
-    const [attempt, setAttempt] = React21.useState(0);
-    const readId = React21.useRef(0);
-    React21.useEffect(() => {
+    const [detail, setDetail] = React22.useState(null);
+    const [error, setError] = React22.useState(null);
+    const [phase, setPhase] = React22.useState("loading");
+    const [attempt, setAttempt] = React22.useState(0);
+    const readId = React22.useRef(0);
+    React22.useEffect(() => {
       const current = readId.current + 1;
       readId.current = current;
       setError(null);
@@ -31950,7 +32125,6 @@ ${MARKDOWN_SHEET}
   function refreshOptionsOf(baseline) {
     if (baseline === null) return void 0;
     const options = {};
-    if (baseline.ifRevision !== void 0) options.ifRevision = baseline.ifRevision;
     if (baseline.storeRevision !== void 0) options.storeRevision = baseline.storeRevision;
     return Object.keys(options).length === 0 ? void 0 : options;
   }
@@ -31971,22 +32145,22 @@ ${MARKDOWN_SHEET}
     return Promise.all([detail, snapshot]).then(() => void 0);
   }
   function useDetailRefresh(client2, target, onDetail, onSnapshot, baseline) {
-    const [refreshing, setRefreshing] = React21.useState(false);
-    const [error, setError] = React21.useState(null);
-    const running = React21.useRef(false);
-    const mounted = React21.useRef(true);
+    const [refreshing, setRefreshing] = React22.useState(false);
+    const [error, setError] = React22.useState(null);
+    const running = React22.useRef(false);
+    const mounted = React22.useRef(true);
     const key = `${target.workspaceRoot}
 ${target.ref}
 ${String(target.number)}`;
-    const latest = React21.useRef(key);
+    const latest = React22.useRef(key);
     latest.current = key;
-    React21.useEffect(() => {
+    React22.useEffect(() => {
       mounted.current = true;
       return () => {
         mounted.current = false;
       };
     }, []);
-    React21.useEffect(() => {
+    React22.useEffect(() => {
       setError(null);
     }, [key]);
     const refresh = () => {
@@ -32016,9 +32190,9 @@ ${String(target.number)}`;
     return { refreshing, error, refresh };
   }
   function useTicketMutation(client2, options) {
-    const [busy, setBusy] = React21.useState(false);
-    const [error, setError] = React21.useState(null);
-    const running = React21.useRef(false);
+    const [busy, setBusy] = React22.useState(false);
+    const [error, setError] = React22.useState(null);
+    const running = React22.useRef(false);
     const apply = (patch) => {
       if (running.current) return;
       running.current = true;
@@ -32055,9 +32229,9 @@ ${String(target.number)}`;
     return { busy, error, apply };
   }
   function useEscapeKey(onBack) {
-    const handler = React21.useRef(onBack);
+    const handler = React22.useRef(onBack);
     handler.current = onBack;
-    React21.useEffect(() => {
+    React22.useEffect(() => {
       const listener = (event) => {
         if (event.key === "Escape") handler.current();
       };
@@ -32069,16 +32243,16 @@ ${String(target.number)}`;
   }
   function useTicketOptions(client2, workspaceRoot, eager) {
     const t = useMessages();
-    const [load, setLoad] = React21.useState({ status: "idle" });
-    const started = React21.useRef(false);
-    const mounted = React21.useRef(true);
-    React21.useEffect(() => {
+    const [load, setLoad] = React22.useState({ status: "idle" });
+    const started = React22.useRef(false);
+    const mounted = React22.useRef(true);
+    React22.useEffect(() => {
       mounted.current = true;
       return () => {
         mounted.current = false;
       };
     }, []);
-    const request = React21.useCallback(() => {
+    const request = React22.useCallback(() => {
       if (started.current) return;
       started.current = true;
       setLoad({ status: "loading" });
@@ -32089,10 +32263,10 @@ ${String(target.number)}`;
         );
       });
     }, [client2, workspaceRoot]);
-    React21.useEffect(() => {
+    React22.useEffect(() => {
       if (eager) request();
     }, [eager, request]);
-    return React21.useMemo(() => optionsState(load, request, t), [load, request, t]);
+    return React22.useMemo(() => optionsState(load, request, t), [load, request, t]);
   }
   function optionsState(load, request, t) {
     if (load.status !== "ready") {
@@ -32124,9 +32298,9 @@ ${String(target.number)}`;
     };
   }
   function useTicketDeletion(client2, target) {
-    const [confirming, setConfirming] = React21.useState(false);
-    const [deleting, setDeleting] = React21.useState(false);
-    const [error, setError] = React21.useState(null);
+    const [confirming, setConfirming] = React22.useState(false);
+    const [deleting, setDeleting] = React22.useState(false);
+    const [error, setError] = React22.useState(null);
     const confirm = () => {
       if (deleting) return;
       setDeleting(true);
@@ -32165,8 +32339,8 @@ ${String(target.number)}`;
   var COPIED_RESET_MS = 2e3;
   function useCopyLink(url) {
     const t = useMessages();
-    const [copy, setCopy] = React21.useState({ status: "idle" });
-    React21.useEffect(() => {
+    const [copy, setCopy] = React22.useState({ status: "idle" });
+    React22.useEffect(() => {
       if (copy.status !== "copied") return;
       const timer = setTimeout(() => {
         setCopy({ status: "idle" });
@@ -32189,11 +32363,11 @@ ${String(target.number)}`;
   }
 
   // src/panel/ticket-timeline.tsx
-  var React23 = __toESM(require_react(), 1);
+  var React24 = __toESM(require_react(), 1);
 
   // src/panel/markdown-body.tsx
-  var React22 = __toESM(require_react(), 1);
-  var import_jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
+  var React23 = __toESM(require_react(), 1);
+  var import_jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
   function inlinePattern() {
     return /(!\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))*\))|(`[^`]+`)|(\*\*[^*]+\*\*)|(__[^_]+__)|(\*[^*\n]+\*)|(_[^_\n]+_)|(~~[^~]+~~)|(\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))*\))|(<https?:\/\/[^>\s]+>)/g;
   }
@@ -32201,11 +32375,11 @@ ${String(target.number)}`;
   var INLINE_IMAGE = /^data:image\/(?:png|jpeg|gif|webp|bmp);base64,[A-Za-z0-9+/]+={0,2}$/;
   function MarkdownBody(props) {
     const allowInlineImages = props.allowInlineImages === true;
-    const content = React22.useMemo(
+    const content = React23.useMemo(
       () => renderMarkdown(props.source, allowInlineImages),
       [props.source, allowInlineImages]
     );
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { "data-testid": props.testId, ...{ [MARKDOWN_ATTRIBUTE]: "" }, children: content });
+    return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { "data-testid": props.testId, ...{ [MARKDOWN_ATTRIBUTE]: "" }, children: content });
   }
   function renderMarkdown(source, allowInlineImages) {
     const lines = source.replace(/\r\n?/g, "\n").split("\n");
@@ -32228,7 +32402,7 @@ ${String(target.number)}`;
         }
         index += 1;
         blocks.push(
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("pre", { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("code", { "data-language": language, children: body.join("\n") }) }, `code-${String(index)}`)
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("pre", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("code", { "data-language": language, children: body.join("\n") }) }, `code-${String(index)}`)
         );
         continue;
       }
@@ -32237,7 +32411,7 @@ ${String(target.number)}`;
         const level = (heading[1] ?? "#").length;
         const text = heading[2] ?? "";
         blocks.push(
-          React22.createElement(
+          React23.createElement(
             `h${String(level)}`,
             { key: `h-${String(index)}` },
             renderInline(text, allowInlineImages)
@@ -32247,7 +32421,7 @@ ${String(target.number)}`;
         continue;
       }
       if (/^\s*([-*_])\s*\1\s*\1[\s-*_]*$/.test(line)) {
-        blocks.push(/* @__PURE__ */ (0, import_jsx_runtime16.jsx)("hr", {}, `hr-${String(index)}`));
+        blocks.push(/* @__PURE__ */ (0, import_jsx_runtime17.jsx)("hr", {}, `hr-${String(index)}`));
         index += 1;
         continue;
       }
@@ -32258,7 +32432,7 @@ ${String(target.number)}`;
           index += 1;
         }
         blocks.push(
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("blockquote", { children: renderMarkdown(quoted.join("\n"), allowInlineImages) }, `quote-${String(index)}`)
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("blockquote", { children: renderMarkdown(quoted.join("\n"), allowInlineImages) }, `quote-${String(index)}`)
         );
         continue;
       }
@@ -32285,7 +32459,7 @@ ${String(target.number)}`;
         index += 1;
       }
       blocks.push(
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { children: renderInline(paragraph.join("\n"), allowInlineImages) }, `p-${String(index)}`)
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("p", { children: renderInline(paragraph.join("\n"), allowInlineImages) }, `p-${String(index)}`)
       );
     }
     return blocks;
@@ -32302,9 +32476,9 @@ ${String(target.number)}`;
       index += 1;
     }
     return {
-      node: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("table", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("tr", { children: header.map((cell, cellIndex) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("th", { children: renderInline(cell, allowInlineImages) }, `th-${String(cellIndex)}`)) }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("tbody", { children: rows.map((row, rowIndex) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("tr", { children: row.map((cell, cellIndex) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("td", { children: renderInline(cell, allowInlineImages) }, `td-${String(cellIndex)}`)) }, `tr-${String(rowIndex)}`)) })
+      node: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("table", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("tr", { children: header.map((cell, cellIndex) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("th", { children: renderInline(cell, allowInlineImages) }, `th-${String(cellIndex)}`)) }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("tbody", { children: rows.map((row, rowIndex) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("tr", { children: row.map((cell, cellIndex) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("td", { children: renderInline(cell, allowInlineImages) }, `td-${String(cellIndex)}`)) }, `tr-${String(rowIndex)}`)) })
       ] }, `table-${String(start)}`),
       next: index
     };
@@ -32333,9 +32507,9 @@ ${String(target.number)}`;
       items.push(line.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, ""));
       index += 1;
     }
-    const children = items.map((item, itemIndex) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("li", { children: item.trim().length === 0 ? null : renderInline(item, allowInlineImages) }, `li-${String(itemIndex)}`));
+    const children = items.map((item, itemIndex) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("li", { children: item.trim().length === 0 ? null : renderInline(item, allowInlineImages) }, `li-${String(itemIndex)}`));
     return {
-      node: ordered ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("ol", { children }, `ol-${String(start)}`) : /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("ul", { children }, `ul-${String(start)}`),
+      node: ordered ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("ol", { children }, `ol-${String(start)}`) : /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("ul", { children }, `ul-${String(start)}`),
       next: index
     };
   }
@@ -32369,28 +32543,28 @@ ${String(target.number)}`;
       const alt = parsed[1] ?? "";
       const src = (parsed[2] ?? "").trim();
       if (allowInlineImages && INLINE_IMAGE.test(src)) {
-        return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("img", { src, alt }, `i-${String(key)}`);
+        return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("img", { src, alt }, `i-${String(key)}`);
       }
-      return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(React22.Fragment, { children: [
+      return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(React23.Fragment, { children: [
         "!",
-        isSafeUrl(src) ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ExternalLink, { href: src, children: alt }) : alt
+        isSafeUrl(src) ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ExternalLink, { href: src, children: alt }) : alt
       ] }, `i-${String(key)}`);
     }
     if (token.startsWith("`") && token.endsWith("`")) {
-      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("code", { children: token.slice(1, -1) }, `i-${String(key)}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("code", { children: token.slice(1, -1) }, `i-${String(key)}`);
     }
     if (token.startsWith("**") || token.startsWith("__")) {
-      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("strong", { children: renderInline(token.slice(2, -2), allowInlineImages) }, `i-${String(key)}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("strong", { children: renderInline(token.slice(2, -2), allowInlineImages) }, `i-${String(key)}`);
     }
     if (token.startsWith("~~")) {
-      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("del", { children: renderInline(token.slice(2, -2), allowInlineImages) }, `i-${String(key)}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("del", { children: renderInline(token.slice(2, -2), allowInlineImages) }, `i-${String(key)}`);
     }
     if (token.startsWith("*") || token.startsWith("_")) {
-      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("em", { children: renderInline(token.slice(1, -1), allowInlineImages) }, `i-${String(key)}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("em", { children: renderInline(token.slice(1, -1), allowInlineImages) }, `i-${String(key)}`);
     }
     if (token.startsWith("<")) {
       const url = token.slice(1, -1);
-      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ExternalLink, { href: url, children: url }, `i-${String(key)}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ExternalLink, { href: url, children: url }, `i-${String(key)}`);
     }
     if (token.startsWith("[")) {
       const parsed = /^\[([^\]]*)\]\((.*)\)$/.exec(token);
@@ -32398,7 +32572,7 @@ ${String(target.number)}`;
       const label = parsed[1] ?? "";
       const href = (parsed[2] ?? "").trim();
       if (!isSafeUrl(href)) return label;
-      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ExternalLink, { href, children: label }, `i-${String(key)}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ExternalLink, { href, children: label }, `i-${String(key)}`);
     }
     return token;
   }
@@ -32408,18 +32582,18 @@ ${String(target.number)}`;
     return SAFE_PROTOCOL.test(href);
   }
   function ExternalLink(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("a", { ...props, target: "_blank", rel: "noopener noreferrer" });
+    return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("a", { ...props, target: "_blank", rel: "noopener noreferrer" });
   }
 
   // src/panel/ticket-timeline.tsx
-  var import_jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
   function Timeline(props) {
     const t = useMessages();
     const { detail } = props;
     const count = detail.comments.length;
     const allowInlineImages = detail.backend === "gitlab";
-    return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: TIMELINE_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: TIMELINE_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         TimelineCard,
         {
           testId: "detail-body-section",
@@ -32430,7 +32604,7 @@ ${String(target.number)}`;
           time: detail.createdAt,
           isTicketAuthor: false,
           ariaLabel: t("detail.body"),
-          children: detail.body.trim().length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { "data-testid": "detail-no-body", style: TIMELINE_EMPTY_STYLE, children: t("detail.noBody") }) : /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+          children: detail.body.trim().length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { "data-testid": "detail-no-body", style: TIMELINE_EMPTY_STYLE, children: t("detail.noBody") }) : /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
             MarkdownBody,
             {
               testId: "detail-body",
@@ -32440,15 +32614,15 @@ ${String(target.number)}`;
           )
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         "section",
         {
           "data-testid": "detail-comments",
           "aria-label": t("detail.comments", { n: count }),
-          children: count === 0 ? /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_jsx_runtime17.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: TIMELINE_CONNECTOR_STYLE }),
-            /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { "data-testid": "detail-no-comments", style: TIMELINE_EMPTY_STYLE, children: t("detail.noComments") })
-          ] }) : detail.comments.map((comment, index) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+          children: count === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: TIMELINE_CONNECTOR_STYLE }),
+            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { "data-testid": "detail-no-comments", style: TIMELINE_EMPTY_STYLE, children: t("detail.noComments") })
+          ] }) : detail.comments.map((comment, index) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
             CommentCard,
             {
               comment,
@@ -32465,9 +32639,9 @@ ${String(target.number)}`;
     const t = useMessages();
     const { comment } = props;
     const isTicketAuthor2 = comment.author !== null && props.ticketAuthor !== null && comment.author.login === props.ticketAuthor.login;
-    return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_jsx_runtime17.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: TIMELINE_CONNECTOR_STYLE }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_jsx_runtime18.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: TIMELINE_CONNECTOR_STYLE }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         TimelineCard,
         {
           testId: "detail-comment",
@@ -32480,7 +32654,7 @@ ${String(target.number)}`;
           ariaLabel: t("detail.commentBy", {
             author: comment.author === null ? t("detail.unnamed") : authorName(comment.author)
           }),
-          children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+          children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
             MarkdownBody,
             {
               source: comment.body,
@@ -32494,11 +32668,11 @@ ${String(target.number)}`;
   function TimelineCard(props) {
     const t = useMessages();
     const header = props.isTicketAuthor ? { ...TIMELINE_CARD_HEADER_STYLE, ...TIMELINE_CARD_AUTHOR_HEADER_STYLE } : TIMELINE_CARD_HEADER_STYLE;
-    return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("article", { "data-testid": props.testId, "aria-label": props.ariaLabel, style: TIMELINE_CARD_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("header", { style: header, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(UserAvatar, { user: props.author, role: props.avatarRole, size: 20 }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { "data-testid": props.authorTestId, style: TIMELINE_TIME_STYLE, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("article", { "data-testid": props.testId, "aria-label": props.ariaLabel, style: TIMELINE_CARD_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("header", { style: header, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(UserAvatar, { user: props.author, role: props.avatarRole, size: 20 }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("span", { "data-testid": props.authorTestId, style: TIMELINE_TIME_STYLE, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
             "span",
             {
               style: TIMELINE_NAME_STYLE,
@@ -32508,9 +32682,9 @@ ${String(target.number)}`;
           ),
           props.time === null ? "" : ` ${props.verb} ${formatTime(props.time)}`
         ] }),
-        props.isTicketAuthor ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { "data-testid": "author-badge", style: TIMELINE_AUTHOR_BADGE_STYLE, children: t("detail.authorBadge") }) : null
+        props.isTicketAuthor ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { "data-testid": "author-badge", style: TIMELINE_AUTHOR_BADGE_STYLE, children: t("detail.authorBadge") }) : null
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: TIMELINE_CARD_BODY_STYLE, children: props.children })
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: TIMELINE_CARD_BODY_STYLE, children: props.children })
     ] });
   }
   function formatTime(value) {
@@ -32519,7 +32693,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/ticket-actions.ts
-  var React24 = __toESM(require_react(), 1);
+  var React25 = __toESM(require_react(), 1);
 
   // src/panel/prompts.ts
   function ticketPrompt(ticket, style) {
@@ -32552,9 +32726,9 @@ ${String(target.number)}`;
 
   // src/panel/ticket-actions.ts
   function useTicketActions(workspaceRoot, port, client2) {
-    const [copied, setCopied] = React24.useState(null);
+    const [copied, setCopied] = React25.useState(null);
     const { state, copy, dismiss } = usePromptCopy(port);
-    React24.useEffect(() => {
+    React25.useEffect(() => {
       setCopied(null);
     }, [workspaceRoot]);
     const copyPrompt = async (build) => {
@@ -32574,7 +32748,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/worktree-action.tsx
-  var React25 = __toESM(require_react(), 1);
+  var React26 = __toESM(require_react(), 1);
 
   // src/panel/worktree-text.ts
   function blockedWorktreeReason(openBlockers, t) {
@@ -32593,7 +32767,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/worktree-action.tsx
-  var import_jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
   function worktreeAvailability(ticket, backend, workspaceRoot, t) {
     if (workspaceRoot === void 0) {
       return { visible: false, enabled: false, reason: null };
@@ -32618,13 +32792,13 @@ ${String(target.number)}`;
     return { visible: true, enabled: true, reason: null };
   }
   function useWorktreeCreate(client2, workspaceRoot, ticket) {
-    const [busy, setBusy] = React25.useState(false);
-    const [error, setError] = React25.useState(null);
-    const [result, setResult] = React25.useState(null);
-    const running = React25.useRef(false);
-    const generation = React25.useRef(0);
+    const [busy, setBusy] = React26.useState(false);
+    const [error, setError] = React26.useState(null);
+    const [result, setResult] = React26.useState(null);
+    const running = React26.useRef(false);
+    const generation = React26.useRef(0);
     const ref = ticket?.ref;
-    React25.useEffect(() => {
+    React26.useEffect(() => {
       generation.current += 1;
       setBusy(false);
       setError(null);
@@ -32662,7 +32836,7 @@ ${String(target.number)}`;
     if (!props.availability.visible) return null;
     const label = worktreeButtonLabel(props.busy, props.compact === true, t);
     const hint = worktreeButtonHint(props.availability.reason, props.busy, t);
-    return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
       "button",
       {
         type: "button",
@@ -32680,7 +32854,7 @@ ${String(target.number)}`;
           ...props.availability.enabled ? void 0 : DISABLED_LOOK_STYLE
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(PlusIcon, {}),
+          /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PlusIcon, {}),
           label
         ]
       }
@@ -32690,15 +32864,15 @@ ${String(target.number)}`;
     const t = useMessages();
     if (props.error !== null) {
       const error = props.error;
-      return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
         "div",
         {
           role: "alert",
           "data-testid": "worktree-error",
           style: { ...ERROR_STYLE2, ...props.compact === true ? ERROR_COMPACT_STYLE : void 0 },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { children: errorText(error, t) }),
-            isEnvIssue(error.code) && props.onOpenEnvCheck !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { children: errorText(error, t) }),
+            isEnvIssue(error.code) && props.onOpenEnvCheck !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
               "button",
               {
                 type: "button",
@@ -32716,25 +32890,25 @@ ${String(target.number)}`;
       );
     }
     if (props.result === null) return null;
-    return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(WorktreeSuccess, { result: props.result, compact: props.compact === true });
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(WorktreeSuccess, { result: props.result, compact: props.compact === true });
   }
   function WorktreeSuccess(props) {
     const t = useMessages();
     const { result } = props;
     const copied = useCopyPath(result.path);
-    return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { "data-testid": "worktree-result", style: props.compact ? RESULT_COMPACT_STYLE : RESULT_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { "data-testid": "worktree-notice", style: NOTICE_STYLE2, children: worktreeResultNotice(result.created, t) }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: LINE_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: LABEL_STYLE, children: t("worktree.branch") }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("code", { "data-testid": "worktree-branch", style: CODE_STYLE, children: result.branch })
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { "data-testid": "worktree-result", style: props.compact ? RESULT_COMPACT_STYLE : RESULT_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { "data-testid": "worktree-notice", style: NOTICE_STYLE2, children: worktreeResultNotice(result.created, t) }),
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: LINE_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: LABEL_STYLE, children: t("worktree.branch") }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("code", { "data-testid": "worktree-branch", style: CODE_STYLE, children: result.branch })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: LINE_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: LABEL_STYLE, children: t("worktree.path") }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("code", { "data-testid": "worktree-path", style: CODE_STYLE, children: result.path })
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: LINE_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: LABEL_STYLE, children: t("worktree.path") }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("code", { "data-testid": "worktree-path", style: CODE_STYLE, children: result.path })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: LINE_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { style: LABEL_STYLE, children: t("worktree.reference") }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: LINE_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: LABEL_STYLE, children: t("worktree.reference") }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
           "a",
           {
             "data-testid": "worktree-reference",
@@ -32745,7 +32919,7 @@ ${String(target.number)}`;
             children: result.reference
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
           "button",
           {
             type: "button",
@@ -32760,13 +32934,13 @@ ${String(target.number)}`;
             children: copied.state === "copied" ? t("worktree.copiedPath") : t("worktree.copyPath")
           }
         ),
-        copied.state === "failed" ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { role: "status", "data-testid": "worktree-copy-error", style: COPY_ERROR_STYLE, children: t("worktree.copyFailed") }) : null
+        copied.state === "failed" ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { role: "status", "data-testid": "worktree-copy-error", style: COPY_ERROR_STYLE, children: t("worktree.copyFailed") }) : null
       ] })
     ] });
   }
   function useCopyPath(path) {
-    const [state, setState] = React25.useState("idle");
-    React25.useEffect(() => {
+    const [state, setState] = React26.useState("idle");
+    React26.useEffect(() => {
       if (state !== "copied") return void 0;
       const timer = window.setTimeout(() => {
         setState("idle");
@@ -32851,7 +33025,7 @@ ${String(target.number)}`;
   };
 
   // src/panel/ticket-detail-view.tsx
-  var import_jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
   function TicketDetailView(props) {
     const t = useMessages();
     const { client: client2, workspaceRoot } = props;
@@ -32866,8 +33040,8 @@ ${String(target.number)}`;
     const detail = request.detail;
     const blockers = blockerItems(ticket, props.snapshotTickets);
     const canExpandBlockers = ticket !== null && ticket.skillActionReason === "blocked" && blockers.length > 0;
-    const [expandedRef, setExpandedRef] = React26.useState(null);
-    React26.useEffect(() => {
+    const [expandedRef, setExpandedRef] = React27.useState(null);
+    React27.useEffect(() => {
       setExpandedRef(null);
     }, [ref]);
     const blockersExpanded = expandedRef === ref && canExpandBlockers;
@@ -32901,8 +33075,8 @@ ${String(target.number)}`;
     const link = useCopyLink(detail?.url ?? null);
     const busy = mutation.busy || deletion.deleting || refresh.refreshing;
     useEscapeKey(props.onBack);
-    return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { "data-testid": "ticket-detail", style: DETAIL_ROOT_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { "data-testid": "ticket-detail", style: DETAIL_ROOT_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(
         DetailHeader,
         {
           refText: ref,
@@ -32910,7 +33084,7 @@ ${String(target.number)}`;
           backRef: props.backRef,
           onBack: props.onBack,
           children: [
-            ticket === null ? null : canExpandBlockers ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+            ticket === null ? null : canExpandBlockers ? /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
               BlockersToggle,
               {
                 label: actionBadgeLabel(ticket, t),
@@ -32920,7 +33094,7 @@ ${String(target.number)}`;
                   setExpandedRef(blockersExpanded ? null : ref);
                 }
               }
-            ) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+            ) : /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
               SkillActionBadge,
               {
                 ticket,
@@ -32928,7 +33102,7 @@ ${String(target.number)}`;
                 onSkillAction: actions.onSkillAction
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
               WorktreeCreateButton,
               {
                 availability: worktreeState,
@@ -32936,7 +33110,7 @@ ${String(target.number)}`;
                 onClick: worktree.create
               }
             ),
-            detail === null ? null : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+            detail === null ? null : /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
               HeaderActions,
               {
                 detail,
@@ -32944,7 +33118,7 @@ ${String(target.number)}`;
                 onApply: mutation.apply,
                 copy: link.copy,
                 onCopy: link.onCopy,
-                afterState: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+                afterState: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
                   RefreshButton,
                   {
                     refreshing: refresh.refreshing,
@@ -32954,12 +33128,12 @@ ${String(target.number)}`;
                 )
               }
             ),
-            detail?.capabilities.delete === true ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(MoreMenu, { onDelete: deletion.open }) : null
+            detail?.capabilities.delete === true ? /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(MoreMenu, { onDelete: deletion.open }) : null
           ]
         }
       ),
-      refresh.error === null ? null : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { role: "alert", "data-testid": "detail-refresh-error", style: ERROR_STYLE, children: t("detail.refreshFailed", { detail: errorText(refresh.error, t) }) }),
-      detail !== null ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+      refresh.error === null ? null : /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { role: "alert", "data-testid": "detail-refresh-error", style: ERROR_STYLE, children: t("detail.refreshFailed", { detail: errorText(refresh.error, t) }) }),
+      detail !== null ? /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
         DetailContent,
         {
           detail,
@@ -32978,13 +33152,13 @@ ${String(target.number)}`;
           worktreeResult: worktree.result,
           onOpenEnvCheck: props.onOpenEnvCheck
         }
-      ) : request.phase === "error" ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(LoadError, { error: request.error, onRetry: request.reload }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { "data-testid": "detail-loading", style: EMPTY_STYLE, children: t("detail.loading") })
+      ) : request.phase === "error" ? /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(LoadError, { error: request.error, onRetry: request.reload }) : /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { "data-testid": "detail-loading", style: EMPTY_STYLE, children: t("detail.loading") })
     ] });
   }
   function RefreshButton(props) {
     const t = useMessages();
     const label = props.refreshing ? t("detail.refreshing") : t("detail.refresh");
-    return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
       "button",
       {
         type: "button",
@@ -32995,7 +33169,7 @@ ${String(target.number)}`;
         title: label,
         onClick: props.onRefresh,
         style: props.refreshing ? { ...HEADER_ICON_BUTTON_STYLE, opacity: 0.5 } : HEADER_ICON_BUTTON_STYLE,
-        children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(RefreshIcon, {})
+        children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(RefreshIcon, {})
       }
     );
   }
@@ -33005,8 +33179,8 @@ ${String(target.number)}`;
     const url = detail?.url ?? null;
     const backLabel = backRef === null ? t("detail.back") : t("detail.backTo", { ref: backRef });
     const backTitle = backRef === null ? t("detail.backHint") : t("detail.backToTitle", { ref: backRef });
-    return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("header", { style: DETAIL_HEADER_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("header", { style: DETAIL_HEADER_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(
         "button",
         {
           type: "button",
@@ -33016,12 +33190,12 @@ ${String(target.number)}`;
           onClick: props.onBack,
           style: DETAIL_BACK_STYLE,
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ChevronLeftIcon, {}),
-            /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: DETAIL_BACK_LABEL_STYLE, children: backLabel })
+            /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(ChevronLeftIcon, {}),
+            /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: DETAIL_BACK_LABEL_STYLE, children: backLabel })
           ]
         }
       ),
-      url === null ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { "data-testid": "detail-ref", title: props.refText, style: DETAIL_REF_STYLE, children: props.refText }) : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+      url === null ? /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { "data-testid": "detail-ref", title: props.refText, style: DETAIL_REF_STYLE, children: props.refText }) : /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
         "a",
         {
           "data-testid": "detail-ref",
@@ -33034,8 +33208,8 @@ ${String(target.number)}`;
           children: props.refText
         }
       ),
-      detail === null ? null : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { "data-testid": "detail-backend", style: BACKEND_BADGE_STYLE, children: backendLabel(detail.backend, t) }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: { flex: 1 } }),
+      detail === null ? null : /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { "data-testid": "detail-backend", style: BACKEND_BADGE_STYLE, children: backendLabel(detail.backend, t) }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: { flex: 1 } }),
       props.children
     ] });
   }
@@ -33043,9 +33217,9 @@ ${String(target.number)}`;
     const t = useMessages();
     const { detail, deletion } = props;
     const fieldProps = { detail, busy: props.busy, onApply: props.onApply };
-    return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { "data-testid": "detail-content", "aria-busy": props.busy, style: DETAIL_SCROLL_STYLE, children: [
-      props.blockersExpanded && props.blockers.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(BlockersSection, { items: props.blockers, onOpen: props.onOpenBlocker }) : null,
-      deletion.confirming ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { "data-testid": "detail-content", "aria-busy": props.busy, style: DETAIL_SCROLL_STYLE, children: [
+      props.blockersExpanded && props.blockers.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(BlockersSection, { items: props.blockers, onOpen: props.onOpenBlocker }) : null,
+      deletion.confirming ? /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
         DeleteConfirm,
         {
           refText: detail.ref,
@@ -33057,8 +33231,8 @@ ${String(target.number)}`;
           onConfirm: deletion.confirm
         }
       ) : null,
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CopyFailure, { copy: props.copy, url: detail.url }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(CopyFailure, { copy: props.copy, url: detail.url }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
         WorktreeOutcome,
         {
           error: props.worktreeError,
@@ -33066,45 +33240,45 @@ ${String(target.number)}`;
           onOpenEnvCheck: props.onOpenEnvCheck
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PromptCopyArea, { state: props.copyState, onDismiss: props.onDismissCopy }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(TitleBlock, { detail }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PropertyStrip, { ...fieldProps, options: props.options }),
-      props.mutationError === null ? null : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { role: "alert", "data-testid": "detail-error", style: DETAIL_ERROR_STYLE, children: errorText(props.mutationError, t) }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Timeline, { detail })
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(PromptCopyArea, { state: props.copyState, onDismiss: props.onDismissCopy }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(TitleBlock, { detail }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(PropertyStrip, { ...fieldProps, options: props.options }),
+      props.mutationError === null ? null : /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { role: "alert", "data-testid": "detail-error", style: DETAIL_ERROR_STYLE, children: errorText(props.mutationError, t) }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(Timeline, { detail })
     ] });
   }
   var NOWRAP_STYLE = { whiteSpace: "nowrap" };
   function TitleBlock(props) {
     const t = useMessages();
     const { detail } = props;
-    return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { style: DETAIL_STACK_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("h2", { "data-testid": "detail-title", title: detail.title, style: DETAIL_TITLE_STYLE, children: detail.title }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { "data-testid": "detail-meta", style: TITLE_META_ROW_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { "data-testid": "detail-state", style: STATE_PILL_STYLES[detail.state], children: [
-          /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: STATUS_DOT_STYLE, "aria-hidden": "true" }),
+    return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: DETAIL_STACK_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("h2", { "data-testid": "detail-title", title: detail.title, style: DETAIL_TITLE_STYLE, children: detail.title }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { "data-testid": "detail-meta", style: TITLE_META_ROW_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { "data-testid": "detail-state", style: STATE_PILL_STYLES[detail.state], children: [
+          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: STATUS_DOT_STYLE, "aria-hidden": "true" }),
           detail.state === "open" ? t("status.open") : t("status.closed")
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { style: NOWRAP_STYLE, children: [
-          detail.author === null ? null : /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { style: TITLE_META_NAME_STYLE, title: authorTitle(detail.author, t), children: [
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { style: NOWRAP_STYLE, children: [
+          detail.author === null ? null : /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { style: TITLE_META_NAME_STYLE, title: authorTitle(detail.author, t), children: [
             authorName(detail.author),
             " "
           ] }),
           t("detail.createdAt", { time: formatTime(detail.createdAt) }),
           " \xB7"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("span", { style: NOWRAP_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("span", { style: NOWRAP_STYLE, children: [
           t("detail.updatedAt", { time: formatTime(detail.updatedAt) }),
           " \xB7"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { style: NOWRAP_STYLE, children: t("detail.commentCount", { n: detail.comments.length }) })
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { style: NOWRAP_STYLE, children: t("detail.commentCount", { n: detail.comments.length }) })
       ] })
     ] });
   }
   function LoadError(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: DETAIL_SCROLL_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { role: "alert", "data-testid": "detail-load-error", style: ERROR_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { children: props.error === null ? t("detail.loadFailed") : errorText(props.error, t) }),
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: DETAIL_SCROLL_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { role: "alert", "data-testid": "detail-load-error", style: ERROR_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { children: props.error === null ? t("detail.loadFailed") : errorText(props.error, t) }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
         "button",
         {
           type: "button",
@@ -33119,7 +33293,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/tickets-view.tsx
-  var React32 = __toESM(require_react(), 1);
+  var React33 = __toESM(require_react(), 1);
 
   // src/panel/hierarchy-text.ts
   function hierarchyAvailability(backend, hierarchy, t) {
@@ -33142,15 +33316,15 @@ ${String(target.number)}`;
   }
 
   // src/panel/hierarchy-notice.tsx
-  var React27 = __toESM(require_react(), 1);
-  var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
+  var React28 = __toESM(require_react(), 1);
+  var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
   function HierarchyNotice(props) {
     const t = useMessages();
     if (props.preference.layout === "hierarchy" && props.layout !== "hierarchy") {
-      return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { "data-testid": "hierarchy-fallback", style: NOTICE_STYLE3, children: t("tickets.layout.fallback") });
+      return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { "data-testid": "hierarchy-fallback", style: NOTICE_STYLE3, children: t("tickets.layout.fallback") });
     }
     if (props.layout === "hierarchy" && props.snapshot.total > props.snapshot.loaded) {
-      return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { "data-testid": "hierarchy-coverage", style: NOTICE_STYLE3, children: t("tickets.layout.coverage", {
+      return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { "data-testid": "hierarchy-coverage", style: NOTICE_STYLE3, children: t("tickets.layout.coverage", {
         loaded: props.snapshot.loaded,
         total: props.snapshot.total
       }) });
@@ -33165,12 +33339,12 @@ ${String(target.number)}`;
   };
 
   // src/panel/layout-toggle.tsx
-  var React28 = __toESM(require_react(), 1);
-  var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
+  var React29 = __toESM(require_react(), 1);
+  var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
   function LayoutToggle(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { role: "group", "aria-label": t("tickets.layoutGroup"), style: GROUP_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { role: "group", "aria-label": t("tickets.layoutGroup"), style: GROUP_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
         LayoutButton,
         {
           testId: "layout-flat",
@@ -33179,10 +33353,10 @@ ${String(target.number)}`;
           onClick: () => {
             props.onLayout("flat");
           },
-          children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(FlatListIcon, {})
+          children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(FlatListIcon, {})
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
         LayoutButton,
         {
           testId: "layout-hierarchy",
@@ -33192,14 +33366,14 @@ ${String(target.number)}`;
           onClick: () => {
             props.onLayout("hierarchy");
           },
-          children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(HierarchyIcon, {})
+          children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(HierarchyIcon, {})
         }
       )
     ] });
   }
   function LayoutButton(props) {
     const disabled = props.disabled === true;
-    return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
       "button",
       {
         type: "button",
@@ -33253,17 +33427,17 @@ ${String(target.number)}`;
   };
 
   // src/panel/ticket-list.tsx
-  var React29 = __toESM(require_react(), 1);
-  var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
+  var React30 = __toESM(require_react(), 1);
+  var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
   var REF_DISPLAY_LIMIT = 40;
   var MAX_EXTRA_LABELS = 3;
   var MAX_ROW_ASSIGNEES = 2;
   function TicketList(props) {
     if (props.rows.length === 0) {
-      return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { "data-testid": "empty", style: EMPTY_STYLE, children: props.emptyText });
+      return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { "data-testid": "empty", style: EMPTY_STYLE, children: props.emptyText });
     }
     const hasCollapsible = props.layout === "hierarchy" && props.rows.some((row) => row.hasChildren);
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { role: "list", "data-testid": "ticket-list", style: LIST_STYLE, children: props.rows.map((row) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { role: "list", "data-testid": "ticket-list", style: LIST_STYLE, children: props.rows.map((row) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
       TicketRow,
       {
         row,
@@ -33294,7 +33468,7 @@ ${String(target.number)}`;
     const availability = worktreeAvailability(ticket, props.backend, props.workspaceRoot, t);
     const hierarchy = props.layout === "hierarchy";
     const indent = hierarchy ? props.row.depth * INDENT_STEP : 0;
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
       "div",
       {
         role: "listitem",
@@ -33303,7 +33477,7 @@ ${String(target.number)}`;
         "data-parent-outside": hierarchy && props.row.parentOutsideView ? "true" : void 0,
         style: indent === 0 ? void 0 : { paddingLeft: indent },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
             "div",
             {
               "data-hover": "card",
@@ -33312,8 +33486,8 @@ ${String(target.number)}`;
               },
               style: { ...CARD_ROW_STYLE, ...props.focused ? CARD_FOCUSED_STYLE : void 0 },
               children: [
-                props.reserveCollapseSlot ? /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: CARD_MAIN_STYLE, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+                props.reserveCollapseSlot ? /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: CARD_MAIN_STYLE, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
                     CollapseControl,
                     {
                       row: props.row,
@@ -33322,7 +33496,7 @@ ${String(target.number)}`;
                       }
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
                     RowContent,
                     {
                       ticket,
@@ -33339,7 +33513,7 @@ ${String(target.number)}`;
                       }
                     }
                   )
-                ] }) : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+                ] }) : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
                   RowContent,
                   {
                     ticket,
@@ -33356,8 +33530,8 @@ ${String(target.number)}`;
                     }
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: ACTION_COLUMN_STYLE, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: ACTION_COLUMN_STYLE, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
                     SkillActionBadge,
                     {
                       ticket,
@@ -33366,7 +33540,7 @@ ${String(target.number)}`;
                       style: CARD_ACTION_BADGE_STYLE
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
                     WorktreeCreateButton,
                     {
                       availability,
@@ -33379,7 +33553,7 @@ ${String(target.number)}`;
               ]
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
             WorktreeOutcome,
             {
               error: worktree.error,
@@ -33388,7 +33562,7 @@ ${String(target.number)}`;
               compact: true
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
             CopyFailure,
             {
               copy: link.copy,
@@ -33402,9 +33576,9 @@ ${String(target.number)}`;
     );
   }
   function RowContent(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: CARD_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: CARD_TITLE_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: CARD_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { style: CARD_TITLE_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
           TicketRef,
           {
             ticket: props.ticket,
@@ -33413,7 +33587,7 @@ ${String(target.number)}`;
             onCopy: props.onCopy
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
           "span",
           {
             role: "button",
@@ -33431,7 +33605,7 @@ ${String(target.number)}`;
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         MetaRow,
         {
           ticket: props.ticket,
@@ -33447,7 +33621,7 @@ ${String(target.number)}`;
     const t = useMessages();
     const url = props.ticket.url;
     if (url === void 0) {
-      return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         "span",
         {
           "data-testid": "ticket-ref",
@@ -33458,8 +33632,8 @@ ${String(target.number)}`;
       );
     }
     const copied = props.copy.status === "copied";
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         "button",
         {
           type: "button",
@@ -33476,14 +33650,14 @@ ${String(target.number)}`;
           children: copied ? t("common.copied") : props.display.text
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { role: "status", "data-testid": "ticket-ref-copied", style: VISUALLY_HIDDEN_STYLE, children: copied ? t("tickets.refCopiedNotice", { ref: props.ticket.ref }) : "" })
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { role: "status", "data-testid": "ticket-ref-copied", style: VISUALLY_HIDDEN_STYLE, children: copied ? t("tickets.refCopiedNotice", { ref: props.ticket.ref }) : "" })
     ] });
   }
   function CollapseControl(props) {
     const t = useMessages();
-    if (!props.row.hasChildren) return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "ticket-collapse-spacer", "aria-hidden": "true", style: COLLAPSE_SPACER_STYLE });
+    if (!props.row.hasChildren) return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "ticket-collapse-spacer", "aria-hidden": "true", style: COLLAPSE_SPACER_STYLE });
     const label = props.row.expanded ? t("tickets.collapse") : t("tickets.expand");
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
       "button",
       {
         type: "button",
@@ -33516,14 +33690,14 @@ ${String(target.number)}`;
     const { shown, hidden } = pickRowLabels(extra, MAX_EXTRA_LABELS);
     const parent = ticket.parent;
     const parentDisplay = parent === void 0 ? void 0 : clipRef(parent);
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: CARD_META_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: STATUS_BADGES[ticket.status], children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: STATUS_DOT_STYLE }),
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { style: CARD_META_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { style: STATUS_BADGES[ticket.status], children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { style: STATUS_DOT_STYLE }),
         t(STATUS_LABEL_KEYS[ticket.status])
       ] }),
-      ticket.category === null ? null : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: CATEGORY_BADGES[ticket.category], children: ticket.category }),
-      props.hierarchy && props.row.hasChildren ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "ticket-children", style: LABEL_BADGE_STYLE, children: t("tickets.childCount", { count: props.row.descendantCount }) }) : null,
-      props.hierarchy && props.row.parentOutsideView && parentDisplay !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      ticket.category === null ? null : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { style: CATEGORY_BADGES[ticket.category], children: ticket.category }),
+      props.hierarchy && props.row.hasChildren ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "ticket-children", style: LABEL_BADGE_STYLE, children: t("tickets.childCount", { count: props.row.descendantCount }) }) : null,
+      props.hierarchy && props.row.parentOutsideView && parentDisplay !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         "span",
         {
           "data-testid": "ticket-parent",
@@ -33532,14 +33706,14 @@ ${String(target.number)}`;
           children: t("tickets.parentOutside", { parent: parentDisplay.text })
         }
       ) : null,
-      shown.map((label) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "ticket-label", style: LABEL_BADGE_STYLE, children: label }, label)),
-      hidden > 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { "data-testid": "ticket-label-more", style: LABEL_BADGE_STYLE, children: [
+      shown.map((label) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "ticket-label", style: LABEL_BADGE_STYLE, children: label }, label)),
+      hidden > 0 ? /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { "data-testid": "ticket-label-more", style: LABEL_BADGE_STYLE, children: [
         "+",
         String(hidden)
       ] }) : null,
-      props.rowFields.showAssignees && ticket.assignees.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(AssigneeMeta, { assignees: ticket.assignees }) : null,
-      props.rowFields.showAuthor && ticket.author !== null ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(AuthorMeta, { author: ticket.author }) : null,
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      props.rowFields.showAssignees && ticket.assignees.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(AssigneeMeta, { assignees: ticket.assignees }) : null,
+      props.rowFields.showAuthor && ticket.author !== null ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(AuthorMeta, { author: ticket.author }) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         TimeMeta,
         {
           createdAt: ticket.createdAt,
@@ -33557,7 +33731,7 @@ ${String(target.number)}`;
     const all = props.assignees.join(separator);
     const shown = props.assignees.slice(0, MAX_ROW_ASSIGNEES);
     const hidden = props.assignees.length - shown.length;
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
       "span",
       {
         role: "group",
@@ -33566,9 +33740,9 @@ ${String(target.number)}`;
         title: t("tickets.row.assigneesLabel", { names: all }),
         style: ASSIGNEE_GROUP_STYLE,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "aria-hidden": "true", style: ASSIGNEE_ICON_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(PersonIcon, {}) }),
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "ticket-assignee", style: ASSIGNEE_NAME_STYLE, children: shown.join(separator) }),
-          hidden > 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "aria-hidden": "true", style: ASSIGNEE_ICON_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(PersonIcon, {}) }),
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "ticket-assignee", style: ASSIGNEE_NAME_STYLE, children: shown.join(separator) }),
+          hidden > 0 ? /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
             "span",
             {
               "data-testid": "ticket-assignee-more",
@@ -33589,9 +33763,9 @@ ${String(target.number)}`;
     const { author } = props;
     const name = authorName(author);
     const full = authorTitle(author, t);
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(UserAvatar, { user: author, role: "creator", size: 16, testId: "ticket-avatar" }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { "data-testid": "ticket-author", title: full, style: AUTHOR_NAME_STYLE, children: name })
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(UserAvatar, { user: author, role: "creator", size: 16, testId: "ticket-avatar" }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { "data-testid": "ticket-author", title: full, style: AUTHOR_NAME_STYLE, children: name })
     ] });
   }
   function TimeMeta(props) {
@@ -33605,7 +33779,7 @@ ${String(target.number)}`;
     }
     if (updatedAge.length > 0) segments.push(t("tickets.row.updated", { age: updatedAge }));
     if (segments.length === 0) return null;
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
       "span",
       {
         "data-testid": "ticket-age",
@@ -33870,8 +34044,8 @@ ${String(target.number)}`;
   }
 
   // src/panel/row-display-control.tsx
-  var React30 = __toESM(require_react(), 1);
-  var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
+  var React31 = __toESM(require_react(), 1);
+  var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
   var DISPLAY_ITEMS = [
     { field: "showAuthor", testId: "display-author", messageId: "tickets.row.author" },
     { field: "showCreatedAt", testId: "display-created", messageId: "tickets.row.createdAt" },
@@ -33880,10 +34054,10 @@ ${String(target.number)}`;
   ];
   function RowDisplayControl(props) {
     const t = useMessages();
-    const [open, setOpen] = React30.useState(false);
-    const wrapper = React30.useRef(null);
-    const trigger = React30.useRef(null);
-    React30.useEffect(() => {
+    const [open, setOpen] = React31.useState(false);
+    const wrapper = React31.useRef(null);
+    const trigger = React31.useRef(null);
+    React31.useEffect(() => {
       if (!open) return void 0;
       const onPointerDown = (event) => {
         if (wrapper.current?.contains(event.target) === true) return;
@@ -33901,8 +34075,8 @@ ${String(target.number)}`;
         document.removeEventListener("keydown", onKeyDown);
       };
     }, [open]);
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { ref: wrapper, style: ROW_DISPLAY_WRAPPER_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { ref: wrapper, style: ROW_DISPLAY_WRAPPER_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         "button",
         {
           ref: trigger,
@@ -33919,10 +34093,10 @@ ${String(target.number)}`;
             ...ROW_DISPLAY_TRIGGER_STYLE,
             ...open ? { background: COLORS.surfaceActive, color: COLORS.text } : void 0
           },
-          children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(DisplaySettingsIcon, {})
+          children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(DisplaySettingsIcon, {})
         }
       ),
-      open ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      open ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
         "div",
         {
           role: "group",
@@ -33931,7 +34105,7 @@ ${String(target.number)}`;
           style: ROW_DISPLAY_MENU_STYLE,
           children: DISPLAY_ITEMS.filter(
             (item) => item.field !== "showAssignees" || props.assigneesAvailable
-          ).map((item) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+          ).map((item) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
             DisplayToggle,
             {
               testId: item.testId,
@@ -33948,7 +34122,7 @@ ${String(target.number)}`;
     ] });
   }
   function DisplayToggle(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
       "button",
       {
         type: "button",
@@ -33959,12 +34133,12 @@ ${String(target.number)}`;
         style: ROW_DISPLAY_ITEM_STYLE,
         children: [
           props.label,
-          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
             "span",
             {
               "aria-hidden": "true",
               style: props.pressed ? ROW_DISPLAY_CHECK_STYLE : ROW_DISPLAY_CHECK_OFF_STYLE,
-              children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(CheckIcon, {})
+              children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(CheckIcon, {})
             }
           )
         ]
@@ -33973,7 +34147,13 @@ ${String(target.number)}`;
   }
 
   // src/panel/view-preference.ts
-  var React31 = __toESM(require_react(), 1);
+  var React32 = __toESM(require_react(), 1);
+  var DEFAULT_ROW_FIELDS = {
+    showAuthor: true,
+    showCreatedAt: true,
+    showUpdatedAt: false,
+    showAssignees: false
+  };
   var DEFAULT_VIEW = {
     filter: "open",
     sortKey: "status",
@@ -33981,10 +34161,7 @@ ${String(target.number)}`;
     assignedToMe: false,
     createdByMe: false,
     layout: "flat",
-    showAuthor: true,
-    showCreatedAt: true,
-    showUpdatedAt: false,
-    showAssignees: false
+    ...DEFAULT_ROW_FIELDS
   };
   var STORAGE_KEY = "view-preferences";
   var STORAGE_VERSION = 1;
@@ -34133,11 +34310,11 @@ ${String(target.number)}`;
     return typeof value === "boolean";
   }
   function useViewPreference(workspaceRoot, snapshot) {
-    const store = React31.useMemo(resolvePreferenceStore, []);
+    const store = React32.useMemo(resolvePreferenceStore, []);
     const key = viewPreferenceKey(snapshot, workspaceRoot);
-    const [preference, setPreference] = React31.useState(DEFAULT_VIEW);
-    const generation = React31.useRef(0);
-    React31.useEffect(() => {
+    const [preference, setPreference] = React32.useState(DEFAULT_VIEW);
+    const generation = React32.useRef(0);
+    React32.useEffect(() => {
       const current = generation.current + 1;
       generation.current = current;
       if (key === void 0 || workspaceRoot === void 0) {
@@ -34153,7 +34330,7 @@ ${String(target.number)}`;
         active = false;
       };
     }, [store, key, workspaceRoot]);
-    const apply = React31.useCallback(
+    const apply = React32.useCallback(
       (next) => {
         generation.current += 1;
         setPreference(next);
@@ -34200,7 +34377,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/tickets-view.tsx
-  var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
   var SECONDARY_BUTTON_STYLE = {
     ...BUTTON_STYLE,
     padding: "2px 6px",
@@ -34247,12 +34424,12 @@ ${String(target.number)}`;
     const focused = focusedTicket.ref;
     const hierarchy = snapshot === null ? { available: false, hint: t("tickets.layout.unavailable") } : hierarchyAvailability(snapshot.backend, snapshot.hierarchy, t);
     const layout = preference.layout === "hierarchy" && hierarchy.available ? "hierarchy" : "flat";
-    const [collapsed, setCollapsed] = React32.useState(/* @__PURE__ */ new Set());
-    const expandedFocusToken = React32.useRef(0);
-    React32.useEffect(() => {
+    const [collapsed, setCollapsed] = React33.useState(/* @__PURE__ */ new Set());
+    const expandedFocusToken = React33.useRef(0);
+    React33.useEffect(() => {
       setCollapsed(/* @__PURE__ */ new Set());
     }, [props.workspaceRoot]);
-    React32.useEffect(() => {
+    React33.useEffect(() => {
       if (focusedTicket.ref === null || expandedFocusToken.current === focusedTicket.token) return;
       if (!tickets.some((ticket) => ticket.ref === focusedTicket.ref)) return;
       expandedFocusToken.current = focusedTicket.token;
@@ -34267,13 +34444,13 @@ ${String(target.number)}`;
         return next;
       });
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
       "div",
       {
         "data-testid": "tickets-view",
         style: { display: "flex", flexDirection: "column", flex: 1, minHeight: 0 },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
             Header,
             {
               snapshot,
@@ -34285,7 +34462,7 @@ ${String(target.number)}`;
               onRefreshFull: refreshFull
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
             ActionBar,
             {
               counts: snapshot === null ? null : counts,
@@ -34297,9 +34474,9 @@ ${String(target.number)}`;
               }
             }
           ),
-          error !== null ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ErrorBanner, { error, onOpenEnvCheck: props.onOpenEnvCheck }) : null,
-          snapshot !== null ? /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+          error !== null ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(ErrorBanner, { error, onOpenEnvCheck: props.onOpenEnvCheck }) : null,
+          snapshot !== null ? /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(import_jsx_runtime25.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
               Toolbar,
               {
                 filter: preference.filter,
@@ -34312,7 +34489,7 @@ ${String(target.number)}`;
                 onToggleRowField: toggleRowField
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
               PeopleFilterRow,
               {
                 viewer: snapshot.viewer,
@@ -34322,8 +34499,8 @@ ${String(target.number)}`;
                 onClear: clearPeople
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(HierarchyNotice, { snapshot, preference, layout }),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(HierarchyNotice, { snapshot, preference, layout }),
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
               TicketRows,
               {
                 snapshot,
@@ -34346,23 +34523,23 @@ ${String(target.number)}`;
                 onLayout: setLayout
               }
             )
-          ] }) : phase === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { "data-testid": "loading", style: EMPTY_STYLE, children: t("common.loadingTickets") }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(PromptCopyArea, { state: actions.copyState, onDismiss: actions.dismiss })
+          ] }) : phase === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { "data-testid": "loading", style: EMPTY_STYLE, children: t("common.loadingTickets") }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(PromptCopyArea, { state: actions.copyState, onDismiss: actions.dismiss })
         ]
       }
     );
   }
   function useFocusedTicket(focusRef, onFocusHandled, workspaceRoot) {
-    const [focused, setFocused] = React32.useState({ ref: null, token: 0 });
-    const token = React32.useRef(0);
-    React32.useEffect(() => {
+    const [focused, setFocused] = React33.useState({ ref: null, token: 0 });
+    const token = React33.useRef(0);
+    React33.useEffect(() => {
       if (focusRef === null || focusRef === void 0) return;
       token.current += 1;
       setFocused({ ref: focusRef, token: token.current });
       onFocusHandled?.();
     }, [focusRef, onFocusHandled]);
-    const previousRoot = React32.useRef(workspaceRoot);
-    React32.useEffect(() => {
+    const previousRoot = React33.useRef(workspaceRoot);
+    React33.useEffect(() => {
       if (previousRoot.current === workspaceRoot) return;
       previousRoot.current = workspaceRoot;
       setFocused((current) => current.ref === null ? current : { ref: null, token: token.current });
@@ -34372,13 +34549,13 @@ ${String(target.number)}`;
   function TicketRows(props) {
     const t = useMessages();
     const remaining = Math.max(0, props.snapshot.total - props.snapshot.loaded);
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_jsx_runtime24.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: LOADED_ROW_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { "data-testid": "loaded-total", style: LOADED_STYLE, children: t("tickets.loadedTotal", {
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(import_jsx_runtime25.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: LOADED_ROW_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { "data-testid": "loaded-total", style: LOADED_STYLE, children: t("tickets.loadedTotal", {
           loaded: props.snapshot.loaded,
           total: props.snapshot.total
         }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
           LayoutToggle,
           {
             layout: props.layout,
@@ -34387,7 +34564,7 @@ ${String(target.number)}`;
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         TicketList,
         {
           rows: props.rows,
@@ -34406,7 +34583,7 @@ ${String(target.number)}`;
           onToggleCollapse: props.onToggleCollapse
         }
       ),
-      props.snapshot.hasMore ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: LOAD_MORE_ROW_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      props.snapshot.hasMore ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: LOAD_MORE_ROW_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         "button",
         {
           type: "button",
@@ -34423,7 +34600,7 @@ ${String(target.number)}`;
   }
   function SourceBadge2(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
       "span",
       {
         "data-testid": "snapshot-source",
@@ -34437,11 +34614,11 @@ ${String(target.number)}`;
   }
   function Header(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("header", { style: HEADER_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, minWidth: 0 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: REPO_CHIP_STYLE, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(FolderIcon, {}),
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("header", { style: HEADER_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, minWidth: 0 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: REPO_CHIP_STYLE, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(FolderIcon, {}),
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
             "span",
             {
               "data-testid": "repo-name",
@@ -34451,9 +34628,9 @@ ${String(target.number)}`;
             }
           )
         ] }),
-        props.snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { "data-testid": "backend-badge", style: BACKEND_BADGE_STYLE, children: backendLabel(props.snapshot.backend, t) }),
-        props.snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(SourceBadge2, { source: props.snapshot.source }),
-        props.snapshot?.backend === "gitea" && props.snapshot.repositoryHost !== null ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+        props.snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { "data-testid": "backend-badge", style: BACKEND_BADGE_STYLE, children: backendLabel(props.snapshot.backend, t) }),
+        props.snapshot === null ? null : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(SourceBadge2, { source: props.snapshot.source }),
+        props.snapshot?.backend === "gitea" && props.snapshot.repositoryHost !== null ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
           "span",
           {
             "data-testid": "repo-host",
@@ -34463,10 +34640,10 @@ ${String(target.number)}`;
           }
         ) : null
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4, flex: "none" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { "data-testid": "snapshot-age", style: AGE_STYLE, children: props.snapshot === null ? t("common.noSnapshot") : formatRelativeTime(props.snapshot.fetchedAt, props.now, t) }),
-        props.notice === null ? null : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { "data-testid": "refresh-error", title: props.notice, style: REFRESH_ERROR_STYLE2, children: props.notice }),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4, flex: "none" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { "data-testid": "snapshot-age", style: AGE_STYLE, children: props.snapshot === null ? t("common.noSnapshot") : formatRelativeTime(props.snapshot.fetchedAt, props.now, t) }),
+        props.notice === null ? null : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { "data-testid": "refresh-error", title: props.notice, style: REFRESH_ERROR_STYLE2, children: props.notice }),
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
           "button",
           {
             type: "button",
@@ -34483,7 +34660,7 @@ ${String(target.number)}`;
             },
             style: { ...REFRESH_BUTTON_STYLE, opacity: props.busy ? 0.6 : 1 },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(RefreshIcon, {}),
+              /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(RefreshIcon, {}),
               props.busy ? t("common.refreshBusy") : t("common.refresh")
             ]
           }
@@ -34493,10 +34670,10 @@ ${String(target.number)}`;
   }
   function ActionBar(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: ACTION_BAR_STYLE, children: [
-      props.counts === null ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", {}) : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(StatsRow, { counts: props.counts }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", gap: 6, marginLeft: "auto" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: ACTION_BAR_STYLE, children: [
+      props.counts === null ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", {}) : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatsRow, { counts: props.counts }),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { display: "flex", gap: 6, marginLeft: "auto" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
           IntakeAction,
           {
             testId: "new-feature",
@@ -34508,7 +34685,7 @@ ${String(target.number)}`;
             onCopy: props.onNewFeature
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
           IntakeAction,
           {
             testId: "new-bug",
@@ -34524,7 +34701,7 @@ ${String(target.number)}`;
     ] });
   }
   function IntakeAction(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
       "button",
       {
         type: "button",
@@ -34535,7 +34712,7 @@ ${String(target.number)}`;
         onClick: props.onCopy,
         style: { ...props.style, flex: "none" },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(PlusIcon, {}),
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(PlusIcon, {}),
           props.label
         ]
       }
@@ -34543,8 +34720,8 @@ ${String(target.number)}`;
   }
   function StatsRow(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: STATS_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: STATS_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         Stat,
         {
           testId: "stat-ready",
@@ -34553,7 +34730,7 @@ ${String(target.number)}`;
           color: COLORS.success
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         Stat,
         {
           testId: "stat-blocked",
@@ -34562,7 +34739,7 @@ ${String(target.number)}`;
           color: COLORS.warn
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         Stat,
         {
           testId: "stat-open",
@@ -34571,7 +34748,7 @@ ${String(target.number)}`;
           color: COLORS.secondary
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         Stat,
         {
           testId: "stat-closed",
@@ -34583,30 +34760,30 @@ ${String(target.number)}`;
     ] });
   }
   function Stat(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { "data-testid": props.testId, style: STAT_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { "data-testid": props.testId, style: STAT_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         "span",
         {
           "aria-hidden": "true",
           style: { width: 7, height: 7, borderRadius: "50%", background: props.color, flex: "none" }
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("strong", { style: STAT_VALUE_STYLE, children: props.value }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { children: props.label })
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("strong", { style: STAT_VALUE_STYLE, children: props.value }),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { children: props.label })
     ] });
   }
   function Toolbar(props) {
     const t = useMessages();
     const ascending = props.direction === "asc";
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: TOOLBAR_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: TOOLBAR_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         "div",
         {
           role: "group",
           "aria-label": t("tickets.filterGroup"),
           "data-scroll-x": "",
           style: FILTER_SEGMENTED_STYLE,
-          children: FILTERS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+          children: FILTERS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
             Chip,
             {
               testId: `filter-${item}`,
@@ -34620,8 +34797,8 @@ ${String(target.number)}`;
           ))
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { role: "group", "aria-label": t("tickets.sortGroup"), style: SORT_GROUP_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { role: "group", "aria-label": t("tickets.sortGroup"), style: SORT_GROUP_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
           "select",
           {
             "data-testid": "sort-key",
@@ -34631,10 +34808,10 @@ ${String(target.number)}`;
               props.onSort(event.target.value);
             },
             style: SORT_SELECT_STYLE,
-            children: SORT_OPTIONS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("option", { value: item, children: t(SORT_LABELS[item]) }, item))
+            children: SORT_OPTIONS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("option", { value: item, children: t(SORT_LABELS[item]) }, item))
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
           "button",
           {
             type: "button",
@@ -34650,7 +34827,7 @@ ${String(target.number)}`;
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         RowDisplayControl,
         {
           fields: props.rowFields,
@@ -34675,7 +34852,7 @@ ${String(target.number)}`;
     title: "tickets.sort.title"
   };
   function Chip(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
       "button",
       {
         type: "button",
@@ -34697,7 +34874,7 @@ ${String(target.number)}`;
     const t = useMessages();
     const anyActive = props.people.assignedToMe || props.people.createdByMe;
     const viewerHint = t("tickets.people.viewerHint", { login: viewer });
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
       "div",
       {
         role: "group",
@@ -34705,8 +34882,8 @@ ${String(target.number)}`;
         "data-testid": "people-filter",
         style: PEOPLE_ROW_STYLE,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { "aria-hidden": "true", style: { color: COLORS.tertiary, display: "inline-flex" }, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(PeopleIcon, {}) }),
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { "aria-hidden": "true", style: { color: COLORS.tertiary, display: "inline-flex" }, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(PeopleIcon, {}) }),
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
             PersonChip,
             {
               testId: "people-assigned",
@@ -34719,7 +34896,7 @@ ${String(target.number)}`;
               }
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
             PersonChip,
             {
               testId: "people-created",
@@ -34732,7 +34909,7 @@ ${String(target.number)}`;
               }
             }
           ),
-          anyActive ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+          anyActive ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
             "button",
             {
               type: "button",
@@ -34743,13 +34920,13 @@ ${String(target.number)}`;
               children: t("tickets.people.clear")
             }
           ) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { "data-testid": "people-viewer", title: viewerHint, style: PEOPLE_VIEWER_STYLE, children: t("tickets.people.viewer", { login: viewer }) })
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { "data-testid": "people-viewer", title: viewerHint, style: PEOPLE_VIEWER_STYLE, children: t("tickets.people.viewer", { login: viewer }) })
         ]
       }
     );
   }
   function PersonChip(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
       "button",
       {
         type: "button",
@@ -34761,7 +34938,7 @@ ${String(target.number)}`;
         style: { ...PEOPLE_CHIP_STYLE, ...props.active ? PEOPLE_CHIP_ACTIVE_STYLE : void 0 },
         children: [
           props.label,
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
             "span",
             {
               style: {
@@ -34777,14 +34954,14 @@ ${String(target.number)}`;
   }
 
   // src/panel/task-panel.tsx
-  var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
   var NO_CAPABILITIES = () => [];
   function TaskPanel(props) {
-    const [view, setView] = React33.useState("tickets");
-    const [focusBackend, setFocusBackend] = React33.useState(null);
+    const [view, setView] = React34.useState("tickets");
+    const [focusBackend, setFocusBackend] = React34.useState(null);
     const navigation2 = useDetailNavigation(props.workspaceRoot);
-    const [focusTicket, setFocusTicket] = React33.useState(null);
-    const previousView = React33.useRef("tickets");
+    const [focusTicket, setFocusTicket] = React34.useState(null);
+    const previousView = React34.useRef("tickets");
     const clientCapabilities = props.clientCapabilities ?? NO_CAPABILITIES;
     const request = useSnapshotRequest(props.client, props.workspaceRoot, props.refreshToken ?? 0);
     const open = navigation2.open;
@@ -34792,9 +34969,9 @@ ${String(target.number)}`;
       if (view !== "help") previousView.current = view;
       setView("help");
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { "data-testid": "task-panel", "data-mattwf-panel": "", style: PANEL_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("style", { children: PANEL_SHEET }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { "data-testid": "task-panel", "data-mattwf-panel": "", style: PANEL_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("style", { children: PANEL_SHEET }),
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
         ViewTabs,
         {
           view,
@@ -34813,7 +34990,7 @@ ${String(target.number)}`;
           onOpenHelp: openHelp
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
         PanelContent,
         {
           panel: props,
@@ -34853,7 +35030,7 @@ ${String(target.number)}`;
   function PanelContent(props) {
     const panel = props.panel;
     if (props.view === "tickets") {
-      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
         TicketsPane,
         {
           client: panel.client,
@@ -34873,7 +35050,7 @@ ${String(target.number)}`;
       );
     }
     if (props.view === "overview") {
-      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
         OverviewPane,
         {
           request: props.request,
@@ -34885,7 +35062,7 @@ ${String(target.number)}`;
       );
     }
     if (props.view === "env") {
-      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
         EnvCheckView,
         {
           client: panel.client,
@@ -34896,10 +35073,10 @@ ${String(target.number)}`;
         }
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(HelpView, { onBack: props.onBack });
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(HelpView, { onBack: props.onBack });
   }
   function OverviewPane(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
       OverviewView,
       {
         request: props.request,
@@ -34915,7 +35092,7 @@ ${String(target.number)}`;
       const open = props.open;
       const snapshot = props.request.snapshot;
       const current = findSnapshotTicket(snapshot?.tickets, open.target.ref) ?? open.target.ticket;
-      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
         TicketDetailView,
         {
           client: props.client,
@@ -34933,7 +35110,7 @@ ${String(target.number)}`;
         open.target.ref
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
       TicketsView,
       {
         client: props.client,
@@ -34950,9 +35127,9 @@ ${String(target.number)}`;
   }
   function ViewTabs(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: VIEW_BAR_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { role: "group", "aria-label": t("common.viewGroup"), style: VIEW_TABS_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { style: VIEW_BAR_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { role: "group", "aria-label": t("common.viewGroup"), style: VIEW_TABS_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
           ViewChip,
           {
             testId: "view-tickets",
@@ -34961,7 +35138,7 @@ ${String(target.number)}`;
             onClick: props.onOpenTickets
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
           ViewChip,
           {
             testId: "view-overview",
@@ -34970,7 +35147,7 @@ ${String(target.number)}`;
             onClick: props.onOpenOverview
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
           ViewChip,
           {
             testId: "view-env",
@@ -34980,9 +35157,9 @@ ${String(target.number)}`;
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: VIEW_ACTIONS_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(LanguageSelect, {}),
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(TipsButton, { label: t("view.help"), onClick: props.onOpenHelp })
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { style: VIEW_ACTIONS_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(LanguageMenu, {}),
+        /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(TipsButton, { label: t("view.help"), onClick: props.onOpenHelp })
       ] })
     ] });
   }
@@ -34992,46 +35169,8 @@ ${String(target.number)}`;
     gap: 4,
     flex: "none"
   };
-  function LanguageSelect() {
-    const t = useMessages();
-    const { setting, setSetting, locale } = useLocale();
-    const languageName = locale === "zh-CN" ? t("language.zhCN") : t("language.en");
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
-      "select",
-      {
-        "data-testid": "language-select",
-        "aria-label": t("language.label"),
-        title: t("language.effective", { language: languageName }),
-        value: setting,
-        onChange: (event) => {
-          setSetting(event.target.value);
-        },
-        style: LANGUAGE_SELECT_STYLE,
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("option", { value: "auto", children: t("language.autoEffective", { language: languageName }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("option", { value: "zh-CN", children: t("language.zhCN") }),
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("option", { value: "en", children: t("language.en") })
-        ]
-      }
-    );
-  }
-  var LANGUAGE_SELECT_STYLE = {
-    appearance: "none",
-    border: "none",
-    borderRadius: 6,
-    padding: "1px 18px 1px 7px",
-    color: COLORS.secondary,
-    backgroundColor: "transparent",
-    backgroundImage: `linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%)`,
-    backgroundPosition: "right 9px center, right 5px center",
-    backgroundSize: "4px 4px, 4px 4px",
-    backgroundRepeat: "no-repeat",
-    cursor: "pointer",
-    font: "inherit",
-    fontSize: 12
-  };
   function ViewChip(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
       "button",
       {
         type: "button",
@@ -35045,7 +35184,7 @@ ${String(target.number)}`;
     );
   }
   function TipsButton(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
       "button",
       {
         type: "button",
@@ -35054,12 +35193,12 @@ ${String(target.number)}`;
         title: props.label,
         onClick: props.onClick,
         style: ICON_BUTTON_STYLE,
-        children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(TipsIcon, {})
+        children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(TipsIcon, {})
       }
     );
   }
   function TipsIcon() {
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(
       "svg",
       {
         width: 14,
@@ -35072,17 +35211,17 @@ ${String(target.number)}`;
         strokeLinecap: "round",
         strokeLinejoin: "round",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("path", { d: "M8 1.8a4.1 4.1 0 0 0-2.5 7.4c.3.2.5.5.5.9v.4h4v-.4c0-.4.2-.7.5-.9A4.1 4.1 0 0 0 8 1.8Z" }),
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("path", { d: "M6.4 12.6h3.2" }),
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("path", { d: "M7.2 14.4h1.6" })
+          /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("path", { d: "M8 1.8a4.1 4.1 0 0 0-2.5 7.4c.3.2.5.5.5.9v.4h4v-.4c0-.4.2-.7.5-.9A4.1 4.1 0 0 0 8 1.8Z" }),
+          /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("path", { d: "M6.4 12.6h3.2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("path", { d: "M7.2 14.4h1.6" })
         ]
       }
     );
   }
 
   // src/panel/workspace-picker.tsx
-  var React34 = __toESM(require_react(), 1);
-  var import_jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
+  var React35 = __toESM(require_react(), 1);
+  var import_jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
   var PICKER_STYLE = {
     display: "flex",
     flexDirection: "column",
@@ -35138,9 +35277,9 @@ ${String(target.number)}`;
   };
   function WorkspacePicker(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { "data-testid": "workspace-picker", style: PICKER_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: PICKER_TITLE_STYLE, children: t("workspace.pickerTitle") }),
-      props.candidates.map((candidate) => /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { "data-testid": "workspace-picker", style: PICKER_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: PICKER_TITLE_STYLE, children: t("workspace.pickerTitle") }),
+      props.candidates.map((candidate) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(
         "button",
         {
           type: "button",
@@ -35152,11 +35291,11 @@ ${String(target.number)}`;
           },
           style: PICKER_BUTTON_STYLE,
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("span", { style: PICKER_ROW_STYLE, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: PICKER_LABEL_STYLE, children: candidateLabel(candidate) }),
-              /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { "data-testid": "workspace-candidate-use", style: PICKER_USE_STYLE, children: t("workspace.use") })
+            /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: PICKER_ROW_STYLE, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: PICKER_LABEL_STYLE, children: candidateLabel(candidate) }),
+              /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { "data-testid": "workspace-candidate-use", style: PICKER_USE_STYLE, children: t("workspace.use") })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: PICKER_PATH_STYLE, children: candidate.path })
+            /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: PICKER_PATH_STYLE, children: candidate.path })
           ]
         },
         candidate.id
@@ -35168,7 +35307,7 @@ ${String(target.number)}`;
   }
 
   // src/panel/main.tsx
-  var import_jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
+  var import_jsx_runtime28 = __toESM(require_jsx_runtime(), 1);
   var hostState = {
     candidates: null,
     workspaceRoot: "",
@@ -35235,10 +35374,10 @@ ${String(target.number)}`;
     });
   }
   function App(props) {
-    const host = React35.useSyncExternalStore(subscribeHost, getHostState);
-    const [probe, setProbe] = React35.useState(null);
-    const [workerReachable, setWorkerReachable] = React35.useState(false);
-    React35.useEffect(() => {
+    const host = React36.useSyncExternalStore(subscribeHost, getHostState);
+    const [probe, setProbe] = React36.useState(null);
+    const [workerReachable, setWorkerReachable] = React36.useState(false);
+    React36.useEffect(() => {
       let active = true;
       void probePanelCapabilities().then((next) => {
         if (active) setProbe(next);
@@ -35247,7 +35386,7 @@ ${String(target.number)}`;
         active = false;
       };
     }, []);
-    React35.useEffect(() => {
+    React36.useEffect(() => {
       let active = true;
       void props.client.cache("").then(
         () => {
@@ -35261,22 +35400,22 @@ ${String(target.number)}`;
         active = false;
       };
     }, [props.client]);
-    const capabilities = React35.useMemo(
+    const capabilities = React36.useMemo(
       () => probe === null ? [] : panelCapabilityDiagnostics(probe, workerReachable),
       [probe, workerReachable]
     );
-    const loadAvatar = React35.useMemo(
+    const loadAvatar = React36.useMemo(
       () => createAvatarSourceLoader(props.client),
       [props.client]
     );
     const candidates = host.candidates;
-    return /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)(
       "div",
       {
         "data-mattwf-panel": "",
         style: { display: "flex", flexDirection: "column", height: "100%", minHeight: 0 },
         children: [
-          candidates === null || candidates.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(
+          candidates === null || candidates.length === 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
             WorkspacePicker,
             {
               candidates,
@@ -35285,7 +35424,7 @@ ${String(target.number)}`;
               }
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(AvatarSourceProvider, { loader: loadAvatar, children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(AvatarSourceProvider, { loader: loadAvatar, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
             TaskPanel,
             {
               client: props.client,
@@ -35319,7 +35458,7 @@ ${String(target.number)}`;
   injectTheme();
   void syncWorkspaceClaim(client);
   (0, import_client.createRoot)(container).render(
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(LocaleProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(App, { client }) })
+    /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(LocaleProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(App, { client }) })
   );
 })();
 /*! Bundled license information:
