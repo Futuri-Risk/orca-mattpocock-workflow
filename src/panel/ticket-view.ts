@@ -77,6 +77,25 @@ export function countTickets(tickets: readonly TicketSnapshot[]): TicketCounts {
 }
 
 /**
+ * 筛选段上的计数，与 `filterTickets` 的口径一一对应：
+ * 「全部」是全部票数，「Open」是所有未关闭票（可接 + 阻塞 + 其他开放），
+ * 其余三项各取同类计数。全部数字都从 `countTickets` 派生，
+ * 因此每个计数都等于点开该段后列表的行数。
+ * @param counts - `countTickets` 的四类计数。
+ * @returns 按筛选键的计数。
+ */
+export function countByFilter(counts: TicketCounts): Readonly<Record<TicketFilter, number>> {
+  const all = counts.ready + counts.blocked + counts.open + counts.closed
+  return {
+    all,
+    open: all - counts.closed,
+    closed: counts.closed,
+    blocked: counts.blocked,
+    ready: counts.ready,
+  }
+}
+
+/**
  * 按状态过滤。
  * @param tickets - 已判定的工单。
  * @param filter - 过滤条件。

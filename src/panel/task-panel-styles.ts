@@ -109,17 +109,6 @@ export const REFRESH_BUTTON_STYLE: CSSProperties = {
   whiteSpace: 'nowrap',
 }
 
-/** 统计与新建按钮同一行：左边是数字，右边是动作，窄面板时换行。 */
-export const ACTION_BAR_STYLE: CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  columnGap: 12,
-  rowGap: 6,
-  padding: '6px 12px 8px',
-}
-
 export const BUTTON_STYLE: CSSProperties = {
   borderWidth: 1,
   borderStyle: 'solid',
@@ -188,6 +177,12 @@ export const CHIP_ACTIVE_STYLE: CSSProperties = {
   boxShadow: '0 1px 2px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.08)',
 }
 
+/** 带计数的筛选段：比通用 chip 更紧，窄侧栏里五项仍能一行。 */
+export const FILTER_CHIP_STYLE: CSSProperties = {
+  ...CHIP_STYLE,
+  padding: '2px 7px',
+}
+
 /** 分段控件的槽。 */
 export const SEGMENTED_STYLE: CSSProperties = {
   display: 'inline-flex',
@@ -243,37 +238,23 @@ export const VIEW_TAB_ACTIVE_STYLE: CSSProperties = {
   fontWeight: 600,
 }
 
-export const STATS_STYLE: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 14,
-}
-
-export const STAT_STYLE: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 5,
-  fontSize: 12,
-  color: COLORS.secondary,
-}
-
-export const STAT_VALUE_STYLE: CSSProperties = {
-  color: COLORS.text,
-  fontSize: 14,
-  fontWeight: 600,
-  fontVariantNumeric: 'tabular-nums',
-}
-
 /**
- * 筛选与排序同一行；放不下时排序整组换到下一行并靠右，
- * 不会把任何一组挤出页边距。
+ * 筛选与排序同一行：左边是带计数的筛选段，右边是排序。
+ * 放不下时排序整组换到下一行并靠右，筛选段自身横向滚动，不折行。
  */
 export const TOOLBAR_STYLE: CSSProperties = {
   display: 'flex',
   flexWrap: 'wrap',
   alignItems: 'center',
   gap: 8,
-  padding: '0 12px 6px',
+  padding: '6px 12px 8px',
+}
+
+/** 无快照时工具栏只剩新建入口：靠右，和列表头里的位置分开但保持同一层级。 */
+export const TOOLBAR_FALLBACK_STYLE: CSSProperties = {
+  display: 'flex',
+  marginLeft: 'auto',
+  flex: 'none',
 }
 
 /**
@@ -282,7 +263,7 @@ export const TOOLBAR_STYLE: CSSProperties = {
 export const FILTER_SEGMENTED_STYLE: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
-  gap: 2,
+  gap: 1,
   padding: 2,
   borderRadius: 8,
   background: COLORS.track,
@@ -410,14 +391,27 @@ export const PEOPLE_VIEWER_STYLE: CSSProperties = {
   maxWidth: '100%',
 }
 
-/** 「已加载 / 共」行：左侧计数，右侧布局切换。 */
+/** 「已加载 / 共」行：左侧计数，右侧新建入口与布局切换；极窄时整组换行。 */
 export const LOADED_ROW_STYLE: CSSProperties = {
   display: 'flex',
+  flexWrap: 'wrap',
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: 8,
   padding: '0 12px 6px',
   minWidth: 0,
+}
+
+/** 已加载行右侧：新建需求 / bug 在前，布局切换在后，整体靠右。 */
+export const LOADED_TRAILING_STYLE: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: 8,
+  marginLeft: 'auto',
+  minWidth: 0,
+  flex: 'none',
 }
 
 export const LOADED_STYLE: CSSProperties = {

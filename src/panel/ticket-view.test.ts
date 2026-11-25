@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { TicketSnapshot, TicketStatus } from '../protocol/tracker.ts'
-import { viewTickets, type PeopleFilter } from './ticket-view.ts'
+import { countByFilter, countTickets, filterTickets, viewTickets, type PeopleFilter } from './ticket-view.ts'
 
 const NONE: PeopleFilter = { assignedToMe: false, createdByMe: false }
 const ASSIGNED: PeopleFilter = { assignedToMe: true, createdByMe: false }
@@ -149,5 +149,25 @@ describe('人员计数', () => {
     const view = viewTickets([ticket(9, { assignees: ['me'], author: 'me' })], query('all', NONE))
 
     expect(view.counts).toEqual({ assignedToMe: 1, createdByMe: 1 })
+  })
+})
+
+describe('筛选计数', () => {
+  it('每个筛选段的计数等于点开后的行数', () => {
+    const counts = countByFilter(countTickets(TICKETS))
+
+    for (const filter of ['all', 'open', 'closed', 'blocked', 'ready'] as const) {
+      expect(counts[filter]).toBe(filterTickets(TICKETS, filter).length)
+    }
+  })
+
+  it('Open 统计所有未关闭票，不只算「其他开放」', () => {
+    expect(countByFilter(countTickets(TICKETS))).toEqual({
+      all: 8,
+      open: 6,
+      closed: 2,
+      blocked: 1,
+      ready: 3,
+    })
   })
 })
