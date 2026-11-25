@@ -36,29 +36,26 @@ import {
   type TicketTreeRow,
 } from './ticket-tree.ts'
 import {
-  ACTION_BAR_STYLE,
   AGE_STYLE,
   BACKEND_BADGE_STYLE,
   BUG_ACTION_STYLE,
   BUTTON_STYLE,
   CHIP_ACTIVE_STYLE,
-  CHIP_STYLE,
   COLORS,
   EMPTY_STYLE,
   FEATURE_ACTION_STYLE,
   FILTERS,
+  FILTER_CHIP_STYLE,
+  FILTER_SEGMENTED_STYLE,
   HEADER_STYLE,
   LOADED_ROW_STYLE,
   LOADED_STYLE,
+  LOADED_TRAILING_STYLE,
   REFRESH_BUTTON_STYLE,
   REPO_CHIP_STYLE,
   REPO_HOST_STYLE,
   REPO_NAME_STYLE,
   SORT_OPTIONS,
-  STATS_STYLE,
-  STAT_STYLE,
-  STAT_VALUE_STYLE,
-  FILTER_SEGMENTED_STYLE,
   PEOPLE_CHIP_ACTIVE_STYLE,
   PEOPLE_CHIP_STYLE,
   PEOPLE_CLEAR_STYLE,
@@ -69,16 +66,17 @@ import {
   SORT_DIRECTION_STYLE,
   SORT_GROUP_STYLE,
   SORT_SELECT_STYLE,
+  TOOLBAR_FALLBACK_STYLE,
   TOOLBAR_STYLE,
 } from './task-panel-styles.ts'
 import {
+  countByFilter,
   countTickets,
   viewTickets,
   type PeopleCounts,
   type PeopleFilter,
   type PersonFilterKey,
   type SortDirection,
-  type TicketCounts,
   type TicketFilter,
   type TicketSortKey,
 } from './ticket-view.ts'
@@ -141,7 +139,7 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
   const actions = useTicketActions(props.workspaceRoot, props.copy, props.client)
 
   const tickets = snapshot?.tickets ?? []
-  const counts = countTickets(tickets)
+  const chipCounts = countByFilter(countTickets(tickets))
   const view = viewTickets(tickets, {
     filter: preference.filter,
     sortKey: preference.sortKey,
@@ -192,6 +190,12 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
       return next
     })
   }
+  const newFeature = (): void => {
+    void actions.copyPrompt((style) => newFeaturePrompt(t, style))
+  }
+  const newBug = (): void => {
+    void actions.copyPrompt((style) => newBugPrompt(t, style))
+  }
 
   return (
     <div
@@ -207,25 +211,19 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
         onRefresh={refresh}
         onRefreshFull={refreshFull}
       />
-      <ActionBar
-        counts={snapshot === null ? null : counts}
-        onNewFeature={() => {
-          void actions.copyPrompt((style) => newFeaturePrompt(t, style))
-        }}
-        onNewBug={() => {
-          void actions.copyPrompt((style) => newBugPrompt(t, style))
-        }}
+      <Toolbar
+        counts={snapshot === null ? null : chipCounts}
+        filter={preference.filter}
+        sortKey={preference.sortKey}
+        direction={preference.direction}
+        onFilter={setFilter}
+        onSort={toggleSort}
+        onNewFeature={newFeature}
+        onNewBug={newBug}
       />
       {error !== null ? <ErrorBanner error={error} onOpenEnvCheck={props.onOpenEnvCheck} /> : null}
       {snapshot !== null ? (
         <>
-          <Toolbar
-            filter={preference.filter}
-            sortKey={preference.sortKey}
-            direction={preference.direction}
-            onFilter={setFilter}
-            onSort={toggleSort}
-          />
           {/* 认不出当前用户时整行不出现：不放永远点不出结果的按钮。 */}
           <PeopleFilterRow
             viewer={snapshot.viewer}
@@ -249,6 +247,8 @@ export function TicketsView(props: TicketsViewProps): React.ReactElement {
             workspaceRoot={props.workspaceRoot}
             onOpenEnvCheck={props.onOpenEnvCheck}
             onLoadMore={loadMore}
+            onNewFeature={newFeature}
+            onNewBug={newBug}
             onPick={props.onOpenTicket}
             onSkillAction={actions.onSkillAction}
             onToggleCollapse={toggleCollapse}
@@ -318,6 +318,8 @@ function TicketRows(props: {
   readonly workspaceRoot: string | undefined
   readonly onOpenEnvCheck: (code: ErrorCode) => void
   readonly onLoadMore: () => void
+  readonly onNewFeature: () => void
+  readonly onNewBug: () => void
   readonly onPick: (ticket: TicketSnapshot) => void
   readonly onSkillAction: (ticket: TicketSnapshot) => void
   readonly onToggleCollapse: (ref: string) => void
@@ -334,11 +336,18 @@ function TicketRows(props: {
             total: props.snapshot.total,
           })}
         </span>
-        <LayoutToggle
-          layout={props.layout}
-          hierarchy={props.hierarchy}
-          onLayout={props.onLayout}
-        />
+        <div style={LOADED_TRAILING_STYLE}>
+          <IntakeActions
+            compact
+            onNewFeature={props.onNewFeature}
+            onNewBug={props.onNewBug}
+          />
+          <LayoutToggle
+            layout={props.layout}
+            hierarchy={props.hierarchy}
+            onLayout={props.onLayout}
+          />
+        </div>
       </div>
       <TicketList
         rows={props.rows}
@@ -475,40 +484,6 @@ function Header(props: {
   )
 }
 
-function ActionBar(props: {
-  readonly counts: TicketCounts | null
-  readonly onNewFeature: () => void
-  readonly onNewBug: () => void
-}): React.ReactElement {
-  const t = useMessages()
-
-  return (
-    <div style={ACTION_BAR_STYLE}>
-      {props.counts === null ? <span /> : <StatsRow counts={props.counts} />}
-      <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
-        <IntakeAction
-          testId="new-feature"
-          label={t('tickets.newFeature')}
-          title={t('tickets.newFeatureHint')}
-          ariaLabel={t('tickets.newFeatureLabel')}
-          style={FEATURE_ACTION_STYLE}
-          hover="primary"
-          onCopy={props.onNewFeature}
-        />
-        <IntakeAction
-          testId="new-bug"
-          label={t('tickets.newBug')}
-          title={t('tickets.newBugHint')}
-          ariaLabel={t('tickets.newBugLabel')}
-          style={BUG_ACTION_STYLE}
-          hover="secondary"
-          onCopy={props.onNewBug}
-        />
-      </div>
-    </div>
-  )
-}
-
 /**
  * 一个入池按钮：点一下把提示词复制到剪贴板。
  * 剪贴板写不进去时复制端口回报 manual，面板自动给出手动复制区，所以按钮从不禁用。
@@ -538,117 +513,126 @@ function IntakeAction(props: {
   )
 }
 
-function StatsRow(props: { readonly counts: TicketCounts }): React.ReactElement {
+/** 新建需求与 bug：无快照时留在工具栏，有快照时进列表头，两处共用一组按钮。 */
+function IntakeActions(props: {
+  readonly onNewFeature: () => void
+  readonly onNewBug: () => void
+  /** 列表头里与布局开关同高，不把「已加载」行撑高。 */
+  readonly compact?: boolean
+}): React.ReactElement {
   const t = useMessages()
+  const compact = props.compact === true
   return (
-    <div style={STATS_STYLE}>
-      <Stat
-        testId="stat-ready"
-        label={t('tickets.stat.ready')}
-        value={props.counts.ready}
-        color={COLORS.success}
+    <div style={INTAKE_ACTIONS_STYLE}>
+      <IntakeAction
+        testId="new-feature"
+        label={t('tickets.newFeature')}
+        title={t('tickets.newFeatureHint')}
+        ariaLabel={t('tickets.newFeatureLabel')}
+        style={compact ? { ...FEATURE_ACTION_STYLE, ...COMPACT_INTAKE_STYLE } : FEATURE_ACTION_STYLE}
+        hover="primary"
+        onCopy={props.onNewFeature}
       />
-      <Stat
-        testId="stat-blocked"
-        label={t('tickets.stat.blocked')}
-        value={props.counts.blocked}
-        color={COLORS.warn}
-      />
-      <Stat
-        testId="stat-open"
-        label={t('tickets.stat.open')}
-        value={props.counts.open}
-        color={COLORS.secondary}
-      />
-      <Stat
-        testId="stat-closed"
-        label={t('tickets.stat.closed')}
-        value={props.counts.closed}
-        color={COLORS.tertiary}
+      <IntakeAction
+        testId="new-bug"
+        label={t('tickets.newBug')}
+        title={t('tickets.newBugHint')}
+        ariaLabel={t('tickets.newBugLabel')}
+        style={compact ? { ...BUG_ACTION_STYLE, ...COMPACT_INTAKE_STYLE } : BUG_ACTION_STYLE}
+        hover="secondary"
+        onCopy={props.onNewBug}
       />
     </div>
   )
 }
 
-function Stat(props: {
-  readonly testId: string
-  readonly label: string
-  readonly value: number
-  readonly color: string
-}): React.ReactElement {
-  return (
-    <div data-testid={props.testId} style={STAT_STYLE}>
-      <span
-        aria-hidden="true"
-        style={{ width: 7, height: 7, borderRadius: '50%', background: props.color, flex: 'none' }}
-      />
-      <strong style={STAT_VALUE_STYLE}>{props.value}</strong>
-      <span>{props.label}</span>
-    </div>
-  )
+/** 紧凑版只收竖直内边距：高度对齐布局开关，文字与图标尺寸不变。 */
+const COMPACT_INTAKE_STYLE: React.CSSProperties = {
+  padding: '2px 8px 2px 6px',
+}
+
+const INTAKE_ACTIONS_STYLE: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  flex: 'none',
 }
 
 function Toolbar(props: {
+  readonly counts: Readonly<Record<TicketFilter, number>> | null
   readonly filter: TicketFilter
   readonly sortKey: TicketSortKey
   readonly direction: SortDirection
   readonly onFilter: (filter: TicketFilter) => void
   readonly onSort: (key: TicketSortKey) => void
+  readonly onNewFeature: () => void
+  readonly onNewBug: () => void
 }): React.ReactElement {
   const t = useMessages()
   const ascending = props.direction === 'asc'
+  const counts = props.counts
+
   return (
     <div style={TOOLBAR_STYLE}>
-      <div
-        role="group"
-        aria-label={t('tickets.filterGroup')}
-        data-scroll-x=""
-        style={FILTER_SEGMENTED_STYLE}
-      >
-        {FILTERS.map((item) => (
-          <Chip
-            key={item}
-            testId={`filter-${item}`}
-            label={t(FILTER_LABELS[item])}
-            active={props.filter === item}
-            onClick={() => {
-              props.onFilter(item)
-            }}
-          />
-        ))}
-      </div>
-      <div role="group" aria-label={t('tickets.sortGroup')} style={SORT_GROUP_STYLE}>
-        <select
-          data-testid="sort-key"
-          aria-label={t('tickets.sortField')}
-          value={props.sortKey}
-          onChange={(event) => {
-            // 换字段时用该字段的默认方向；同字段不会触发 change。
-            props.onSort(event.target.value as TicketSortKey)
-          }}
-          style={SORT_SELECT_STYLE}
+      {counts === null ? null : (
+        <div
+          role="group"
+          aria-label={t('tickets.filterGroup')}
+          data-scroll-x=""
+          style={FILTER_SEGMENTED_STYLE}
         >
-          {SORT_OPTIONS.map((item) => (
-            <option key={item} value={item}>
-              {t(SORT_LABELS[item])}
-            </option>
+          {FILTERS.map((item) => (
+            <Chip
+              key={item}
+              testId={`filter-${item}`}
+              label={t(FILTER_LABELS[item])}
+              count={counts[item]}
+              active={props.filter === item}
+              onClick={() => {
+                props.onFilter(item)
+              }}
+            />
           ))}
-        </select>
-        <button
-          type="button"
-          data-testid="sort-direction"
-          data-hover="soft"
-          title={ascending ? t('tickets.sortAscHint') : t('tickets.sortDescHint')}
-          aria-label={ascending ? t('tickets.sortAscHint') : t('tickets.sortDescHint')}
-          onClick={() => {
-            // 对当前字段再切一次 = 翻转方向。
-            props.onSort(props.sortKey)
-          }}
-          style={SORT_DIRECTION_STYLE}
-        >
-          {ascending ? '↑' : '↓'}
-        </button>
-      </div>
+        </div>
+      )}
+      {counts === null ? (
+        <div style={TOOLBAR_FALLBACK_STYLE}>
+          <IntakeActions onNewFeature={props.onNewFeature} onNewBug={props.onNewBug} />
+        </div>
+      ) : (
+        <div role="group" aria-label={t('tickets.sortGroup')} style={SORT_GROUP_STYLE}>
+          <select
+            data-testid="sort-key"
+            aria-label={t('tickets.sortField')}
+            value={props.sortKey}
+            onChange={(event) => {
+              // 换字段时用该字段的默认方向；同字段不会触发 change。
+              props.onSort(event.target.value as TicketSortKey)
+            }}
+            style={SORT_SELECT_STYLE}
+          >
+            {SORT_OPTIONS.map((item) => (
+              <option key={item} value={item}>
+                {t(SORT_LABELS[item])}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            data-testid="sort-direction"
+            data-hover="soft"
+            title={ascending ? t('tickets.sortAscHint') : t('tickets.sortDescHint')}
+            aria-label={ascending ? t('tickets.sortAscHint') : t('tickets.sortDescHint')}
+            onClick={() => {
+              // 对当前字段再切一次 = 翻转方向。
+              props.onSort(props.sortKey)
+            }}
+            style={SORT_DIRECTION_STYLE}
+          >
+            {ascending ? '↑' : '↓'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -669,11 +653,18 @@ const SORT_LABELS: Readonly<Record<TicketSortKey, MessageId>> = {
   title: 'tickets.sort.title',
 }
 
+/** 计数沿用统计条的字重与等宽数字，颜色跟随 chip 的选中态。 */
+const CHIP_COUNT_STYLE: React.CSSProperties = {
+  color: COLORS.text,
+  fontWeight: 600,
+  fontVariantNumeric: 'tabular-nums',
+}
+
 function Chip(props: {
   readonly testId: string
   readonly label: string
+  readonly count: number
   readonly active: boolean
-  readonly suffix?: string
   readonly onClick: () => void
 }): React.ReactElement {
   return (
@@ -683,10 +674,11 @@ function Chip(props: {
       aria-pressed={props.active}
       data-hover="soft"
       onClick={props.onClick}
-      style={{ ...CHIP_STYLE, ...(props.active ? CHIP_ACTIVE_STYLE : undefined) }}
+      style={{ ...FILTER_CHIP_STYLE, ...(props.active ? CHIP_ACTIVE_STYLE : undefined) }}
     >
       {props.label}
-      {props.suffix ?? ''}
+      {' '}
+      <span style={CHIP_COUNT_STYLE}>{props.count}</span>
     </button>
   )
 }
