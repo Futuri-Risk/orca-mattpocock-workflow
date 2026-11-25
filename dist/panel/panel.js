@@ -24048,10 +24048,6 @@
     "tickets.sortField": "\u6392\u5E8F\u5B57\u6BB5",
     "tickets.sortAscHint": "\u5347\u5E8F\uFF0C\u70B9\u51FB\u6539\u4E3A\u964D\u5E8F",
     "tickets.sortDescHint": "\u964D\u5E8F\uFF0C\u70B9\u51FB\u6539\u4E3A\u5347\u5E8F",
-    "tickets.stat.ready": "\u53EF\u63A5",
-    "tickets.stat.blocked": "\u963B\u585E",
-    "tickets.stat.open": "\u5176\u4ED6\u5F00\u653E",
-    "tickets.stat.closed": "\u5DF2\u5173\u95ED",
     "tickets.filter.all": "\u5168\u90E8",
     "tickets.filter.open": "Open",
     "tickets.filter.closed": "\u5DF2\u5173\u95ED",
@@ -24591,10 +24587,6 @@
     "tickets.sortField": "Sort field",
     "tickets.sortAscHint": "Ascending; click for descending",
     "tickets.sortDescHint": "Descending; click for ascending",
-    "tickets.stat.ready": "Ready",
-    "tickets.stat.blocked": "Blocked",
-    "tickets.stat.open": "Other open",
-    "tickets.stat.closed": "Closed",
     "tickets.filter.all": "All",
     "tickets.filter.open": "Open",
     "tickets.filter.closed": "Closed",
@@ -25870,15 +25862,6 @@
     fontSize: 12,
     whiteSpace: "nowrap"
   };
-  var ACTION_BAR_STYLE = {
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    columnGap: 12,
-    rowGap: 6,
-    padding: "6px 12px 8px"
-  };
   var BUTTON_STYLE = {
     borderWidth: 1,
     borderStyle: "solid",
@@ -25936,6 +25919,10 @@
     background: COLORS.surfaceRaised,
     boxShadow: "0 1px 2px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.08)"
   };
+  var FILTER_CHIP_STYLE = {
+    ...CHIP_STYLE,
+    padding: "2px 7px"
+  };
   var SEGMENTED_STYLE = {
     display: "inline-flex",
     flexWrap: "wrap",
@@ -25983,35 +25970,22 @@
     color: COLORS.text,
     fontWeight: 600
   };
-  var STATS_STYLE = {
-    display: "flex",
-    alignItems: "center",
-    gap: 14
-  };
-  var STAT_STYLE = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 5,
-    fontSize: 12,
-    color: COLORS.secondary
-  };
-  var STAT_VALUE_STYLE = {
-    color: COLORS.text,
-    fontSize: 14,
-    fontWeight: 600,
-    fontVariantNumeric: "tabular-nums"
-  };
   var TOOLBAR_STYLE = {
     display: "flex",
     flexWrap: "wrap",
     alignItems: "center",
     gap: 8,
-    padding: "0 12px 6px"
+    padding: "6px 12px 8px"
+  };
+  var TOOLBAR_FALLBACK_STYLE = {
+    display: "flex",
+    marginLeft: "auto",
+    flex: "none"
   };
   var FILTER_SEGMENTED_STYLE = {
     display: "inline-flex",
     alignItems: "center",
-    gap: 2,
+    gap: 1,
     padding: 2,
     borderRadius: 8,
     background: COLORS.track,
@@ -26118,11 +26092,22 @@
   };
   var LOADED_ROW_STYLE = {
     display: "flex",
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
     padding: "0 12px 6px",
     minWidth: 0
+  };
+  var LOADED_TRAILING_STYLE = {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 8,
+    marginLeft: "auto",
+    minWidth: 0,
+    flex: "none"
   };
   var LOADED_STYLE = {
     color: COLORS.tertiary,
@@ -33944,6 +33929,16 @@ ${String(target.number)}`;
     }
     return { ready, blocked, open, closed };
   }
+  function countByFilter(counts) {
+    const all = counts.ready + counts.blocked + counts.open + counts.closed;
+    return {
+      all,
+      open: all - counts.closed,
+      closed: counts.closed,
+      blocked: counts.blocked,
+      ready: counts.ready
+    };
+  }
   function filterTickets(tickets, filter) {
     switch (filter) {
       case "all":
@@ -34406,7 +34401,7 @@ ${String(target.number)}`;
     const nowValue = useNow(clock);
     const actions = useTicketActions(props.workspaceRoot, props.copy, props.client);
     const tickets = snapshot?.tickets ?? [];
-    const counts = countTickets(tickets);
+    const chipCounts = countByFilter(countTickets(tickets));
     const view = viewTickets(tickets, {
       filter: preference.filter,
       sortKey: preference.sortKey,
@@ -34444,6 +34439,12 @@ ${String(target.number)}`;
         return next;
       });
     };
+    const newFeature = () => {
+      void actions.copyPrompt((style) => newFeaturePrompt(t, style));
+    };
+    const newBug = () => {
+      void actions.copyPrompt((style) => newBugPrompt(t, style));
+    };
     return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
       "div",
       {
@@ -34463,32 +34464,23 @@ ${String(target.number)}`;
             }
           ),
           /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
-            ActionBar,
+            Toolbar,
             {
-              counts: snapshot === null ? null : counts,
-              onNewFeature: () => {
-                void actions.copyPrompt((style) => newFeaturePrompt(t, style));
-              },
-              onNewBug: () => {
-                void actions.copyPrompt((style) => newBugPrompt(t, style));
-              }
+              counts: snapshot === null ? null : chipCounts,
+              filter: preference.filter,
+              sortKey: preference.sortKey,
+              direction: preference.direction,
+              rowFields: preference,
+              assigneesAvailable: snapshot !== null && snapshot.backend !== "markdown",
+              onFilter: setFilter,
+              onSort: toggleSort,
+              onToggleRowField: toggleRowField,
+              onNewFeature: newFeature,
+              onNewBug: newBug
             }
           ),
           error !== null ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(ErrorBanner, { error, onOpenEnvCheck: props.onOpenEnvCheck }) : null,
           snapshot !== null ? /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(import_jsx_runtime25.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
-              Toolbar,
-              {
-                filter: preference.filter,
-                sortKey: preference.sortKey,
-                direction: preference.direction,
-                rowFields: preference,
-                assigneesAvailable: snapshot.backend !== "markdown",
-                onFilter: setFilter,
-                onSort: toggleSort,
-                onToggleRowField: toggleRowField
-              }
-            ),
             /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
               PeopleFilterRow,
               {
@@ -34517,6 +34509,8 @@ ${String(target.number)}`;
                 workspaceRoot: props.workspaceRoot,
                 onOpenEnvCheck: props.onOpenEnvCheck,
                 onLoadMore: loadMore,
+                onNewFeature: newFeature,
+                onNewBug: newBug,
                 onPick: props.onOpenTicket,
                 onSkillAction: actions.onSkillAction,
                 onToggleCollapse: toggleCollapse,
@@ -34555,14 +34549,24 @@ ${String(target.number)}`;
           loaded: props.snapshot.loaded,
           total: props.snapshot.total
         }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
-          LayoutToggle,
-          {
-            layout: props.layout,
-            hierarchy: props.hierarchy,
-            onLayout: props.onLayout
-          }
-        )
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: LOADED_TRAILING_STYLE, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+            IntakeActions,
+            {
+              compact: true,
+              onNewFeature: props.onNewFeature,
+              onNewBug: props.onNewBug
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+            LayoutToggle,
+            {
+              layout: props.layout,
+              hierarchy: props.hierarchy,
+              onLayout: props.onLayout
+            }
+          )
+        ] })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         TicketList,
@@ -34668,38 +34672,6 @@ ${String(target.number)}`;
       ] })
     ] });
   }
-  function ActionBar(props) {
-    const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: ACTION_BAR_STYLE, children: [
-      props.counts === null ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", {}) : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatsRow, { counts: props.counts }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { display: "flex", gap: 6, marginLeft: "auto" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
-          IntakeAction,
-          {
-            testId: "new-feature",
-            label: t("tickets.newFeature"),
-            title: t("tickets.newFeatureHint"),
-            ariaLabel: t("tickets.newFeatureLabel"),
-            style: FEATURE_ACTION_STYLE,
-            hover: "primary",
-            onCopy: props.onNewFeature
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
-          IntakeAction,
-          {
-            testId: "new-bug",
-            label: t("tickets.newBug"),
-            title: t("tickets.newBugHint"),
-            ariaLabel: t("tickets.newBugLabel"),
-            style: BUG_ACTION_STYLE,
-            hover: "secondary",
-            onCopy: props.onNewBug
-          }
-        )
-      ] })
-    ] });
-  }
   function IntakeAction(props) {
     return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
       "button",
@@ -34718,65 +34690,51 @@ ${String(target.number)}`;
       }
     );
   }
-  function StatsRow(props) {
+  function IntakeActions(props) {
     const t = useMessages();
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: STATS_STYLE, children: [
+    const compact = props.compact === true;
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: INTAKE_ACTIONS_STYLE, children: [
       /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
-        Stat,
+        IntakeAction,
         {
-          testId: "stat-ready",
-          label: t("tickets.stat.ready"),
-          value: props.counts.ready,
-          color: COLORS.success
+          testId: "new-feature",
+          label: t("tickets.newFeature"),
+          title: t("tickets.newFeatureHint"),
+          ariaLabel: t("tickets.newFeatureLabel"),
+          style: compact ? { ...FEATURE_ACTION_STYLE, ...COMPACT_INTAKE_STYLE } : FEATURE_ACTION_STYLE,
+          hover: "primary",
+          onCopy: props.onNewFeature
         }
       ),
       /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
-        Stat,
+        IntakeAction,
         {
-          testId: "stat-blocked",
-          label: t("tickets.stat.blocked"),
-          value: props.counts.blocked,
-          color: COLORS.warn
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
-        Stat,
-        {
-          testId: "stat-open",
-          label: t("tickets.stat.open"),
-          value: props.counts.open,
-          color: COLORS.secondary
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
-        Stat,
-        {
-          testId: "stat-closed",
-          label: t("tickets.stat.closed"),
-          value: props.counts.closed,
-          color: COLORS.tertiary
+          testId: "new-bug",
+          label: t("tickets.newBug"),
+          title: t("tickets.newBugHint"),
+          ariaLabel: t("tickets.newBugLabel"),
+          style: compact ? { ...BUG_ACTION_STYLE, ...COMPACT_INTAKE_STYLE } : BUG_ACTION_STYLE,
+          hover: "secondary",
+          onCopy: props.onNewBug
         }
       )
     ] });
   }
-  function Stat(props) {
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { "data-testid": props.testId, style: STAT_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
-        "span",
-        {
-          "aria-hidden": "true",
-          style: { width: 7, height: 7, borderRadius: "50%", background: props.color, flex: "none" }
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("strong", { style: STAT_VALUE_STYLE, children: props.value }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { children: props.label })
-    ] });
-  }
+  var COMPACT_INTAKE_STYLE = {
+    padding: "2px 8px 2px 6px"
+  };
+  var INTAKE_ACTIONS_STYLE = {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    flex: "none"
+  };
   function Toolbar(props) {
     const t = useMessages();
     const ascending = props.direction === "asc";
+    const counts = props.counts;
     return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: TOOLBAR_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+      counts === null ? null : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         "div",
         {
           role: "group",
@@ -34788,6 +34746,7 @@ ${String(target.number)}`;
             {
               testId: `filter-${item}`,
               label: t(FILTER_LABELS[item]),
+              count: counts[item],
               active: props.filter === item,
               onClick: () => {
                 props.onFilter(item);
@@ -34797,7 +34756,7 @@ ${String(target.number)}`;
           ))
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { role: "group", "aria-label": t("tickets.sortGroup"), style: SORT_GROUP_STYLE, children: [
+      counts === null ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: TOOLBAR_FALLBACK_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(IntakeActions, { onNewFeature: props.onNewFeature, onNewBug: props.onNewBug }) }) : /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { role: "group", "aria-label": t("tickets.sortGroup"), style: SORT_GROUP_STYLE, children: [
         /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
           "select",
           {
@@ -34851,6 +34810,11 @@ ${String(target.number)}`;
     number: "tickets.sort.number",
     title: "tickets.sort.title"
   };
+  var CHIP_COUNT_STYLE = {
+    color: COLORS.text,
+    fontWeight: 600,
+    fontVariantNumeric: "tabular-nums"
+  };
   function Chip(props) {
     return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
       "button",
@@ -34860,10 +34824,11 @@ ${String(target.number)}`;
         "aria-pressed": props.active,
         "data-hover": "soft",
         onClick: props.onClick,
-        style: { ...CHIP_STYLE, ...props.active ? CHIP_ACTIVE_STYLE : void 0 },
+        style: { ...FILTER_CHIP_STYLE, ...props.active ? CHIP_ACTIVE_STYLE : void 0 },
         children: [
           props.label,
-          props.suffix ?? ""
+          " ",
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: CHIP_COUNT_STYLE, children: props.count })
         ]
       }
     );
