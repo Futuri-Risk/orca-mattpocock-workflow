@@ -84,7 +84,8 @@ orca plugin list --json                                      # 所有插件的�
 
 ## 语言
 
-面板右上角的下拉写插件设置 `language`（`auto` / `zh-CN` / `en`），改完即时生效。
+面板右上角的地球图标点开是三选一的菜单，写插件设置 `language`（`auto` / `zh-CN` / `en`），改完即时生效。
+入口用图标而不是原生下拉：永远只占一个图标宽度，窄侧栏里不会和视图页签抢空间。
 `auto` 跟随 Orca 的界面语言（`orca.locale`），`zh*` 落中文、`en*` 落英文，其余落中文。
 同一个设置也在 Orca 的 Settings → Plugins 里可改；面板订阅设置变更，不用重载。
 

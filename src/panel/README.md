@@ -91,6 +91,10 @@ The MattWorkflow panel in Orca's right sidebar (`ui: "html"`, a React app runnin
   non-React modules use `activeTranslate()`.
 - `task-panel.tsx`: the panel shell that switches between list, overview, environment check and
   workflow help.
+- `language-menu.tsx`: the top-bar language entry. It is a globe icon button that opens a
+  single-choice menu instead of a native dropdown, so the view bar keeps its width in a narrow
+  sidebar; the menu closes on an outside click and Esc only closes the menu. It writes the same
+  `language` setting read by `i18n.ts`.
 - `theme.css`: maps the host-injected `--orca-*` tokens to the panel's own `--mwf-*` variables; light
   and dark follow the host.
 - `markdown-body.tsx`: a small built-in Markdown renderer. Ticket bodies are untrusted input, so raw

@@ -66,6 +66,9 @@ Orca 右侧栏里的 MattWorkflow 面板（`ui: "html"`，独立 frame 里跑的
   提供插值、React context 与 `<html lang>` 同步；消息目录在 `src/protocol/i18n.ts`。
   面板组件只通过 `useMessages()` 取文案，非 React 模块用 `activeTranslate()`。
 - `task-panel.tsx`：面板外壳，在列表、概览、环境检查与流程帮助之间切换。
+- `language-menu.tsx`：顶栏的语言入口。用地球图标按钮打开单选菜单，不用原生下拉，
+  窄侧栏里顶栏宽度不被最长文案撑开；点外部收起，Esc 只收菜单。它写的就是 `i18n.ts` 读的
+  `language` 设置。
 - `theme.css`：把宿主注入的 `--orca-*` 令牌映射成面板自己的 `--mwf-*` 变量；深浅色跟随宿主。
 - `markdown-body.tsx`：自带的极简 Markdown 渲染器。工单正文是不可信输入，因此不解析原始
   HTML，链接只放行 http(s) 与 mailto。GitLab 详情会把上传附件内联成 `data:image/` 位图；

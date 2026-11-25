@@ -10,13 +10,13 @@ import * as React from 'react'
 
 import type { BackendKind } from '../protocol/backend.ts'
 import type { CapabilityDiagnostic } from '../protocol/env-check.ts'
-import type { LanguageSetting } from '../protocol/i18n.ts'
 import { ERROR_BACKENDS, type ErrorCode, type TicketSnapshot } from '../protocol/tracker.ts'
-import { useLocale, useMessages } from './i18n.ts'
+import { useMessages } from './i18n.ts'
 import type { PromptCopy } from './injection.ts'
 import { useDetailNavigation, type DetailTargetState } from './detail-navigation.ts'
 import { EnvCheckView } from './env-check-view.tsx'
 import { HelpView } from './help-view.tsx'
+import { LanguageMenu } from './language-menu.tsx'
 import { OverviewView } from './overview-view.tsx'
 import type { PanelClient } from './transport.ts'
 import {
@@ -25,7 +25,6 @@ import {
   type SnapshotRequestState,
 } from './snapshot-request.ts'
 import {
-  COLORS,
   ICON_BUTTON_STYLE,
   PANEL_SHEET,
   PANEL_STYLE,
@@ -328,59 +327,19 @@ function ViewTabs(props: {
         />
       </div>
       <div style={VIEW_ACTIONS_STYLE}>
-        <LanguageSelect />
+        <LanguageMenu />
         <TipsButton label={t('view.help')} onClick={props.onOpenHelp} />
       </div>
     </div>
   )
 }
 
-/** 右侧入口组：语言下拉贴着流程帮助图标，窄面板里不抢页签的宽度。 */
+/** 右侧入口组：语言图标贴着流程帮助图标，窄面板里不抢页签的宽度。 */
 const VIEW_ACTIONS_STYLE: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: 4,
   flex: 'none',
-}
-
-/** 语言切换器：写同一个 `language` 设置，改完即时重渲染。 */
-function LanguageSelect(): React.ReactElement {
-  const t = useMessages()
-  const { setting, setSetting, locale } = useLocale()
-  const languageName = locale === 'zh-CN' ? t('language.zhCN') : t('language.en')
-
-  return (
-    <select
-      data-testid="language-select"
-      aria-label={t('language.label')}
-      title={t('language.effective', { language: languageName })}
-      value={setting}
-      onChange={(event) => {
-        setSetting(event.target.value as LanguageSetting)
-      }}
-      style={LANGUAGE_SELECT_STYLE}
-    >
-      <option value="auto">{t('language.autoEffective', { language: languageName })}</option>
-      <option value="zh-CN">{t('language.zhCN')}</option>
-      <option value="en">{t('language.en')}</option>
-    </select>
-  )
-}
-
-const LANGUAGE_SELECT_STYLE: React.CSSProperties = {
-  appearance: 'none',
-  border: 'none',
-  borderRadius: 6,
-  padding: '1px 18px 1px 7px',
-  color: COLORS.secondary,
-  backgroundColor: 'transparent',
-  backgroundImage: `linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%)`,
-  backgroundPosition: 'right 9px center, right 5px center',
-  backgroundSize: '4px 4px, 4px 4px',
-  backgroundRepeat: 'no-repeat',
-  cursor: 'pointer',
-  font: 'inherit',
-  fontSize: 12,
 }
 
 function ViewChip(props: {

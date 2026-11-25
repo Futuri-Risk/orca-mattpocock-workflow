@@ -92,8 +92,10 @@ and the panel renders that.
 
 ## Language
 
-The dropdown in the panel's top-right writes the `language` plugin setting (`auto` / `zh-CN` / `en`)
-and takes effect immediately. `auto` follows Orca's UI locale (`orca.locale`); `zh*` resolves to
+The globe icon in the panel's top-right opens a single-choice menu that writes the `language` plugin
+setting (`auto` / `zh-CN` / `en`) and takes effect immediately. The entry is an icon rather than a
+native dropdown so it always takes one glyph of width and never competes with the view tabs in a
+narrow sidebar. `auto` follows Orca's UI locale (`orca.locale`); `zh*` resolves to
 Chinese, `en*` to English, and everything else to Chinese. The same setting is available in Orca's
 Settings → Plugins; the panel subscribes to setting changes, so no reload is needed.
 
