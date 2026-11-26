@@ -30494,8 +30494,11 @@ ${MARKDOWN_SHEET}
   var DETAIL_HEADER_STYLE = {
     position: "relative",
     display: "flex",
+    // 窄侧栏里放不下技能、worktree 与工单操作时折到下一行；不折行会把整页撑宽，出现页面级横向滚动条。
+    flexWrap: "wrap",
     alignItems: "center",
-    gap: 6,
+    columnGap: 6,
+    rowGap: 4,
     minWidth: 0,
     padding: "6px 8px 6px 6px",
     borderBottom: `1px solid ${COLORS.border}`

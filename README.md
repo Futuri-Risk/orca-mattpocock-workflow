@@ -216,7 +216,7 @@ Tag the release commit with an annotated tag, then run the single gate. The chec
 missing tag fails immediately:
 
 ```bash
-git tag -a v0.6.0 -m v0.6.0
+git tag -a v0.6.1 -m v0.6.1
 pnpm release:check
 ```
 
@@ -228,13 +228,13 @@ read the topic and visibility and degrades to a warning when unavailable.
 Push the commit and tag after it passes:
 
 ```bash
-git push origin HEAD v0.6.0
+git push origin HEAD v0.6.1
 ```
 
 Users install a pinned version:
 
 ```bash
-orca plugin install cnzgray/orca-mattpocock-workflow@v0.6.0
+orca plugin install cnzgray/orca-mattpocock-workflow@v0.6.1
 ```
 
 The first install requires one approval; the approval page lists capabilities and contributions.
